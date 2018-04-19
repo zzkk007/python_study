@@ -8,7 +8,9 @@ Python虚拟环境
 ####使用方法
     
     $ cd my_project_folder
-    $ virtualenv venv 
+    $  virtualenv env
+    这里可能会出现virtualenv包安装成功，但是命令virtualenv不存在，这里就需要周到安装包文件virtualenv.py,添加一条软连接。
+
 如，创建名为**ENV**的虚拟环境  
 
     $ virtualenv ENV
