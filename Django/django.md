@@ -1,4 +1,4 @@
-#Django 学习笔记  
+#Django 学习笔记  
 ##环境安装  
 ### 我在安装环境的时候遇到了一些问题  
 ####1、linux（debian）系统上python版本混乱问题
@@ -35,8 +35,12 @@ The following packages have unmet dependencies:
 976:ii  python3.2-dev         3.2.3-7+deb7u1    amd64 
 977:ii  python3.2-minimal     3.2.3-7+deb7u1    amd64   
 由于在系统上频繁的安装卸载不同的版本，导致一些文件产生相互依赖，很难处理，记住一条原则，宁装不卸载。
+
+
 ####2、django.db.utils.NotSupportedError: URIs not supported
 当运行python3 manage.py runserver 命令时出现django.db.utils.NotSupportedError: URIs not supported错误，在google上搜了好久，有的说django和python的版本不兼容问题，我用的是python3.6，django是2.0.5，版本是兼容的，但是这个问题还是没有解决，不知道谁知道这个问题的答案，求教！！
+
+
 ####3、pip工具
 我在debian系统上安装了一个python3.6,在用命令安装django时报错，错误信息如下：
 pip is configured with locations that require TLS/SSL, however the ssl module in Python is not available.  
@@ -47,6 +51,8 @@ pip is configured with locations that require TLS/SSL, however the ssl module in
 make
 make install
 可能还需要升级一下pip的版本。 
+
+
 ####4、浏览器访问Django被拒  
 创建一个Django项目之后，用浏览器访问的时候为拒，需要使用命令  
 python manage.py runserver 0:8000 启动端口，并且在项目的settings.py配置文件中设置访问ip:  
