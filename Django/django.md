@@ -59,3 +59,10 @@ python manage.py runserver 0:8000 启动端口，并且在项目的settings.py�
 ALLOWED_HOSTS = ['*']  
 设置过之后就可以访问了。
 
+
+
+##编写你的第一个 Django 应用
+通过https://docs.djangoproject.com/zh-hans/2.0/intro/tutorial01/
+通过这个教程，创建一个基本的投票应用程序。
+代码见django-polls.tar
+
