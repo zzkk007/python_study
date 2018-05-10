@@ -66,3 +66,6 @@ ALLOWED_HOSTS = ['*']
 通过这个教程，创建一个基本的投票应用程序。
 代码见django-polls.tar
 
+
+
+
