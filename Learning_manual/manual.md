@@ -42,18 +42,15 @@ Python3中类型已经和类结合起来了。
 pythonz中允许编写代码来检验它所处理的对象的类型，python中至少有三种方法可以做到:
 
 1:
-		if type(L) == type([]):
-			
+		if type(L) == type([]):   
 			print('yes')
 
 2:       
-		if type(L) == list:
-			
+		if type(L) == list:  
 			print('yes')
 
 3:
-		if isinstance(L,list):
-			
+		if isinstance(L,list):  
 			print('yes')
 
 核心python概念(可能是唯一一个)：在代码中检验了特定的类型，实际上是破坏了它的灵活性，即限制它使用一种类型工作。没有这样的检测，代码也许能使用整个范围的类型工作。
