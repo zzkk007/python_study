@@ -214,7 +214,220 @@ before you can communicate with a coroutine you must first call
 next() or send(None) to advance its execution to the first yield
 expression.
 
+问题就来，既然在给yield传值过程中，会调用next()方法，那么是不是在调用一次函数的时候，
 
+是不是每次都要给它传递一个空值？有没有什么简便方法来解决這个问题呢？答案，装饰器！！看下面代码:
+
+def deco(func):  # 装饰器:用来开启协程
+	
+	def wrapper():
+
+		res = func()
+
+		next(res)
+
+		return res    #返回一个已经执行了next的函数对象
+
+	return wrapper
+
+@deco
+
+def foo():
+
+	food_list = []
+
+	while True:
+		
+		food = yield food_list    #返回添加food的列表
+
+		food_list.append(food)
+
+		print("elements in foodlist are:",food)
+
+g = foo()
+
+print(g.send('苹果'))
+
+print(g.send('香蕉'))
+
+print(g.send('菠萝'))
+
+###########输出结果为######
+
+elements in foodlist are: 苹果
+
+['苹果']
+
+elements in foodlist are: 香蕉
+
+['苹果', '香蕉']
+
+elements in foodlist are: 菠萝
+
+['苹果', '香蕉', '菠萝']
+
+
+这里我们要明确一点，yield的返回值和传给yield的值是两码事！！
+
+yield的返回值就相当于return的返回值，这个值是要被传递出去的,而send()传递的值，是要被yield接受，
+
+供函数内部使用的的，明确这一点很重要的。那么上面的打印，就应该打印出yield的返回值，
+
+而传递进去的值则本保存在一个列表中。
+
+
+
+
+
+
+装饰器：
+
+
+装饰器本质上是一个Python函数或类，它可以让其他函数或类在不需要做任何代码修改的前提下增加额外的功能，
+
+装饰器的返回值也是一个函数或类对象。它经常用于有切面需求的场景，比如：插入日志、性能测试、事务处理、
+
+缓存、权限校验等场景。装饰器是解决这类问题的绝佳设计。
+
+有了装饰器，我们可以抽离大量与函数功能本身无关的雷同代码到装饰器中并继续使用。概括的将，装饰器的作用
+
+就是为已经存在的对象添加额外的功能。
+
+
+例子： 定义一个函数专门处理日志，日志处理完之后执行代码
+
+def use_logging(func):
+	
+	logging.warn("%s is running"% func.__name__)
+	
+	func()
+
+def foo():
+
+	print('i am foo')
+
+use_logging(foo)
+
+
+这样做的逻辑没有问题，功能实现了，但是我们调用的时候不再试调用真正的业务逻辑函数foo，而是变成了use_logging函数
+
+破坏了原有的代码结构， 现在我们不得不每次都要把原来的那个 foo 函数作为参数传递给 use_logging 函数，
+
+那么有没有更好的方式的呢？当然有，答案就是装饰器。
+
+
+def use_logging(func):
+
+	def wrapper():
+
+		logging.warn("%s is running"% func.__name__)
+
+		return func()
+
+	return wrapper
+
+def foo():
+	print('i am foo')
+
+
+foo = use_logging(foo) #因为装饰器use_logging(foo)返回的函数对象wrapper,这条语句相当于foo = wrapper
+
+foo()                  # 执行foo()就相当于执行 wrapper()
+
+
+@语法糖
+
+@ 符号就是装饰器的语法糖，它放在函数开始定义的地方，这样就可以省略最后一步再次赋值的操作。
+
+def use_logging(func):
+
+	def wrapper():
+	
+		logging.warn("%s is running" % func.__name__)
+		
+		return func()
+	return wrapper
+							 
+
+@use_logging
+
+def foo():
+	
+	print("i am foo")
+									 
+foo()
+
+如上所示，有了@，我们就可以省去foo = use_logging(foo)这一句了，直接调用 foo() 即可得到想要的结果。
+
+装饰器在 Python 使用如此方便都要归因于 Python 的函数能像普通的对象一样能作为参数传递给其他函数，
+
+可以被赋值给其他变量，可以作为返回值，可以被定义在另外一个函数内。
+
+
+
+*args、**kwargs:
+
+可能有人问，如果我的业务逻辑函数 foo 需要参数怎么办？比如：
+
+def foo(name):
+	
+	print("i am %s" % name)
+
+我们可以在定义 wrapper 函数的时候指定参数：
+
+def wrapper(name):
+	        
+		logging.warn("%s is running" % func.__name__)
+			    
+		return func(name)
+
+	return wrapper
+
+
+这样 foo 函数定义的参数就可以定义在 wrapper 函数中。这时，又有人要问了，如果 foo 函数接收两个参数呢？
+
+三个参数呢？更有甚者，我可能传很多个。当装饰器不知道 foo 到底有多少个参数时，我们可以用 *args 来代替：
+
+def wrapper(8args):
+	
+		logging.warn("%s is running" % func.__name__)
+			        
+		return func(8args)
+
+	return wrapper
+
+
+
+
+
+类装饰器：
+
+没错，装饰器不仅可以是函数，还可以是类，相比函数装饰器，类装饰器具有灵活度大、高内聚、封装性等优点。
+
+使用类装饰器主要依靠类的__call__方法，当使用 @ 形式将装饰器附加到函数上时，就会调用此方法。
+
+
+class Foo(object):
+	
+	def __init__(self, func):
+		
+		self._func = func
+
+		def __call__(self):
+			
+				print ('class decorator runing')
+									        
+				self._func()
+				
+				print ('class decorator ending')
+											 
+@Foo
+
+def bar():
+	
+	print ('bar')
+													 
+bar()
 
 
 
