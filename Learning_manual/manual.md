@@ -37,7 +37,7 @@ Python还有额外的类文件工具:管道、先进先出队列（FIFO）、套
 
 Python3中类型已经和类结合起来了。
 
-pythonz中允许编写代码来检验它所处理的对象的类型，python中至少有三种方法可以做到:
+python中允许编写代码来检验它所处理的对象的类型，python中至少有三种方法可以做到:
 
 1:
 		if type(L) == type([]):   
@@ -65,11 +65,154 @@ pythonz中允许编写代码来检验它所处理的对象的类型，python中�
 						第五章  数字    
 "----------------------------------------------------------------------------------------------------------"
 
+在python中数字并不是一个真正的对象类型，而是一组类似类型的分类。
+
+yield x                    生成器函数发送协议
+
+lambda args:expression     生产匿名函数
+
+x if y else z              三元选择表达式
+
+x or y                     逻辑或（只有x 为假，才会计算y）
+
+x and y                    逻辑与（只有x 为真，才会计算y）
+
+not x                      逻辑非
+
+x in y , x not in y        成员关系（可迭代对象、集合）
+
+x is y , x is not y        对象实体测试
+
+x | y                      位或
+
+x ^ y                      位异或
+
+x // y                     真除法
+
+x[i:j:k]                   分片
+
+x(...)                     调用（函数、方法、类及其他调用）
+
+(...)                      元组、表达式、生成器表达式
+
+[...]                      列表、列表解析
+
+{...}                      字典、集合、集合和字典解析
+
+
+列表解析：
+	
+	根据已有的列表，高效创建新列表的方式。列表解析是python迭代机制的一种应用。
+	
+	语法：
+	
+	[expression for iter_val in interable]
+	
+	[expression for iter_val in interable if cond_expr]
+
+	例如：
+	L = [ i**2 for i in range(1,11) if i >= 4 ]
+	
+	print L
+	
+	[16,25,36,49,64,81,100]
 
 
 
+协程：
+
+协程是一种用户级的轻量级线程。协程拥有自己的寄存器上下文和栈。
+
+协程调度切换时，将寄存器上下文和栈保存到其他地方，在切回来的时候，恢复先前保存的寄存器上下文和栈。
+
+因此：协程能保留上一次调用时的状态（即所有局部状态的一个特定组合），每次过程重入时，
+
+就相当于进入上一次调用的状态，换种说法：进入上一次离开时所处逻辑流的位置。
+
+在并发编程中，协程与线程类似，每个协程表示一个执行单元，有自己的本地数据，与其它协程共享全局数据和其它资源。
+
+目前主流语言基本上都选择了多线程作为并发设施，与线程相关的概念是抢占式多任务（Preemptive multitasking），
+
+而与协程相关的是协作式多任务。
 
 
+
+yield与send实现协程操作:
+
+在函数内部含有yield语句即称为生成器。
+
+def foo():
+
+	while True:
+	
+		x = yield
+			
+		print("value:",x)
+
+g = foo()        #g 是一个生产器
+
+next(g)          #程序运行到yield就停住了，等待下一个next
+
+g.send(1)        #我们给yield 发送值1，然后这个值就被赋值给了x,并且打印出来，然后继续下一次循环停在yield处
+
+g.send(2)        #同上
+
+next(g)          #没有给赋值，执行print语句，打印None,继续循环停在yield处
+
+
+我们都知道，程序一旦执行到yield就会停在该处,并且将其返回值进行返回.上面的例子中，我们并没有设置返回值，
+
+所有默认程序返回的是None。我们通过打印语句来查看一下第一次next的返回值：
+
+print(next(g))
+
+####输出结果#####
+	
+	None
+
+正如我们所说的，程序返回None。接着程序往下执行，但是并没有看到next()方法。
+
+为什么还会继续执行yield语句后面的代码呢？这是因为，send()方法具有两种功能：
+
+第一，传值，send()方法，将其携带的值传递给yield，注意，是传递给yield，而不是x,然后再将其赋值给x；
+
+第二，send()方法具有和next()方法一样的功能，也就是说，传值完毕后，会接着上次执行的结果继续执行，
+
+知道遇到yield停止。这也就为什么在调用g.send()方法后，还会打印出x的数值。
+
+有了上述的分析，我们可以总结出send()的两个功能：1.传值；2.next()。
+
+既然send()方法有和next一样的作用，那么我们可不可以这样做：
+
+def foo():
+	    
+	while True:
+		        
+		x = yield
+		
+		print("value:",x)
+		   
+g = foo()
+	
+g.send(1) #执行给yield传值,这样行不行呢?
+
+执行结果：TypeError: can not send non-None value to a just-started generator
+
+错误提示:不能传递一个非空值给一个未启动的生成器。
+
+也就是说，在一个生成器函数未启动之前，是不能传递数值进去。必须先传递一个None进去或者调用一次next(g)方法，
+
+才能进行传值操作。至于为什么要先传递一个None进去，可以看一下官方说法。
+
+Because generator-iterators begin execution at the top of the
+generator function body, there is no yield expression to receive
+a value when the generator has just been created.  Therefore,
+calling send() with a non-None argument is prohibited when the
+generator iterator has just started, and a TypeError is raised if
+this occurs (presumably due to a logic error of some kind).  Thus,
+before you can communicate with a coroutine you must first call
+next() or send(None) to advance its execution to the first yield
+expression.
 
 
 
