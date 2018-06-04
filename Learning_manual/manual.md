@@ -431,3 +431,133 @@ bar()
 
 
 
+
+在python中变量不需要声明，但是使用之前必须赋值，在混合类型的表达式中，python首先将被操作
+
+的对象转换成其中最复杂的操作对象的类型，然后再对相同的类型的操作对象进行数字运算。
+
+在python3中有3种方法计算平方根：使用一个模块函数、一个表达式或一个内置函数。
+
+import math
+math.sprt(144)
+
+144**.5
+
+pow(144,.5)
+
+模块是外部组件，而内置函数位于一个隐形的命名空间内，python会自动搜索程序的变量名。
+
+这个命名空间对应Python3中为builtins模块（python2.6中的__builtin__）。
+
+
+小数：
+
+from decimal import Decimal 
+
+printf(Decimal('0.1') + Decimal('0.1') + Decimal('0.1') -Decimal('0.3'))
+
+Decimal('0.0')
+
+
+decimal.getcontext().prec = 4 (设置精度，小数点后4位)
+
+
+分数：
+
+from fractions  import Fraction
+
+x = Fraction(1,3)
+
+y = Fraction(4,6)
+
+printf(x + y)
+
+Fraction(1,1)
+
+
+print(x - y)
+
+Fraction(-1,3)
+
+
+print(x * y)
+
+Fraction(2,9)
+
+
+
+
+集合：
+
+集合(set)，这是一些唯一的，不可变的对象的一个无序集合（collection）.
+
+
+集合对象支持与数学集合理论相对应的操作。
+
+要创建一个集合对象，向内置的set函数传递一个序列或其他的可迭代的对象：
+
+集合通过表达式操作符支持一般的数学集合运算。注意，不能在一般序列上应用这些表达式，
+
+必须通过序列创建集合后才能使用。
+
+x = set('abcde')
+
+y = set('bdxyz')
+
+print(x)
+
+	set(['a', 'c', 'b', 'e', 'd'])
+
+'e' in  x
+	
+	True
+
+x - y
+	
+	set(['a','c','e'])
+
+x | y
+
+	set(['a','c','b','d','y','x','z'])
+
+x & y
+	
+	set(['b','d'])
+
+x ^ y
+
+	set(['a','c','e','y','x','z'])
+
+x > y ,x < y
+	
+	(False,False)
+
+
+除了表达式，集合对象还提供了对应这些操作的方法。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
