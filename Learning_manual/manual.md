@@ -388,11 +388,11 @@ def wrapper(name):
 
 三个参数呢？更有甚者，我可能传很多个。当装饰器不知道 foo 到底有多少个参数时，我们可以用 *args 来代替：
 
-def wrapper(8args):
+def wrapper(*args):
 	
 		logging.warn("%s is running" % func.__name__)
 			        
-		return func(8args)
+		return func(*args)
 
 	return wrapper
 
