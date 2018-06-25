@@ -2432,151 +2432,375 @@ python for循环的首行定义了一个赋值目标，以及你想遍历的对�
 								迭代器和解析，第一部分
 
 "--------------------------------------------------------------------------------------------"
+
+迭代器：初探
+
+术语："可迭代对象"，"迭代器"，"生成器"
+
+				---> 迭代器 --> 生成器
+	可迭代对象：---> 序列
+				---> 字典
+
+可迭代对象与迭代器：
+	1、可迭代对象包含迭代器
+	2、如果一个对象拥有__iter__方法，就是可迭代对象；如果一个对象拥有next方法，就是迭代器
+	3、定义可迭代对象，必须实现__iter__方法；定义迭代器，必须实现__iter__和next方法。
+	
+__iter__():
+	该方法返回的是当前对象的迭代器类的实例。因为迭代对象和迭代器都实现这个方法，因此有两种写法。
+	
+	写法一：用于可迭代对象类的写法，返回该可迭代对象的迭代器类的实例。
+	写法二：用于迭代器类的写法，直接返回self(即自己本身)，表示自身即是自身的迭代器。
+
+next():
+	返回迭代的每一步，实现该方法时注意要最后超出边界要抛出StopIteration异常。
+
+
+	
+文件迭代器：
+	了解迭代器的最简单的方式之一就是，看一看它是如何与内置类型一起工作的。
+	例如： 
+	f = open('script1.py')
+	f.readline()
+		'import sys\n'
+	f.readline()
+		'pirnt(sys.path)\n'
+	f.readline()
+		'x=2\n'
+	f.readline()
+		''
+如今，文件也有一个方法，名为__next__,差不多有相同的效果：每次调用时，就会返回文件的下一行，唯一
+的区别是，达到文件末尾时，__next__会引发内置的StopIteration异常，而不是返回空字符串。
+
+	f = open('script1.py')
+	f.__next__()
+		'import sys\n'
+	f.__next__()
+		'pirnt(sys.path)\n'
+	f.__next__()
+		'x=2\n'
+	f.__next__()
+		Traceback (most recent call last):
+			File "<stdin>", line 1, in <module>
+		StopIteration
+
+这个接口就是python中所谓的迭代协议：有__next__方法的对象会前进到下一个结果，而在一系列结果的末尾时
+则会引发StopIteration。
+
+
+手动迭代：
+	为了支持迭代代码，python3.0还提供了一个内置函数next,它会自动调用一个对象的__next__方法。
+	给定一个可迭代对象X,调用next(X)等同于X.__next__().
+	f = open('script1.py')
+	next(f)
+		'import sys\n'
+	next(f)
+		'pirnt(sys.path)\n'
+	next(f)
+		'x=2\n'
+	next(f)
+		Traceback (most recent call last):
+			File "<stdin>", line 1, in <module>
+		StopIteration
+
+
+从技术角度来讲，迭代协议还有一点可以注意。当for循环开始时，会通过它传给iter内置函数，以便从迭代对象中
+获得一个迭代器，返回的对象含有需要的next方法。如果我们看for循环内部如何处理列表这类内置序列的话，就会一目了然。
+
+	这是python 2.X存在next,python3.0不存在next(),而是__next__()
+	L = [1,2,3]
+	I = iter(L)
+	I.next()
+		1
+	I.next()
+		2
+	I.netxt()
+		3
+	I.next()
+		Traceback (most recent call last):
+			File "<stdin>", line 1, in <module>
+		StopIteration
+
+最初的一步对于文件来说是不需要的，因为文件对象是自己的迭代器。也就是文件有自己的__next__方法。
+
+	f = open('/home/zhangkun/222.txt')
+	iter(f) is f
+		True
+
+列表以及其他的内置对象，不是自身的迭代器，因它们支持多次打开迭代器。对于这样的对象，我们必须调用iter来启动迭代。
+
+	L= [1,2,3]
+	iter(L) is L
+		False
+
+	L.__next__()
+		Traceback (most recent call last):
+			File "<stdin>", line 1, in <module>
+		AttributeError: 'list' object has no attribute '__next__'
+
+	I = iter(L) 
+	I.__next__()
+		1
+	I.__next__()
+		2
+	next(I)
+		3
+	I.__next__()
+		Traceback (most recent call last):
+			File "<stdin>", line 1, in <module>
+		StopIteration
+
+
+	
+python3中列表iter(L)生成的是list_iterator，这个类中不存在next方法，只有__next__()
+python2中类别iter(L)生产的是listiterator，这个类中不存__next__()方法，只有next方法。
+
+从技术上讲，for循环调用内部等价的I.__next__,而不是next(I)
+	L = [1,2,3]
+	for x in L:
+		pirnt(x**2,end=' ')
 	
 
+	I = iter(L) 
+		while True:
+			try:
+				x = next(I)
+			except StopIteration:
+				break;		
+			print(x**2,end=' ')
+
+其他内置类型迭代器：
+
+字典：
+	
+	D = {'a':1,'b':2,'c':3}
+	for key in D.keys():
+			print(key,D[key])
+
+		a 1
+		b 2
+		c 3
+	
+	I = iter(D)
+	next(I)
+		'a'
+	next(I)
+		'b'
+	next(I)
+		'c'
+	next(I)
+		Traceback (most recent call last):
+			  File "<stdin>", line 1, in <module>
+		StopIteration
+
+直接效果是，不需要调用keys方法来遍历字典键-for循环将使用迭代协议在每次迭代的时候获取一个键。
+	for key in D:
+		print(key,D[key])
+
+		a 1
+		b 2
+		c 3
+	
 
 	
+列表解析：初探
+与for循环一起使用，列表解析是最常应用迭代协议的环境之一。
+
+列表解析基础知识:	
+	L = [x +10 for x in L]
+列表解析写在一个方括号中，因为他们最终是构建一个新的列表的一种方式。
+
+
+在文件上使用列表解析：
+	f = open('/home/zhangkun/222.txt')
+	lines = f.readlines()
+	lines
+		['dfasf\n', 'f\n', 'd\n', 'sa\n', 'f\n', 'sa\n', 'f\n', 'sa\n', 'df\n', '\n']
+
+如下代码通过对列表中的每一行运行字符串rstrip方法，去移除右端的空白。
+	lines = [line.rstrip() for line in lines]
+	lines
+		['dfasf', 'f', 'd', 'sa', 'f', 'sa', 'f', 'sa', 'df', '']
+
+
+其他迭代环境：
+
+	在对象中从左到右扫描的每种工具都使用了迭代协议。
+	列表解析、in成员测试、map内置函数、以及像sorted和zip调用这样的内置函数也都使用了迭代协议。
+
+
+
+Python 3.0中的新的可迭代对象：
+	python3一个基本改变是比Python2更强调迭代。字典方法keys,values和items都是可迭代对象。
+	内置函数：range、map、zip和filter
+
+range迭代器：
+	在python3中，range返回一个迭代器，该迭代器根据需要产生范围中的数字，而不是一个内存中构建一个结果列表。
+	python3:
+		R = range(10)
+		R
+			range(0, 10)
+		I = iter(R)
+		next(I)
+			0
+		next(I)
+			1
+		...
+
+
+		list(range(10))
+			[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 	
+	python2中:
+		R = range(10)
+		R
+			[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+	python3中的range对象支持迭代、索引以及len函数，不支持任何其他序列操作（可使用list(...)）
 
 
+map、zip和filter迭代器：
+和range类似，map、zip、以及filter内置函数，在python3中也转变成迭代器以节约内存空间，而不再内存中一次性生产结果类表。
+和range不同，他们都有自己的迭代器。
+		
+		M = map(abs,(-1,0,1))
+		M
+			<map object at 0x7f3fab5ed470>
+		M.__next__()
+			1
+		next(M)
+			0
+		next(M)
+			1
+		next(M)
+			Traceback (most recent call last):
+				File "<stdin>", line 1, in <module>
+			StopIteration
 
 
+zip
+		z = zip((1,2,3),(4,5,6))
+		z
+			<zip object at 0x7f3fab5e7248>
+		next(z)
+			(1, 4)
+		next(z)
+			(2, 5)
+		next(z)
+			(3, 6)
+		next(z)
+			Traceback (most recent call last):
+				File "<stdin>", line 1, in <module>
+			StopIteration
 
 
+filter：
+	filter内置函数，对于传入的函数返回True的可迭代对象中的每一项（非空对象）
+	filter(bool,['spam','','ni'])
+	list(filter(bool,['spam','','ni']))
+		['spam','ni']
 
 
-	
+多个迭代器VS单个迭代器：
+
+range对象与map、zip、filter内置函数不同，range支持len和索引，他不是自己的迭代器（手动迭代时，使用iter产生一个迭代器）。
 		
 
-
-
-
+字典视图迭代器：
 	
+	在python3中，字典的keys、values和items方法返回可迭代的视图对象，它们一次产生一个结果项，而不是在内存中
+	一次产生全部结果列表。
 
-
+	和所有迭代器一样，把python3字典视图传递给list内置函数中，从而强制构建一个真正的列表。
 	
+	D = dict(a=1,b=2,c=3)
+	K = D.keys()
+	list(K)
+		['a','b','c']
 
 
+其他迭代器主体：
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	1、使用yield语句，用户定义的函数可以转换成为可迭代的生成器函数。
 	
+	2、当编写在圆括号中的时候，列表解析转变为可迭代的生成器表达式。
+
+	3、用户定义的类通过__iter__ 或__getitem__运算符重载变得可迭代。
 
 
 
 
+本章小结：
 
-
-
-
-
+1、for循环和迭代器之间有什么关系？
 	
+	for循环使用迭代协议来遍历迭代对象中的每一个项，for循环在每次迭代中调用该对象的__next__方法
+	（有next内置函数运行），而且会捕捉StopIteration异常，从而决定何时终止循环。
+
+
+2、for循环和列表解析直接有什么关系？
+
+	两支都是迭代工具，列表解析是执行常见for循环任务的简明并且高效的方法:对可迭代对象内所有元素应用一个
+	表达式，并收集其结果。
+
+3、举出python中的四种迭代环境？
+
+python中的迭代环境包括for循环、列表解析、map内置函数、in成员关系测试表达式以及内置函数sorted、sum、any和all.
+这个分类也包括了内置函数list和tuple、字符串join方法以及序列赋值运算。所有这些都使用了迭代协议(next方法)来
+一次一次元素逐个遍历可迭代对象。
+
+
+4、如今从一个文本文件中逐行读取行的最好方法是什么？
+	在迭代环境中打开文件，如for循环，列表解析，然后，让迭代工具在每次迭代中执行该文件的next方法，
+	自动一次扫描一次。
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+"------------------------------------------------------------------------------------------------"
 	
+								第15章   文档	
+
+"------------------------------------------------------------------------------------------------"
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
 	
-
-
-	
-
-
-
-
-
-
-
-
-
-
-
 
 
 
