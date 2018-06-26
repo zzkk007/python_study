@@ -2763,44 +2763,715 @@ python中的迭代环境包括for循环、列表解析、map内置函数、in成
 
 "------------------------------------------------------------------------------------------------"
 
+python 文档资源：
+
+	形式                    角色
+	#注释                 文件中的文档
+
+	dir函数              对象中的可用属性的列表
+
+	文档字符串：__doc__  附加在对象上的文件中的文档
+
+	pyDoc：help函数      对象的交互帮助
+
+	pyDoc：HTML报表      浏览器中的模块文档
+
+	标准手册             正式的语言和库的说明
+
+	网站资源             在线教程，例子等
+
+	出版书籍             商业参考书
+
+
+常见的编写代码的陷阱：
+
+	1、别忘记冒号。复合语句首行末尾输入":"
+
+	2、空白行在交互模式提示符下很重要。
+
+	3、缩进要一致
+
+	4、不要在python中写C代码。
+
+	5、使用简单的for循环，而不是while或range。
+
+	6、要注意赋值语句中的可变对象
+		列表、字典，引用会改变。
+
+	7、不要期待在原处修改对象的函数会返回结果。
+		例如：list.append和list.sort方法这种修改运算，并不会有返回值（而是None）
+
+	8、一定要使用括号调用函数。
+
+	9、不要在导入和重载中使用扩展名或路径。
+		例如:要写import mod，而不是import mod.py
+
+
+本章习题：
+
+1、什么时候应该使用文档字符串而不是#注释？
+	文档字符串被认为最适用于较大、功能性的文档，用了描述程序中的模块、函数、类以及方法的使用。
+	#注释只限于关于费解的表达式或语句的微型文档。
+
+
+	
+
+"===================================================================================="
+
+								第四部分 函数
+
+"====================================================================================="
+
+
+"--------------------------------------------------------------------------------------"
+									
+								第16章  函数基础
+
+"---------------------------------------------------------------------------------------"
+
+函数是python为了代码最大程度的重用和最小化代码冗余而提供的最基本的程序结构。
+
+函数相关的语句和表达式：
+
+语句                          例子
+calls                     myfunc("spam","eggs",meat=ham)
+
+def                       def adder(a,b=1,*c)
+
+return                    return  a+b+c[0]
+
+global                    def changer():
+								global x;x='new'
+
+nonlocal                  def changer():
+								nonlocal x;x = 'new'
+
+yield                     def squarers(x):
+								for i in ranger(x):yield i**2
+
+lambda                    Funcs = [lambda x: X**2,lambda x:x*3]
+
+
+
+为何使用函数：
+
+函数主要扮演两种角色：
+
+1、最大化的代码重用和最小化的代码冗余
+
+2、流程分解
+
+
+
+编写函数：
+
+	1、def是可执行的代码。
+		Python的函数是有一个新的语句编写的，即def。不像C这样的编译语言，def是一个可执行语句---函数并不存在，
+		直到python运行了def后才存在。
+		在典型的操作中，def语句在模块文件中编写，并自然而然的在模块文件第一次被导入的时候生产定义的函数。
+
+	2、def创建了一个对象并将其赋值给某一变量名。
+		当python运行到def语句时，它将会生产一个新的函数对象并将其赋值给这个函数名。就像所有的赋值一样，函数
+		名变成了某一个函数的引用。
+
+	3、lambda创建一个对象但将其作为结果返回。
+
+	4、return将一个结果对象发送给调用者。
+
+	5、yield向调用者发回一个结果对象，但是记住它离开的地方。
+
+	6、global声明了一个模块级的变量并被赋值。
+		
+	7、nonlocal声明了将要赋值的一个封闭的函数变量。
+		nonlocal语句允许一个函数来赋值一条语法封闭的def语句的作用域中已有的名称。
+		这就允许封闭的函数作为保留状态的一个地方--当一个函数调用的时候，信息被记住了，而不必使用共享的全局名称。
+
+	8、函数是通过赋值（对象引用）传递的。
+
+	9、参数、返回值以及变量并不是声明。
+		就像在python中所有的一样，在函数中并没有类型约束。实际上，从一开始函数就不需要声明：可以传递任意类型的参数
+		给函数，函数也可以返回任意类型的对象。
+
+
+def 语句:
+	def语句将创建一个函数对象并将其赋值给一个变量名。Def语句一般的格式如下所示:
+
+	def <name> (arg1,arg2,...argN):
+		<statements>
+
+		 retrun <value>
+
+	就像所有的多行python语句一样，def包含了首行并有一个代码块跟随在后边，这个代码块通常会缩进。而代码块就是函数
+	的主体--也就是每当调用函数时python所执行的语句。
+	
+	python的return语句可以在函数主体中的任何地方出现，它表示函数调用的结束，并将结果返回至函数调用处。
+	return语句包含一个对象表达式，这个对象给出的函数的结果。
+	如果它没有出现，那么函数将会在控制流执行完函数主体时结束。
+	从技术角度上讲，一个没有返回值的函数会自动返回none对象，但这个值往往被忽略。
+
+
+	def语句是实时执行的：
+	python中的所有的语句都是实时运行的，没有像独立的编译时间这样的流程。
+	
+
+本章小结：
+
+	什么时候python将会创建函数？
+
+	当python运行到def语句时，函数就会被创建。这个语句会创建函数对象，并将其赋值给函数名。
+
+
+
+"----------------------------------------------------------------------------------------"
+
+				第17章                   作用域
+
+"----------------------------------------------------------------------------------------"
+	
+python作用域基础:
+
+python中变量名的含义：当你在一个程序中使用变量名时，python创建，改变或查找变量名都是在所谓的
+	命名空间（一个保存变量名的地方）中进行的。作用域这个术语指的就是命名空间。
+
+python将一个变量名被赋值的地点关联为(绑定给)一个特定的命名空间。换句话说，在代码中给一个变量赋值的地方决定了
+这个变量将存在于那个命名空间。
+
+一个函数的所有变量名都是与函数的命名空间向关联的这意味着:
+
+	1、一个在def内定义的变量名能够被def内的代码使用。不能在函数的外部引用这样的变量名。
+
+	2、def之中的变量名于def之外的变量名并不冲突，即是使用在别处的相同的变量名。
+	一个在def之外被赋值的变量x与在这个def之内的赋值的变量x是完全不同的变量。
+
+一个变量的作用域总是由在代码中被赋值的地方所决定，并且与函数调用完全没有关系。
+	1、如果一个变量在def内赋值，它被定位在这个函数之内。
+
+	2、如果一个变量在一个嵌套的def中赋值，对于嵌套的函数来说，它是给非本地的
+
+	3、如果在def之外赋值，它就是整个文件全局的。
+
+
+
+作用域法则:
+	
+	函数定义了本地作用域，模块定义是全局作用域。
+
+	1、内嵌的模块是全局作用域。
+
+	2、全局作用域的作用范围仅限于单个文件。
+
+	3、每次对函数的调用都会创建了一个新的本地作用域。
+
+	4、赋值的变量名除非什么为全局变量或非本地变量，否则均为本地变量。
+
+	5、所有其他的变量名都可以归纳为本地、全局或者内置的。
+
+
+变量名解析：LEGB原则
+对于一个def语句：
+	1、变量名引用分为三个作用域进行查找:首先是本地、之后是函数内（如果有的话），之后是全局，最后是内置。
+
+	2、默认情况下，变量名赋值会创建或者改变本地变量。
+
+	3、全局声明和非本地声明将赋值的变量名映射到模块文件内部的作用域。
+
+
+python的变量名解析机制有时也称为LEGB法则，这也是由作用域的命名而来的。
+	
+	1、当函数中使用未认证的变量名时，Python搜索4个作用域[本地作用域(L),之后是上一层结构中的def或lambda的本地
+		作用域（E）,之后是全局作用域(G),最后是内置作用域(B)]并且在第一处能够找到这个变量名的地方停下来。
+		如果变量名在这次搜索中没有找到，python会报错。
+
+	2、当函数中给一个变量赋值时python总是创建或改变本地作用域的变量名，除非它已经在那个函数中声明为全局变量。
+
+	3、当在函数之外给一个变量名赋值时，本地作用域和全局作用域是相同的。
+
+
+
+内置作用域：
+
+	内置作用域仅仅是一个名为__builtin__的内置模块，但是必须要import __builtin__之后才能使用内置作用域。
+
+	内置作用域通过一个名为__builtin————的标准库模块来实现，这个变量名自身并没有发到内置作用域内，所有
+	必须导入这个文件才能使用它。
+	import builtins
+	dir(builtins) 
+	['ArithmeticError', 'AssertionError', 'AttributeError', 'BaseException', 'BlockingIOError', 'BrokenPipeError', 'BufferError', 'BytesWarning', 'ChildProcessError', 'ConnectionAbortedError', 'ConnectionError', 'ConnectionRefusedError', 'ConnectionResetError', 'DeprecationWarning', 'EOFError', 'Ellipsis', 'EnvironmentError', 'Exception', 'False', 'FileExistsError', 'FileNotFoundError', 'FloatingPointError', 'FutureWarning', 'GeneratorExit', 'IOError', 'ImportError', 'ImportWarning', 'IndentationError', 'IndexError', 'InterruptedError', 'IsADirectoryError', 'KeyError', 'KeyboardInterrupt', 'LookupError', 'MemoryError', 'ModuleNotFoundError', 'NameError', 'None', 'NotADirectoryError', 'NotImplemented', 'NotImplementedError', 'OSError', 'OverflowError', 'PendingDeprecationWarning', 'PermissionError', 'ProcessLookupError', 'RecursionError', 'ReferenceError', 'ResourceWarning', 'RuntimeError', 'RuntimeWarning', 'StopAsyncIteration', 'StopIteration', 'SyntaxError', 'SyntaxWarning', 'SystemError', 'SystemExit', 'TabError', 'TimeoutError', 'True', 'TypeError', 'UnboundLocalError', 'UnicodeDecodeError', 'UnicodeEncodeError', 'UnicodeError', 'UnicodeTranslateError', 'UnicodeWarning', 'UserWarning', 'ValueError', 'Warning', 'ZeroDivisionError', '__build_class__', '__debug__', '__doc__', '__import__', '__loader__', '__name__', '__package__', '__spec__', 'abs', 'all', 'any', 'ascii', 'bin', 'bool', 'bytearray', 'bytes', 'callable', 'chr', 'classmethod', 'compile', 'complex', 'copyright', 'credits', 'delattr', 'dict', 'dir', 'divmod', 'enumerate', 'eval', 'exec', 'exit', 'filter', 'float', 'format', 'frozenset', 'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex', 'id', 'input', 'int', 'isinstance', 'issubclass', 'iter', 'len', 'license', 'list', 'locals', 'map', 'max', 'memoryview', 'min', 'next', 'object', 'oct', 'open', 'ord', 'pow', 'print', 'property', 'quit', 'range', 'repr', 'reversed', 'round', 'set', 'setattr', 'slice', 'sorted', 'staticmethod', 'str', 'sum', 'super', 'tuple', 'type', 'vars', 'zip']
+
+	这个列表中的变量名组成了python中的内置作用域，前一半是内置异常，而后一半是内置函数。
+	由于LEGB法则python最后将自动搜索这个模块，将会自动得到这个列表中的所有变量名。也就是说，你能够使用这些变量名
+	而不需要导入任何模块。
+
+
+global语句：
+	global语句是python中唯一看起来像声明语句的语句。但是它并不是一个类型或大小声明，它是一个命名空间的声明。
+	它告诉python函数，打算生成一个或多个全局变量名。也是存在整个作用域的变量名。
+
+	1、全局变量是位于模块文件内部的顶层变量名。
+
+	2、全局变量如果是在函数内被赋值的话，必须经过声明。
+
+	3、全局变量名在函数内部不经过声明也可以被引用。
+	
+
+
+
+作用域和嵌套函数:
+
+嵌套作用域的细节：
+	1、一个引用(X)首先在本地(函数内)作用域查找变量名X;之后会在代码的语法上嵌套了的函数中的本地作用域，从内到外查找
+	之后查找当前的全局作用域；最后再内置作用域。全局声明将会直接从全局作用域进行搜索。
+
+	2、默认情况下，一个赋值(X =value)创建或改变了变量名X的当前作用域。如果X在函数内部声明为全局变量，他将会创建或
+	改变变量名X为整个模块的作用域。另一方面，如果X在函数内部声明为nonlocal，赋值会修改最近的嵌套函数的本地作用域中的
+	名称X。
+
+例子:
+	X = 99
+	def f1():
+		X = 88
+		def f2():
+			pirnt(X)
+		f2()
+	
+	f1()
+
+	def是一个简单的可执行语句，可以出现在任意其他语句能够出现的地方，包括嵌套在另一个def之中。这里，嵌套的def在函数
+	f1调用时运行；这个def生产了一个函数，并将其赋值给变量名f2,f2是f1的本地作用域内的一个本地变量。在此情况下，f2是
+	一个临时函数，仅在f1内部执行过程中存在（并且只对f1中的代码可见）
+
+	当打印变量X时，x引用了存在函数f1整个本地作用域内的变量X的值。因为函数能够在整个def声明内获取变量名，通过LEGB
+	查找法则，f2内想x自动映射到f1的x。
+
+
+
+工厂函数：
+	
+	根据要求的对象，这种行为有时也叫做闭合或者工厂函数--一个能够记住嵌套作用域的变量值的函数，尽管那个作业域或许
+	已经不存在了。
+	例如：
+
+	def maker(N):
+		def action(X):
+			return X**N
+		return action
+
+	这定义了一个外部的函数，这个函数简单地生成并返回了一个嵌套的函数，却并不调用这个内嵌的函数。如果我们调用外部的函数：
+	f = maker(2)
+	f
+		<function maker.<locals>.action at 0x7f0d62511158>
+	
+	我们得到的是生产的内嵌函数的一个引用。这个内嵌函数是通过运行内嵌的def而创建的，如果现在调用从外部得到那个函数：
+	f(3)
+		9
+	f(4)
+		16
+
+	
+嵌套作用域和lambda:
+	lambda是一个表达式，将会生成后面调用的一个新的函数。
+
+	def func():
+		x = 4
+		action = (lambda n :x ** n)
+		return action
+	x = func()
+	print(x(2))
 
 
 
 
 
+nonlocal语句：
+
+	nonlocal语句是global的近亲，声明将要在一个嵌套的作用域中修改的名称。和global不同在于，nonlocal应用于
+	一个嵌套的函数的作用域的一个名称，而不是所有def之外的全局模块作用域。而且在声明nonlocal名称的时候，它
+	必须已经存在于该嵌套函数的作用域中---它们可能只存在于一个嵌套的函数中，并且不能有一个嵌套的def中的第一次
+	赋值创建。
+
+	nonlocal即允许对嵌套的函数作用域中的名称赋值，并且把这样的名称的作用域查找限制在嵌套的def。
+
+nonlocal基础
+	def func():
+		nonlocal name1,name2,...
+	这条语句允许一个嵌套函数来修改在一个语法嵌套函数的作用域中定义的一个或多个名称。
+	
+当执行到nonlocal语句的时候，nonlocal中列出的名称必须在一个嵌套的def中提前定义过，否则，将会产生一个错误。
+直接效果和global很相似：global意味着名称位于一个嵌套的模块中，nonlocal意味着他们位于一个嵌套的def中。
+
+nonlocal的添加并没有改变通用的名称引用作用域规则；他们仍然像以前一样工作，即前面多描绘每条"LEGB"规则。
+nonlocal语句主要作用是允许嵌套的作用域中的名被修改，而不只是被引用。然而，当一个函数中使用的时候，global
+和nonlocal语句在某种程度上限制了查找规则：
+
+	1、global使得作用域查找从嵌套的模块的作用域开始，并且允许对那里的名称赋值。
+
+	2、nonlocal限制作用域查找只是嵌套的def，要求名称已经存在于那里，并且允许对它们赋值。
+
+	def tester(start):
+		state = start
+		def nested(label):
+			print(label,state)
+		return nested
+	
+	F = tester(0)
+	F('spam')
+		spam 0
+	F('ham')
+		ham 0
+
+	
+	def tester(start):
+		state = start
+		def nested(label):
+			print(label,state)
+			state += 1
+		return nested
+	F = tester(0)
+	F('spam')
+
+		Traceback (most recent call last):
+		UnboundLocalError: local variable 'state' referenced before assignment
+	
+	使用nonlocal进行修改：
+	def tester(start):
+		state = start
+		def nested(label):
+				nonlocal state
+				print(label,state)
+				state += 1
+		return nested
+
+	F = tester(0)
+	F('spam')
+		spam 0
+	F('spamw')
+		spamw 1
+	F('spamw')
+		spamw 2
 
 
+边界情况:
+	当执行nonlocal语句时，nonlocal名称必须已经在一个嵌套的def作用域中赋值过，否则将会得到一个错误---不能通过
+	在嵌套的作用域中赋值给它们一个新值来创建它们：
+		
+		def tester(start):
+			def nested(label):
+				nonlocal state
+				state = 0
+				print(label,state)
+			return nested
+
+		SyntaxError:no binding for nonlocal 'state' found
+
+	
+	其次,nonlocal限制作用域查找仅为嵌套的def，nonlocal不会在嵌套的模块的全局作用域或所有def之外的内置作用域
+	中查找，即便已经有了这些作用域：
+
+		spam = 99
+		def tester():
+			def nested():
+				nonlocal spam
+				print('Current=',spam)
+				spam += 1
+			return nested
+	
+		SyntaxError:no binding for nonlocal 'spam' found
+
+	
+为什么使用nonlocal:
+
+在python中，有各种不同的方法来"记住"跨函数和方法的信息。尽量都有利弊，对于嵌套作用域引用，nonlocal确实
+起到了改进作用--nonlocal语句允许在内存中保持可变的多个副本，并且解决了类无法保证的情况下的简单的状态保持。
+
+	def tester(start):
+		state = start
+		def nested(label):
+			nonlocal state
+			print(label,state)
+			state += 1
+		return nested
+	
+	F = tester(0)
+	F('spam')
 
 
+	与全局共享状态：
+	在python2.6实现nonlocal效果的一种通用的方法，就是直接把状态移出全局作用域(嵌套的模块)
+
+	def	tester(start):
+		global state
+		state = start
+		def nested(label):
+			global state
+			print(label,state)
+			state += 1
+		return nested
+
+	F = tester(0)
+	F('spam')
+		spam 0
+	F('spama')
+		spama 1
+	F('spama')
+		spama 2
 
 
+	使用类的状态
+		改变信息，另一种较早的方法是使用带有属性的类，从而让状态信息的方法比隐式的范围查找规则更明确。
+
+	class tester:
+		def __init__(self,start):
+			self.state = start
+		def nested(self,label):
+			print(label,self.state)
+			self.state += 1
+
+	F = tester(0)
+	F.nested('spam')
+		spam 0
+	F.nested('spam')
+		spam 1
+	
+	G =  tester(32)
+	G.nested('egg')
+		egg 32
+	G.nested('egg') 
+		egg 33
+
+	
+
+	我们也可以使用运算符重载让类看上去像是一个可调用函数。__call__获取了一个实例上的直接调用，因此，
+	不需要指定一个指定的方法：
+	
+	class tester:
+		def __init__(self,start):
+			self.state = start
+		def __call__(self,label):
+			print(label,self.state)
+			self.state += 1
+	
+	H = tester(99)
+	H('juice')
+		juice 99
+	H('juice')
+		juice 100
+		
+	
+全局、非本地、类都提供了状态保持的选项。
 
 
+本章小结：
+	下面代码会输出什么? 为什么？
+
+	X = 'Spam'
+	def func():
+		print(X)
+
+	func()
+		'Spam'
+
+	因为函数引用的是所在模块中的全局变量。
+
+Python的作用域背后的细节---即定义和查找变量的位置。在代码中定义名称的位置决定了它大部分的含义。
 
 
+"----------------------------------------------------------------------------------------"
 
 
+							第18章     参数
+
+"----------------------------------------------------------------------------------------"
+python参数传递的概念，即对象作为输入发送给函数的方式。
+参数：赋值给一个函数中的名称，但是，它们更多地与对象引用相关，而不是与变量作用域相关。
+python提供的额外工具：关键字、默认值、任意参数收集器，它们为参数发送给函数的方式提供了广泛的灵活性。
 
 
+传递参数：
+	
+	1、参数的传递是通过自动将对象赋值给本地变量名来实现的。
+		函数参数[调用者发送的共享对象引用值]在实际中至是python赋值的另一个实例而已。	
+
+		
+	2、在函数内部的参数名的赋值不会影响调用者。
+		在函数运行时，在函数头部的参数名是一个新的、本地的变量名，这个变量名是在函数的本地作用域内。
+		函数参数名和调用者作用域中的变量名是没有别名的。
+
+	3、改变函数的可变对象参数的值也许会对调用者有影响。
+		因为参数是简单地赋值给传入的对象，函数能够就地改变传入的可变对象，结果会影响调用者。
+
+	4、不变参数"通过值"进行传递。
+		像整数和字符串这样的对象是通过对象引用而不是拷贝进行传递，但是因为你无论怎样都不能在
+		原处修改不可变对象，实际的效果就很像创建看一份拷贝。
+		
+	5、可变对象是通过"指针"进行传递的。
+		列表和字典这样的对象也是通过对象引用进行传递的，可变对象能够在函数内部进行原处的改变，
+		这点和C数组很像。
 
 
+参数和共享引用：
+
+	def f(a):
+		a = 99
+	
+	b = 88
+	f(b)
+	print(b)
+		88
+
+	在上面的例子中，使用f(b)调用函数的时候，变量a赋值了对象88，但是，a只是存在于调用的函数中。
+	在函数中修改a对于调用的地方没有任何影响，它直接把本地变量a重置为一个完全不同的对象。
+
+	对函数中参数名的赋值（a=99）,a 是一个引用，重新赋值，只是把引用a指向了新的对象，
+	b这个引用指向的对象没有改变。
 
 
+	def changer(a,b):
+		a = 2
+		b[0] = 'spam'
 
 
+	X = 1
+	L = [1,2]
+	changer(X,L)
+	print(X,L)
+
+	上面代码中，changer函数给参数a赋值，并给参数b所引用的一个对象元素赋值。
+	这两个函数内赋值语法相同但结构大相径庭
+
+		1、因为a是在函数作用域内的本地变量名，第一个赋值对函数调用者每月影响，仅仅把本地变量a修改
+		为引用一个完全不同的对象，并没有改变调用者作用域中的名称X的绑定。
+
+		2、b也是一个本地变量，但是它被传给的是一个可变对象。第二个赋值时在原处发生的对象的改变，
+		结果会影响L值。
+
+	引用：参数。因为参数是通过赋值传递的，函数中的参数名可以在调用时通过变量实现共享对象。
+	因为，函数中的可变对象参数的在原处修改能够影响到调用者。
 
 
+避免可变参数的修改：
+
+	在python中，默认通过引用(也就是指针)进行函数的参数传递：这就意味着不需要多个拷贝就可以在我们
+	的程序中传递很大的对象，并且能够按照需要方便的更新这些对象。
+
+	如果不想要函数内部在原处修改影响传递给它的对象，那么可以创建一个明确的可变对象的拷贝，对应函数参数
+	我们总是能够在调用时对列表进行拷贝
+
+	L=[1,2]
+	changer(X,L[:])
+
+	如果不想改变传入的对象，无论函数如果调用的，我们同样可以在函数内部进行拷贝。
+
+	def changer(a,b):
+		b = b[:]
+		a = 2
+		b[0] = 'spam'
+
+	这两种拷贝机制都不会阻止函数改变对象：这样做仅仅是防止改变影响调用者。
+	为了真正意义上的防止这些改变，我们讲可变对象转换为不可变对象，例如元组。
+
+	L = [1,2]
+	changer(X,tuple(L))
+	这种原理会是内置函数tuple函数，将一个序列（可以任意可迭代对象）中的所有元素为基础创建一个新的元组。
+	这种方式过于极端：强制函数写成不可改变传入参数的样子，对函数更多限制。
 
 
+对参数输出进行模拟：
+
+	return 能够返回任意中类的对象，所有能够返回多个值，如果这些值封装一个元组或其他的集合类型。
+
+	def multiple(x,y):
+		x = 2
+		y = [3,4]
+		return x,y
+
+	X = 1
+	L =[1,2]
+	X,L = multiple(X,L)
+	X,L
+		(2, [3, 4])
+	X
+		2
+	L
+		[3, 4]
+
+	M = multiple(X,L) 
+	M
+		(2, [3, 4])
+
+	看起来代码好像返回了两个值，实际上只有一个，一个包含2个元素的元组，她的圆括号是可选的。
+	在调用返回之后，我们能够使用元组赋值去分解这个返回元组的组成部分。
+
+	X,Y,Z=(1,"aaaa",[2,3,4])
+	X
+		1
+	Y
+		"aaaa"
+	Z
+		[2, 3, 4]
 
 
+特定的参数匹配模型：
+
+	默认情况下，参数是通过位置进行匹配的，从左至右，而且必须精确地传递和函数头部参数名一样多的参数。
+	还能通过定义变量名进行匹配，默认参数值，以及对额外参数的容器。
+
+基础知识：
+
+	位置：从左至右进行匹配
+
+	关键字参数：通过参数名进行匹配
+		调用者可以定义哪一个函数接受这个值，通过在调用时使用参数的变量名，使用name=value这种语法。
+	
+	默认参数：为没有传入值的参数定义参数值
+
+	可变参数：收集任意多基于位置或关键字的参数
+		函数能够使用特定的参数，它们是以字符*开头，收集任意多的额外参数（可变参数）
+
+	可变参数解包：传递任意多的基于位置或关键字的参数
+		调用者能够再使用*语法去将参数集合打散，分成参数。这个"*"与在函数头部的"*"恰恰相反；
+		在函数头部它意味着收集任意多的参数，而在调用者中意味着传递任意多的参数。
+	
+	Keyword-only参数：参数必须按照名称传递。
 
 
+匹配语法：
 
+函数参数匹配表：
+
+	语法                    位置                     解释
+	
+	func(value)          调用者                  常规参数：通过位置进行匹配
+	func(name=value)     调用者                  关键字参数：通过变量名匹配
+	func(8sequence)      调用者                  以name传递所有的对象，并作为独立的基于位置的参数
+	func(88dict)         调用者                  以name成对的传递所有的关键字/值，并作为独立的关键字参数
+	
+	def func(name)       函数                    常规参数：通过位置或变量名进行匹配
+	def func(name=value) 函数                    默认参数值,如果没有在调用中传递的话
+	def func(8name)      函数                    匹配并收集（在元组中）所有包含位置的参数
+	def func(88name)     函数                    匹配并收集(在字典中)所有包含位置的参数
+	def func(8args,name) 函数                    参数必须在调用中按照关键字传递
+	def func(8,name=value) 函数                  python3
 
 
 		
 	
+
+
+
+		
+
+
+	
+	
+
+	
+
+
+
+
+
+
+
 
 
 
