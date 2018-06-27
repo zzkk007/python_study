@@ -3338,7 +3338,7 @@ python提供的额外工具：关键字、默认值、任意参数收集器，�
 	上面代码中，changer函数给参数a赋值，并给参数b所引用的一个对象元素赋值。
 	这两个函数内赋值语法相同但结构大相径庭
 
-		1、因为a是在函数作用域内的本地变量名，第一个赋值对函数调用者每月影响，仅仅把本地变量a修改
+		1、因为a是在函数作用域内的本地变量名，第一个赋值对函数调用者没有影响，仅仅把本地变量a修改
 		为引用一个完全不同的对象，并没有改变调用者作用域中的名称X的绑定。
 
 		2、b也是一个本地变量，但是它被传给的是一个可变对象。第二个赋值时在原处发生的对象的改变，
@@ -3453,12 +3453,551 @@ python提供的额外工具：关键字、默认值、任意参数收集器，�
 	def func(8,name=value) 函数                  python3
 
 
+细节：
+
+	在函数调用中，参数必须以此顺序出现：任何位置参数（value）,后面跟着关键字参数(name=value)
+	和*sequence形式的组合，后面跟着**dict形式。
+
+	在函数头部，参数必须以此顺序出现：任何一般参数(name),紧跟着任何默认参数(name=value),如果有的话，后面是
+	*name（python3中是*）的形式，后面跟着任何name或name=value keyword-only参数(python3)，后面跟着**name形式
+
+	在调用和函数头部中，如果出现**arg形式的话，必须出现最后。
+	Python内部必须适应一下的步骤来在赋值前进行参数匹配：
+
+	1、通过位置分配非关键字参数。
+
+	2、通过匹配变量名分配关键字参数。
+
+	3、其他额外的非关键字参数分配到*name元组中。
+
+	4、其他额外的关键字参数分配到**name字典中。
+
+	5、用默认值分配给在头部未得到分配的参数。
+
+
+
+任意参数的实例：
+
+*和**,是让函数支持接受任意数目的参数的。他们都可以出现在函数定义和函数调用中.
+
+收集参数：
+	1、在函数定义中，在元组中收集不匹配的位置参数
+	def f(8args):print(args)
+	...
+
+	当这个函数调用时，python将所有位置相关的参数收集到一个新的元组中，并将这个元组赋值给变量args.
+	因为它是一个一般的元组对象，能够索引或在一个for循环中进行步进。
+
+	f()
+		()
+	f(1)
+		(1,)
+	f(1,2,3,4)
+		(1,2,3,4)
+	
+	**特性类似，但是它只对关键字有效。将这些关键字参数传递给一个新的字典，这些字典能够用字典工具进行处理。
+	在这种情况下，**允许将关键字参数转换为字典。
+
+	def f(88args):print(args)
+	...
+
+	f()
+		{}
+	f(a=1,b=2)
+	{'a':1,'b':2}
+
+	最后，头部混合一般参数，*参数以及**去实现更加灵活的调用方式。
+	def f(a,*pargs,**kargs):print(a,pargs,kargs)
+
+	f(1,2,3,x=1,y=2)
+		1 (2,3) {'y':2,'x':1}
+
+
+解包参数：
+	
+	def func(a,b,c,d):
+		print(a,b,c,d)
+	...
+
+	args = (1,2)
+	args += (3,4)
+
+	func(8args)
+		1 2 3 4
+	
+	相似的，在函数调用时，**会以键/值对的形式解包一个字典，使其成为独立的关键字参数。
+
+	args = {'a':1,'b':2,'c':3}
+	args['d'] = 4
+	func(88args)
+		1 2 3 4
+
+
+
+Python 3.0 Keyword-Only参数：
+	python3把函数头部的排序规则通用化了，允许我们指定keyworld-only参数--即必须只按照关键字传递并且不会
+	由一个位置参数来填充的参数。
+
+	从语法上讲，keyword-only参数编码为命名的参数，出现在参数列表中的*args之后。所以这些参数都必须在调用
+	中使用关键字语法来传递。例如:如下代码中，a可按照名称或位置传递，b收集任何额外的位置参数，c必须按照
+	关键字传递。
+
+	def kwonly(a,*b,c):
+		print(a,b,c)
+
+	kwonly(1,2,c=3)
+		1 (2,) 3
+	
+	kwonly(a=1,c=3)
+		1 () 3
+	kwonly(1,2,3)
+		TypeError: kwonly() missing 1 required keyword-only argument: 'c'
+
+	我们也可以在参数列表中使用一个"*"符号，来表示一个函数不会接受一个变量长度的参数列表，而在"*"之后所有参数
+	必须作为关键字传递。
+
+	def kwonly(a,*,b,c):
+		print(a,b,c)
+
+	kwonly(1,c=3,b=2)
+		1 2 3
+	
+	
+	排序规则：
+		注意keyworld-only参数必须在一个单星号后面指定，而不是两个星号---命名的参数不能出现在**args任意关键字
+	形式的后面。并且一个**不能独自出现在参数列表中，下面两种做法都是错误：
+
+		def kwonly(a,**pargs,b,c):
+			SyntaxError: invalid syntax
+		def kwonly(a,**,b,c):
+			SyntaxError: invalid syntax
+
+	意味着，在一个函数头部，keyword-only参数必须编写在**args任意关键字形式之前，且在*args任意位置形式之后。
+	当二者都有的时候，无论何时，一个参数名称出现在*args之前，可能是默认位置参数，而不是keyword-only参数。
+
+	def f(a,*b,**d,c=6):
+		pirnt(a,b,c,d)
+
+		SyntaxError: invalid syntax
+	
+	def f(a,*b,c=6,**d):
+		pirnt(a,b,c,d)
+
+	f(1,2,3,x=4,y=5)
+		1 (2,3) 6 {'y':5,'z':4}
+
+为何使用keyword-only参数：
+
+	简而言之，他们使得允许一个函数既接收任意多个要处理的位置参数，也接受作为关键字传递的配置选项。
+
+
+
+本章小结：
+
+	举出三种以上函数和调用者能够交流结果的方法：
+	
+	函数可以用return语句，修改传入的可变参数以及通过设置全局变量来返回其结果。
+
+
+
+
+"-------------------------------------------------------------------------------------------"
+
+							第19章         函数的高级话题
+
+"-------------------------------------------------------------------------------------------"
+更高级函数的话题：递归函数、函数属性和注解、lambda表达式、如果map和filter这样的函数式编程工具。
+
+函数设计概念：
+	耦合性：
+			对于输入使用参数并且对于输出使用return语句。
+			只有在真正必须的情况下使用全局变量。
+			不要改变可变类型的参数，除非调用者希望这样做。
+
+	聚合性：
+			每一个函数都应该有一个单一的、统一的目标。
+
+	大小：
+			每一个函数应该相对较小。
+
+	耦合：
+			避免直接改变在另一个模块文件中的变量。
+
+递归函数：
+
+	python支持递归函数--既直接或间接地调用自身以进行循环的函数。
+
+	递归求和：
+		def mysum(L):
+			if not L:
+				return 0
+			else:
+				return L[0] + mysum(L[1:])
+
 		
+		mysum([1,2,3,4,5])
+			15
+
+	
+函数对象：属性和注解：
+
+	python函数比我们想象中灵活，python函数是俯拾皆是的对象，自身全部存储在内存块中。
+	同样，它们可以跨程序自由地传递和间接调用。它们支持与调用根本无关的操作--属性存储和注解。
+
+	间接函数调用：
+
+		pyhton函数是对象，可以赋值给其他名字、传递给其他函数、嵌入到数据结构、
+	以及从一个函数返回给另一个函数，等等。
+
+	在def运行之后，函数名直接是一个对象的引用--我们可以自由地把这个对象赋给其他名称并且通过任何引用调用它。
+	def echo(message):
+		print(message)
+
+	echo('Direct call')
+		Direct call
+
+	X = echo
+	X('Indirect call')
+		indirect call
+
+	X就是echo，他们是指向同一个对象。
+
+
+	参数是通过赋值对象来传递，那么函数也可以作为参数传递给其他函数，调用者可以通过把参数添加括号
+	中来调用传入的函数：
+
+	def indirct(func,arg):
+		func(arg)
+
+	indirect(echo,'argument call!')
+		argument call!
+
+	
+	我们可以把函数对象的内容填入到数据结构中，就像是整数或字符串一样。
+
+	schedule = [(echo,'apam'),(echo,'ham')]
+	for (func,arg) in schedule:
+		func(arg)
+
+
+
+	def make(label):
+		def echo(message):
+			print(label + ":" + message)
+		return echo
+
+	F = make('spam')
+	F('ham')
+		spam:ham
+
+
+
+函数内省：
+
+	
+	函数是对象，我们可以用常规的对象工具来处理函数。
+
+	def func(a):
+		b = 'spam'
+		return b*a
+
+	func.__name__
+		'func'
+	dir(func)
+		['__annotations__', '__call__', '__class__', '__closure__', '__code__', '__defaults__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__get__', '__getattribute__', '__globals__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__kwdefaults__', '__le__', '__lt__', '__module__', '__name__', '__ne__', '__new__', '__qualname__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__']
+
+
+	内省工具允许我们探索实行细节--例如，函数已经附加了代码对象，代码对象提供了函数的本地变量和参数等方面的细节。
+	func.__code__
+		<code object func at 0x7ff4a0722030, file "<stdin>", line 1>
+
+	dir(func.__code__)
+		['__class__', '__delattr__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', 'co_argcount', 'co_cellvars', 'co_code', 'co_consts', 'co_filename', 'co_firstlineno', 'co_flags', 'co_freevars', 'co_kwonlyargcount', 'co_lnotab', 'co_name', 'co_names', 'co_nlocals', 'co_stacksize', 'co_varnames']
+
+	func.__code__.co_varnames
+		('a', 'b')
+
+	工具编写者可以利用这些信息来管理函数
+
+
+函数属性：
+
+	函数对象不仅仅限制于系统定义的属性，也可能向函数附加任意的用意定义的属性：
+
+	func
+		<function func at 0x7ff4a06ba2f0>
+	
+	func.count = 0
+	func.count += 1
+	func.count
+		1
+	func.handles = 'Button-press'
+	func.handles
+		Button-press
+	dir(func)
+		['__annotations__', '__call__', '__class__', '__closure__', '__code__', '__defaults__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__get__', '__getattribute__', '__globals__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__kwdefaults__', '__le__', '__lt__', '__module__', '__name__', '__ne__', '__new__', '__qualname__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', 'count', 'handles']
+
+	这样属性可以直接把状态信息附加到函数对象，而不必使用全局、非本地和类其他技术。和非本地不同，这样属性
+	可以在函数自身的任何地方访问。从某种意思上说，这也是模拟其他语言中的"静态本地变量"的一种方式。
+
+
+
+python3中的函数注解：
+	
+	给函数对象附件注解信息--与函数的参数和结果相关的任意的用户定义的数据。python为声明注解提供了特殊语法。
+	但是自身不做任何事情，注解完全是可选的，出现的时候只是直接附加到函数对象的__annotations__属性以供
+	其他用户使用。
+
+	从语法上，函数注解编写在def头部行，就像与参数和返回值相关的任意表达式一样。对应参数，它们出现在
+	紧随参数名之后的冒号之后；对于返回值，它们编写于紧随参数列表之后的一个->之后。
+
+	例如下面代码，注解了前面函数的3个参数以及返回值:
+
+	def func(a:'spam',b:(1,10),c:float) -> int:
+		return a + b + c
+	func(1,2,3)
+		6
+	
+	调用一个注解过的函数，像以前一样，不过，当注解出现的时候，python将它们收集到字典中并且将它们附加给函数
+	对象自身。参数名变成键，如果编写了返回值注解的话，它存储的键"return"下，而键的值则赋给了表达式的结果。
+
+	func.__annotations__
+		{'a': 'spam', 'b': (1, 10), 'c': <class 'float'>, 'return': <class 'int'>}
+
+	注解只是附加到python对象的python对象，注解可以直接处理。
+
+	def func(a:'spam',b,c:99):
+		return a+b+c
+	
+	func(1,2,3)
+		6
+	
+	func.__annotations__
+		{'a': 'spam', 'c': 99}
+
+	for arg in func.__annotations__:
+		print(arg,"=>",func.__annotations__[arg])
+
+
+		a => spam
+		c => 99
+
+	
+	注意两点，编写注解的话，仍然可以对参数使用默认值
+
+	def func(a:'spam'= 4,b:(1,10)=5,c:float=6) ->int:
+		return a + b +c
+	
+	func()
+		15
+	func(1,2,3)
+		6
+	func.__annotations__
+		{'a': 'spam', 'b': (1, 10), 'c': <class 'float'>, 'return': <class 'int'>}
+
+
+	最后：注解在def语句中有效，在lambda表达式中无效。因为lambda的语句已经限制了它所定义的函数工具。
+
+
+匿名函数：lambda
+	
+	lambda的一般形式是关键字lambda，之后是一个或多个参数，紧跟一个冒号，之后是表达式：
+
+	lambda argument1,argument2,... argumentN:expression using arguments
+
+	由lambda表达式所返回的函数对象与def创建并赋值的函数对象工作起来是完全一样的，但是lambda有一些不同之处
+	让其扮演特定角色很有用：
+
+		1、lambda是一个表达式，而不是语句。
+			因为这一点，lambda能够出现在python语法不允许def出现的地方，例如：在一个列表常量中或者函数调用
+			的参数中。此外，作为表达式，lambda返回一个值（一个新的函数），可以选择性赋值给一个变量名。
+			相反，def语句总是得在头部将一个新的函数赋值给一个变量名，而不是将这个函数作为结果返回。
+
+		2、lambda的主体是一个单个的表达式，而不是一个代码块。
+			lambda主体好像放在def主体的returen语句中的代码一样。简单地将结果写成一个表达式，
+		而不是明确的返回。
+
+		def func(x,y,z):return x+y+z
+		func(2,3,4)
+
+		f = lambda x,y,z:x+y+z
+		f(2,3,4)
+	
+	这里的f被赋值给一个lambda表达式创建的函数对象。也就是def所完成的任务，只不过def的赋值时自动进行的。
+
+	默认参数也可以在lambda参数中使用，就像def中使用一样。
+	X = (lambda a='fee',b='fie',c='foe':a+b+c)
+	X("wee")
+		weefiefoe
+
+	在lambda主体中的代码和在def内的代码一样都遵循相同的作用域查找法则（LEGB）。
+
+	def knights():
+		title = 'Sir'
+		action = (lambda x:title + '' + x)
+		return action
+	
+	act = knights()
+	act('robin')
+
+	act
+		<function knights.<locals>.<lambda> at 0x7f3b1499c400>
+	act('robin')
+		'Sirrobin'
+
+
+为什么是用lambda
+
+	lambda 通常用来编写跳转表，也就是行为的列表或字典，能够按照需要执行相应的动作。
+	
+	L = [lambda x:X**2,
+		 lambda x:X**3,
+		 lambda x:X**4]
+
+	for f in L:
+		print(f(2))
+			
+		4,8,16
+
+	print(L[0](3))
+		9
+	
+	lambda表达式作为def的一种速写来说最为有用。
+	例如：在列表常量中嵌入lambda表达式创建一个含义三个函数的列表，def不会在列表中工作，因为def是语句。
+
+	def f1(x):return x**2
+	def f2(x):return x**3
+	def f3(x):return x**4
+	
+	L = [f1,f2,f3]
+
+	for f in L:
+		print(f(2))
+
+	print(L[0](3))
+
+
+	当python创建字典时，每个嵌入的lambda都生成并留下能够调用的函数，通过键索引取回取出函数的调用。
+	是一种更通用的多路分支工具。
+
+	key = 'got'
+	
+	{'alreadly':(lambda:2+2),
+		'got'     :(lambda:2*4),
+		'one'	  :(lambda:2**6)
+	}[key]()
+		8
+
+
+嵌套lambda 和作用域：
+	
+	lambda是嵌套函数作用域查找（LEGB中的E）的最大收益者。
+	
+	def action(x):
+		return (lambda y:x + y)
+
+	act = action(99)
+	act(2)
+		101
+	
+
+	action = (lambda x:(lambda y:x + y))
+	act = action(99)
+	act(3)
+		102
+	这里嵌套的lambda结构让函数调用时创建了一个函数，无论哪种情况，嵌套的lambda代码都能获取上层lambda函数
+	中的变量x。
+
+
+在序列中映射函数：map
+
+	程序对列表和其他序列常常要做的一件事就是对每一个元素进行操作并把结果结合起来。
+	map函数会对序列对象中每一个元素应用被传入的函数，并且返回一个包含了所有函数调用结果的一个列表。
+
+	conters = [1,2,3,4]
+	def inc(x):return x+10
+	list(map(inc,counters))
+		[11,12,13,14]
+	map对每一个列表中的元素调用了inc函数，并将所有的返回值收集到一个新的列表中。
+
+	list(map((lambda x:x+3),counters))
+
+
+	map更高级的用法：例如，提供过个序列作为参数，能够并行返回分别以每个序列中的元素作为函数对应
+	参数得到的结果的列表。
+
+	list(map(pow,[1,2,3],[2,3,4]))
+		[1,8,81]    #1**2,2**3,3**4
+	
+
+函数式编程工具：filter和reduce
+
+	函数式编程的意思就是对序列应用一些函数的工具。
+	基于某一测试函数过滤出一些元素(filter),以及对每对元素都应用函数并运行到最后结果（reduce）
+	list(range(-5,5))
+		[-5,-4,-3,-2,-1,0,1,2,3,4]
+	list(filter((lambda x:x>0),range(-5,5)))
+		[1,2,3,4]
+
+
+	form functools import reduce
+	reduce((lambda x,y:x+y),[1,2,3,4])
+		10
+	reduce((lambda x,y:x*y),[1,2,3,4])
+		24
+
+
+本章小结：
+	1、def语句和lambda表达式有什么关系？
+		lambda和def都会创建函数对象，不过，lambda可以用在def语法无法使用的地方，lambda总是可以用def来替代，
+		并且，通常变量名来引用函数。
+
+	2、使用lambda的要点是什么？
+		lambda允许"内联"小单元可执行代码，推迟其执行，并且以默认参数和封闭作用域变量的形式为提供状态。
+
+
+
+
+
+
+"--------------------------------------------------------------------------------------------------"
+
+				第20章          迭代和解析，第二部分		
+
+"--------------------------------------------------------------------------------------------------"
+
 	
 
 
 
+	
+
+	
+	
+
+
+	
+
+
+	
+
+
 		
+
+
+
+
+
+
+	
+
+
+
+
+			
+		
+			
+	
 
 
 	
