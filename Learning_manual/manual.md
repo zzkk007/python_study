@@ -3966,8 +3966,541 @@ python3中的函数注解：
 
 "--------------------------------------------------------------------------------------------------"
 
+列表解析：
+	
+列表解析与map:
+	列表解析是在一个序列的值上应用一个任意表达式，将其结果收集到一个新的列表中并返回。、
+	从语法上来说：列表解析是由方括号封装起来的，它们是简单形式是方括号中编写一个表达式，其中的变量，在后面
+	跟随着的看起来像一个for循环的头部一样的语句，有着相同的变量名的变量。
+
+	[x **2 for x in range(10)]
+		[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+
+	list(map((lambda x:x ** 2),range(10)))
+		[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+
+增加测试和嵌套循环：
+
+	[x for x in range(5) if x % 2 == 0]
+		[0, 2, 4]
+	
+	list(filter((lambda x:x%2==0),range(5)))
+		[0, 2, 4]
+
+
+	列表解析还能更加通用，在一个列表解析中编写任意数量的嵌套的for循环，并且都可以管理if测试。
+
+	[expression  for target1 in interable1 [if condition1]
+				 for target2 in interable2 [if condition2]
+				 for targetN in interableN [if conditionN]]
+
+	res = [x + y for x in [0,1,2] for y in [100,200,300]]
+	res
+		[100, 200, 300, 101, 201, 301, 102, 202, 302]
+	效果和下面代码相同：
+		res = []
+		for x in [0,1,2]:
+			for y in [100,200,300]:
+				res.append(x+y)
+
+		res
+		[100, 200, 300, 101, 201, 301, 102, 202, 302]
+
+
+	[(x,y) for x in range(5) if x%2 == 0 for y in range(5) if y %2==1]
+		[(0, 1), (0, 3), (2, 1), (2, 3), (4, 1), (4, 3)]
+	效果和下面相同：
+		res = []
+		for x in range(5):
+			if x%2 == 0:
+				for y in range(5):
+					if y%2 == 1:
+						res.append((x,y))
+		res
+			[(0, 1), (0, 3), (2, 1), (2, 3), (4, 1), (4, 3)]
+
+
+
+列表解析和矩阵:
+	python编写矩阵的基本方法就是使用嵌套的列表结构。
+	M = [[1,2,3],
+		 [4,5,6],
+		 [7,8,9]]
+
+	我们通过通过对行进行迭代，之后从所需的列表中提取出元素。
+	[row[1] for row in M]
+		[2,5,8]
+	
+	[M[row][1] for row in (0,1,2)]
+		[2, 5, 8]
+	
+	[M[i][i] for i in range(len(M))]
+		[1, 5, 9]
+
+用列表解析来混合多个矩阵，通过嵌套的列表解析来构建具体相同值的嵌套列表结构
+	M = [[1,2,3],
+		 [4,5,6],
+		 [7,8,9]]
+	
+	N = [[2,2,2],[3,3,3],[4,4,4]]
+	
+	
+	[M[row][col] * N[row][col] for row in range(3) for col in range(3)]	
+		[2, 4, 6, 12, 15, 18, 28, 32, 36]
+
+
+为什么使用列表解析
+	列表解析运行更快，比for循环快很多，列表解析还能作为一种列表选择操作使用。
+
+
+重访迭代器：生成器
+
+python对延迟提供更多支持---它提供了具体需要的时候才产生结果，而不是立刻产生结果。
+	有两种语句结构尽可能延迟结果创建
+	
+	1、生产器函数：编写常规的def语句，但是使用yield语句一次返回一个结果，在每个结果之间挂起和继续它们的状态
+
+	2、生产器表达式类似于上一节的列表解析，但是，它们返回按需要产生结果的一个对象，而不是构建一个结果列表。
+
+	两者都是通过迭代协议来执行它们延迟结果的魔术。
+
+
+生产器函数：yield VS return
+
+	生产器函数：函数可以送回一个值并随后从其退出的地方继续的函数，这样的函数叫做生成器函数。
+	生成器函数和常规函数一样，都是def语句编写，然而，创建时，它们自动实现迭代协议。
+
+	状态挂起：
+		常规函数返回一个值并退出，而生成器函数自动在生产值的时刻挂起并继续函数的执行。
+		因此，它们对应提前计算整个一系列值以及在类中手动保存和恢复状态都很有用。
+		生成器函数在挂起时保存的状态包含它们整个本地作用域，当函数恢复时，本地变量保持了信息并且使其可用
+	
+		生成器函数和常规函数主要的代码区别不同之处在于，生成器yields一个值，而不是返回一个值。
+		yield语句挂起该函数并向调用者发送一个值，但是，保留足够的状态使得函数能够从它离开的地方继续。
+		当继续时，函数在yield返回后立即继续执行。
+
+		从函数的角度看，这允许代码随着时间产生一系列的值，而不是一次计算它们所有值。
+
+	
+	迭代协议整合：
+
+		为了支持迭代协议，生成器函数包含一条yield语句，该语句特别编译为生成器。当调用时，
+		它们返回一个迭代器对象，该对象支持用一个名为__next__的自动创建的方法来继续执行的接口。
+		生成器函数也可能有一条return语句，总在def语句末尾，直接终止值的生成。
+
+		从技术上讲，可以在任何常规函数退出执行之后，引发一个StopIteration异常来实现，从调用者的角度
+		生成器的__next__方法继续函数并且运行到下一个yield结果返回或引发一个StopIteration异常。
+
+
+	生成器函数应用：
+		下段代码定义了一个生产器函数
+		def gensquares(N):
+			for i in range(N):
+				yield i**2
+
+		这个函数每次循环都会产生一个值，之后将其返回给调用者。当它被暂停后，它的上一个状态保存了下来，
+		并且在yield语句之后控制器马上被收回。
+	
+		当用在一个for循环时，在循环中每一次完成函数的yield语句后，控制权都会返还给函数。
+
+		for i in gensquares(5):
+			print(i,end=':')
+			
+			0:1:4:9:16:
+
+		看看在for里面发生了什么，直接调用一个生成器函数：
+		x = gensquares(4)
+		x 
+			<generator object gensquares at 0x7f720c09c150>
+		得到一个生成器对象，支持迭代协议，也就是说生成器对应有一个__next__方法，它可以开始这个函数，或者
+		从它上次yield值后的地方恢复，得到一系列值，产生StopIteration异常。
+		next(x)
+			0
+		next(x)
+			1
+		next(x)
+			4
+		next(x)
+			9
+		next(x)
+			Traceback (most recent call last):
+				StopIteration
+
+		有了生成器，函数变量就能进行自动的保存和恢复。
+
+
+	扩展生成器函数协议：send和next
+
+		生成器函数协议中增加了一个send的方法，send方法生产一系列结果的下一个元素，这一点像__next__方法一样
+		但是它也提供了一种调用者与生成器之间进行通信的方法，从而能够影响它的操作。
+
+		从技术上说，yield现在是一个表达式的形式，可以返回传入的元素来发送，而不是一个语句。表达式必须
+		包含在括号中，除非它是赋值语句右边的唯一一项。例如，x = yield Y 没有问题，就如同X = ()yield Y) + 42
+
+		使用额外协议时，值可以通过调用G.send(value) 发送给一个生成器G.之后恢复生成器的代码，并且生成器
+		中的yield表达式返回了为了发送而传入的值，如果提前调用了正常的G.__next__()方法，yield返回None。
+
+		def gen():
+			for i in range(10):
+				X = yield i
+				print(X)
+
+		G= gen()
+		next(G)
+			0
+		G.send(77)
+			77
+			1
+		G.send(88)
+			88
+			2
+		next(G)
+			None
+			3
+
+
+生成器表达式：迭代器遇到列表解析：
+
+	迭代器和列表解析的概念形成了这种语言的新的特性--生成器表达式。
+	从语法上来说：生成器表达式就像一般的列表解析一样，但是它们是括在圆括号中而不是方括号中。
+
+	[x **2 for x in range(4)]
+		[0,1,4,9]
+	(x**2 for x in range(4))
+		<generator object <genexpr> at 0x7fc18efa7db0>
+
+	在一个list内置调用中包含一个生成器表达式以迫使其一次生成列表中所有的结果。
+
+	list(x**2 for x in range(4))
+		[0, 1, 4, 9]
+
+	生成器表达式很不相同：不是在内存中构建结果，而是返回一个生成器对象，这个对象将会支持迭代协议并在任意
+	的迭代语境的操作中。
+
+	G = (x**2 for x in range(4))
+	next(G)
+		0
+	next(G)
+		1
+	next(G)
+		4
+	next(G)
+		9
+	next(G)
+		Traceback
+		StopIteration
+
+	我们不会机械使用next迭代器来操作生成器表达式，因为for循环会自动触发。
+	for num in (x**2 for x in range(4))
+		print(num,end=' ') 
+	
+		0 1 4 9
+
+	每一迭代的语句都会这样，包括：sum、map和sorted等内置函数，以及其他迭代语境：any、all、list。
+
+	sum(x**2 for x in range(4))
+		14
+	sorted(x**2 for x in range(4))
+		[0, 1, 4, 9]
+	
+	生成器表达式大体上可以认为是对内存空间的优化，不需要方括号列表解析一样，一次构造出整个结果列表。
+
+
+生成器函数 VS 生成器表达式：
+
+	同样的迭代往往可以用一个生成器函数或一个生成器表达式编写。如下:
+
+	G = (c*4 for c in 'SPAM')
+	list(G)
+		['SSSS', 'PPPP', 'AAAA', 'MMMM']
+	
+	def timesfour(S):
+		for c in S:
+			yield c*4
+	G = timesfour('SPAM')
+	list(G)
+		['SSSS', 'PPPP', 'AAAA', 'MMMM']
+
 	
 
+生成器是单迭代器对象：
+	生成器函数和生成器表达式自身都是迭代器。
+	
+	G = (c*4 for c in 'SPAM')
+	iter(G) is G
+		True
+
+	如果你使用多个迭代器来迭代结构流
+	G = (c*4 for c in 'SPAM')
+	T1 = iter(G)
+	next(T1)
+		'SSSS'
+	next(T1)
+		'PPPP'
+	T2 = iter(G)
+	next(T2)
+		'AAAA'
+	next(T1)
+		'MMMM'
+	next(T2)
+		Traceback (most recent call last):
+			StopIteration
+	T3 = iter(G)
+	next(T3)
+		StopIteration
+
+	T3 = iter(c*4 for c in 'SPAM')
+	next(T3)
+		'SSSS'
+	
+	一旦迭代器运行到完成，所有的迭代器都将用尽，必须产生一个新的生成器以再次开始。
+
+	与某些内置类型的行为不同，它们支持多个迭代器并且在一个活动迭代器中传递并反映它们的原处修改。
+	
+	L = [1,2,3,4]
+	T1,T2 = inter(L),inter(L)
+	next(T1)
+		1
+	next(T2)
+		1
+
+
+
+
+python3 解析语法概括：
+
+	对于集合，新的常量形式{1,3,2}等同于set([1,3,2]),并且新的集合解析语法{f(x) for x in S if P(x)}
+	就像是生成器表达式set(f(x) for x in S if P(x)),其中f(x)是一个任意表达式。
+
+	对于字典，新的字典解析语法{key:val for (key,val) in zip(keys,vals)}像dict(zip(keys,vals))形式一样工作
+	并且{x:f(x) for x in items}像生成器表达式dict((x,f(x)) for x in items)一样工作。
+
+
+解析集合和字典解析：
+
+	从某种意义上，集合解析和字典解析只是把生成器表达式传递给类型名的语法糖。
+	因此，两者都接受任何的可迭代对象，一个生成器在这里工作的很好。
+
+	{x*x for x in range(10)}
+		{0, 1, 64, 4, 36, 9, 16, 49, 81, 25}
+
+	set(x*x for x in range(10))
+		{0, 1, 64, 4, 36, 9, 16, 49, 81, 25}
+
+	{x:x*x for x in range(10)}
+		{0: 0, 1: 1, 2: 4, 3: 9, 4: 16, 5: 25, 6: 36, 7: 49, 8: 64, 9: 81}
+	
+	dict((x,x*x) for x in range(10))
+		{0: 0, 1: 1, 2: 4, 3: 9, 4: 16, 5: 25, 6: 36, 7: 49, 8: 64, 9: 81}
+
+	
+
+对迭代的各种方法进行计时：
+
+	对模块计时：
+	import time
+	reps = 1000
+	repslist = range(reps)
+
+	def timer(func,*pargs,**kargs):
+		start = time.clock()
+		for i in repslist:
+			ret = func( *pargs,**kargs)
+		elapsed = time.clock() - start
+		return(elapsed,ret)
+
+	
+	计时脚本：
+		import sys,mytimer
+		reps = 10000
+		repslist = reange(reps)
+
+		def forLoop():
+			res = []
+			for x in repslist:
+				res.append(abs(x))
+			return res
+
+		
+		def listComp():
+			return [abs(x) for x in repsList]
+
+		print(sys.version)
+		for test in(forLoop,listComp):
+			elapsed,result = mytimer.timer(test)
+			print('_'*33)
+			print('%-9s:%.5f')%(test.__name__,elapsed)
+
+
+
+
+函数陷阱：
+
+本地变量是静态检测的：
+	
+	python定义一个函数中进行分配的变量名是默认本地变量的，它们存在于函数的作用域并只在函数运行时存在。
+	Python是静态检测python的本地变量的，当编译def代码时，不是通过发现赋值语句在运行时进行检测的。
+	这导致了python新闻组最常见陷阱之一。
+
+	x = 99
+	def selector():
+			print(x)
+
+	selector()
+		99
+
+	x = 99
+	def selector():
+		print(x)
+		X = 88
+
+	selector()
+		Traceback (most recent call last):
+		UnboundLocalError: local variable 'X' referenced before assignment
+	
+	得到一个未定义变量名的错误，原因很微妙，Python看到了对X赋值语句，并且决定X将会在函数中的任一地方都将是
+	本地变量名，但是，在函数实际运行时，因为在print执行时赋值语句并没有发生，python告诉你正在使用一个未定义
+	的变量名。根据变量名规则，本地变量X是在其被赋值前就使用了。实际上，任何在函数体内赋值将会使其成为一个
+	本地变量名。Import、=、嵌套def、嵌套类等。都会受到行为影响。
+
+	产生的原因在于被赋值的变量名在函数内部是当作本地变量来对待的，而不是仅仅在赋值以后的语句中才被当作是本地
+	变量。
+
+
+	如果你希望打印全局变量：
+	x = 99
+	def selector():
+		global x
+		print(x)
+		x = 88
+
+	selector()
+		99
+
+	这个位置的赋值语句同样会改变全局变量X,而不是一个本地变量。
+
+	x = 99
+	def selector():
+		import __main__
+		print(__main__.x)
+		x = 88
+		print(x)
+
+	selector()
+		99
+		88
+
+
+默认和可变对象
+	默认参数是在def语句运行时评估并保存的，而不是在这个函数调用时。
+	从内部来讲，python会将每一个默认参数保存成一个对象，附件在这个函数本身。
+
+	因为默认参数是在def时被评估的，如果必要的话，它能够从整个作用域内保存值，但是因为默认参数在调用之间都保存了
+	一个对象，必须对修改可变默认参数十分小心。
+
+	下面一个空列表作为默认参数，并在函数每次调用时对他进行了改变。
+
+	def saver(x=[]):
+		x.append(1)
+		print(x)
+	
+	saver([2])
+		[2, 1]
+	saver()
+		[1]
+	saver()
+		[1, 1]
+	saver()
+		[1, 1, 1]
+
+	从某种意义上充当C语言中静态本地函数变量的角色。
+
+	如果你不想要这样，在函数主体的开始对默认参数进行简单拷贝，或者将默认参数值的表达式移至函数内部。
+
+	def saver(x=None):
+		if x is None:
+			x = []
+		x.append(1)
+			print(x)
+
+	saver(2)
+		[2,1]
+	saver()
+		[1]
+	saver()
+		[1]
+
+	一种实现默认效果的另一种方式：
+		def saver():
+			saver.x.append(1)
+			print(saver.x)
+
+		saver.x = []
+		saver()
+			[1]
+		saver()
+			[1, 1]
+		saver()
+			[1, 1, 1]
+	
+	
+	
+没有return语句的函数
+	没有return语句，函数字符返回None对象。
+	
+	def prox(x):
+			pirnt(x)
+
+	x = proc('testing 123...')
+
+	print(x)
+		None
+	
+	list = [1,2,3]
+	list = list.append(4)
+	print(list)
+		None
+
+本章小结:
+
+	1、生成器和迭代器有什么关系？
+	生成器是支持迭代协议的对象。
+
+
+
+
+
+
+	
+
+
+	
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
 
 
 	
@@ -3994,23 +4527,4 @@ python3中的函数注解：
 
 
 
-			
 		
-			
-	
-
-
-	
-	
-
-	
-
-
-
-
-
-
-
-
-
-
