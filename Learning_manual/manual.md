@@ -5312,336 +5312,263 @@ import语句和from语句的as扩展：
 	这段代码意味着，需要传入name值，job和pay现在是可选的，如果忽略，默认是None和0。
 
 
+步骤2：添加行为方法:
+	
+	if __name__ == '__main__':
+		bob = Person('Bob Smith')
+		sue = Person('Sue Jones',job='dev',pay=100000)
+		print(bob.name,bob.pay)
+		print(bob.name.split()[-1])
+		sue.pay *= 1.10
+		print(sue.pay)
+
+
+	封装的思想就是把操作逻辑包装到界面之后。
+
+	class Person:
+		def __init__(self,name,job=None,pay=0):
+			self.name = name
+			self.job = job
+			self.pay = pay
+		
+		def lastName(self):
+			return self.name.split()[-1]
+		def giveRaise(self,percent):
+			self.pay = int(self.pay *(1+percent))
+
+	方法只是附加给类并旨在处理那些类的实例的常规函数。
+
+
+步骤3：运算符重载
+
+	class Person:
+		def __init__(self,name,job=None,pay=0):
+			self.name = name
+			self.job = job
+			self.pay = pay
+		def lastName(self):
+			return self.name.split()[-1]
+		def giveRaise(self,percent):
+			self.pay = int(self.pay *(1+percent))
+		
+		def __str__(self):
+			return '[Person:%s,%s]' % (self.name,self.pay)
+
+步骤4：通过子类定制行为：
+	
+	class Manager(Person):
+		def giveRaise(self,percent,bonus=0.10)
+
+	
+	扩展方法：不好的方式：
+	
+		class Manager(Person):
+			def giveRaise(self,percent,bonus=0.10):
+				self.apy = int(self.pay *(1 + percent + bonus))
+
+		这里的问题是一个非常常见的问题：任何时候，当你复制粘贴代码的时候，基本上都会使未来的维护工作倍增。
+		考虑一下：因为我们复制了最初的版本，如果一旦改变了涨工资的方式，将必须修改两个地方的代码。
+
+	扩展方式：好的方式：
+		
+		真正想要做的事情是扩展最初的giveRaise，而不是完全替代它。在python中做到这一点的好处是，
+		使用扩展的参数来直接调用其最初的版本，如下：
+
+		class Manager(Person):
+			def giveRaise(self,percent,bonus=0.10):
+				Person.giveRaise(self,percent+bonus)
+
+		这段代码利用了一个事实：类方法总是可以在一个实例中调用，或者通过类来调用。
+	
+	好的版本，对未来的代码维护意义重大。
+
+
+多态的作用：
+
+	class Person:
+		def __init__(self,name,job=None,pay=0):
+			self.name = name
+			self.job = job
+			self.pay = pay
+		
+		def lastName(self):
+			return self.name.split()[-1]
+
+		def giveRaise(self,percent):
+			self.apy = int(self.pay*(1+percent)))
 
+		def __str__(self):
+			return '[Person:%s,%s]' % (self.name,self.pay)
 
+	class Manager(Person):
+		def giveRaise(self,percent,bonus = 0.1):
+			Person.giveRaise(self,percent + bonus)
 
+	
+	if __name__== '__main__':
+		bob = Person('Bob Smith')
+		sue = Person('Sue Jones',job = 'dev',pay=100000)
+		print(bob)
+		print(sue)
+		print(bob.lastName(),sue.lastName())
+		sue.giveRaise(0.10)
+		print(sue)
+		
+		tom = Manager('Tom Jones','Mgr',50000)
+		tom.giveRaise(0.10)
+		print(tom.lastName())
+		print(tom)
 
+		print('--All three--')
+		for object in (bob,sue,tom):
+			object.giveRaise(0.10)
+			print(object)
 
+	下面是新添加的代码，对象是一个Person或Manager，python自动运行相应的giveRaise，这里不过是
+	python所谓的多态。
 
 
+步骤5：定制构造函数
 
+	一种常见的编码模式是把对象彼此嵌套以组成复合对象。
+	
+	class Person:
+		...same...
 
+	class Manager:
+		def __init__(self,name,pay):
+			self.person = Person(name,'mgr',pay)     #产生了一个Person实例self.person
 
+		def giveRaise(self,percent,bonus=0.1):
+			self.person.giveRaise(percent + bonus)
+		
+		def __getattr__(self,attr):
+			return getattr(self.person,attr)
 
+		def __str__(self):
+			return str(self.person)
 
+	if__name__ == '__main__':
+		...same...
 
 
+	实际上，这个Manager替代方案是一种叫委托的常用代码模式的一个代表，委托是一种基于复合的结构。
+	它管理一个包装的对象并且把方法调用传递给它。
 
 
+步骤6：使用内省工具：
 
+	特殊类属性：
+		内置的instance.__class__属性提供了一个从实例到创建它的类的链接。类反过来有一个__name__(就像模块一样)
+	还有一个__bases__序列，提供了超类的访问。我们使用这些来打印一个实例类的名字，而不是硬编码来做到。
 
+		内置的object.__dict__属性提供了一个字典，带有一个键/值对，以便每一个属性都有附加到一个命名控件对象
+	（包括模块、类和实例）。由于它是字典，因此我们可以获取键的列表、按照键来索引、迭代其键，等等，从而广泛
+	的处理所有属性。我们使用这些来打印出任何实例的每一个属性，而不是在定制显示中硬编码。
 
+	用form语句载入Person:类名存在语句之中，并且从模块导入，这与函数名和其他变量是完全相同的：
+		
+		from person import Person
+		
+		bob  = Person('Bob Smith')
+		print(bob)
+			[Person:Bob Smith,0]
 
+		bob.__class__
+			<class 'person.Person'>
 
+		bob.__class__.__name__
+			'Person'
 
+		list(bob.__dict__.keys())
+			['pay','job','name']
 
+		for key in bob.__dict__:
+			print(key,'=>',bob.__dict__[key])
 
 
 
+步骤7：把对象存储到数据库中
 
+	使用python一项叫做对象持久化的功能---让对象在创建它们的过程退出之后依然存在。
 
+	Pickle 和 Shelve
+	对象持久化通关3个3个标准的库模块来实现，这3个模块在python中都可用：
 
+	pickle:
+		任意python对象和字节串之间的序列化。
 
+	dbm:(在python2.6中叫做anydbm)
+		实现一个可通过键访问的文件系统，以存储字符串。
 
+	shelve:
+		使用另两个模块按照键把python对象存储到一个文件中。
+		
 
+	
+	pickle模块是一种非常通用的对象格式化和解格式化工具。
+	shelve模块提供了一个额外的层结构，允许按照键来存储pickle处理处理后的对象。
+	
+	实际上，一个shelve提供了一个简单的数据库来按照键存储和获取本地的python对象，并由此使它们
+	跨程序运行而保持持久化。它不支持SQL这样的查询语句，并缺乏在企业数据库中可用的某些高级功能(真正事务处理)
+	但是，一旦使用键获取了存储在shelve中的本地python对象，就可以使用python语言的所有功能处理他。
 
 
 
+	在shelve数据库中存储对象：
 
+	一旦有了实例，将它们存储到shelve中简直是小菜一碟，直接导入shelve模块，用外一个文件打开一个新的shelve,
+	把对象赋给shelve中的键，当我们操作完毕后关闭shelve，因为已经做过修改：
 
+	from person import Person,Manager
+	bob = Person('Bob Smith')
+	sue = Person('Sue Jones',job = 'dev',pay = 100000)
+	tom = Manager('Tom Jones',5000)
 
+	import shelve
+	db = shelve.open('persondb')
+	for object in (bob,sue,tom):
+		db[object.name] = object
+	db.close()
 
+	在shelve中，键可以是任何字符串，唯一的规则是必须唯一。文件的后缀是".db"
 
+	交互的探索shelve:
+		
+	此时，当前目录下会有一个或多个真爽的文件，他们的名字都以"persondb"开头，和内置open函数一样，shelve.open()
+	中的文件名也是相对于当前工作目录，除非它包含路径。不关文件在哪里，这些文件实现为一个键访问的文件，不要
+	删除文件，它们是你的数据库，并且是我们备份或移动存储的时候需要复制和转移的内容。
 
 
+	这里交互的模式有效的成为一个数据库客户端：
+	import shelve
+	db = shelve.open('persondb')
 
+	len(db)
+		3
+	list(db.keys())
+		['Tom Jones','Sue Jones',"Bob Smith"]
+	
+	bob = db['Bob Smith']
+	print(bob)
+		[Person:job= None,name=Bob Smith,pay=0]
 
+	for key in db:
+		print(key,'=>',db[key])
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	Tom Jones => [Manager:job=mgr,name=Tom Jones,pay=50000]
+	Sue Jones => [Person: job=dev,name=Sue,pay=100000]
+	Bob Smith => [Person: job=None,name=Bob Smith,apy=0]
 
 	
 
 
 
+"---------------------------------------------------------------------------------------------------------"
 
+						第28章        类代码编写细节
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+"---------------------------------------------------------------------------------------------------------"
 
 
 
