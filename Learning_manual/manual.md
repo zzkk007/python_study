@@ -5561,7 +5561,20 @@ import语句和from语句的as扩展：
 	Bob Smith => [Person: job=None,name=Bob Smith,apy=0]
 
 	
+本章习题：
+	1、当shelve获取Manager对象打印它的时候，显示格式逻辑来自何处？
+		在类的最终版本中，Manager最终从单独的classtools模块的AttrDisplay继承其__str__打印方法。
 
+	2、当一个从shelve获取一个Person对象而没有导入其模块的时候，改对象如何知道他是一个giveRaise方法可供我们调用？
+		shelve（实际上，使用pickle模块）自动地把该实例重新连接到他创建自的类。
+
+	3、为什么把处理放入方法中而不是类之外硬编码如此重要？
+		未来只需要副本修改，利用维护，这是python封装的概念
+
+	4、何时选择使用对象嵌入和组合而不是继承
+		继承是最佳的代码扩展
+		对于多个对象集合到一个完整的对象，并且由一个控制器层类主导的情况，组合非常实用。
+		继承向上传递调用以实现复用，组合向下传递以实现委托。
 
 
 "---------------------------------------------------------------------------------------------------------"
@@ -5569,6 +5582,397 @@ import语句和from语句的as扩展：
 						第28章        类代码编写细节
 
 "---------------------------------------------------------------------------------------------------------"
+class语句：
+	class语句是python主要的OOP工具，但与C++不同，python的class并不是声明式的，就像def一样，
+	class语句是对象的创建者并且是一个隐含的赋值运算---执行时，太会产生类对象，并把其引用值存储在前面
+	所使用的变量名，此外，和def一样，class语句也是真正的可执行代码，指定python抵达并且运行定义class语句前，
+	你的类不存在。
+
+一般形式：
+	class是复合语句,在class语句内，任何赋值语句都会产生类属性。
+
+	怎么从class语句到命名空间呢？
+		1、就像函数一样，class语句是本地作用域，由内嵌的赋值语句建立的变量名，就存在于这个本地作用域内。
+		
+		2、就像模块内的变量名，在class语句内赋值的变量名会变成类对象中的属性。
+
+	类主要的不同之处在于其命名空间，在类或实例对象中找不到所引用的属性，就会从其他类中获取，这是python继承基础。
+
+	
+	class ShareData:
+		spam = 42
+
+	x = ShareData()
+	y = ShareData()
+	x.spam,y.spam
+		42,42
+	ShareData.spam = 99
+	x.spam,y.spam,ShareData.spam
+		99,99,99
+	x.spam = 88
+	x.spam,y.spam,ShareData.spam
+		88,99,99
+
+	对实例的属性进行赋值运算会在该实例内创建或修改变量名，而不是在共享的类中。
+	通常情况下，继承搜索只会在属性引用时发生，而不是在赋值运算时发生：对对象属性进行赋值总会修改该对象，
+	除此之外没有其他是影响。例如，y.spam会通过继承而在类中查找，但是，对x.spam进行赋值运算则会把该变量名
+	附加到x本身上。
+
+	class MixedNames:
+		data = 'spam'
+		def __init__(self,value):
+			self.data = value
+		def display(self):
+			print(self.data,MixedNames.data)
+
+	data是类中的对象属性，data会被继承，从而被所有没有自己的data属性的类的实例所共享。
+	当创建实例的时候，变量名data会在构造方法中对self.data进行赋值运算，把data附加到实例上。
+
+	data存在于两个地方：实例对象内(由__init__中self.data赋值运算所创建)，以及在实例继承变量名的类中(由类中
+	的赋值语句创建)
+	
+
+
+方法：
+	
+	静态方法：可以让你编写不预期第一参数为实例对象的方法。并且可以用来管理类数据。
+	类方法：当调用的时候接受一个类而不是一个实例，并且可以用来管理基于每个类的数据。
+
+
+继承：
+
+	像class语句这样的命名空间工具的重点就是支持变量名继承。
+
+	在python中，当对对象进行点号运算时，就会发生继承，而且涉及了搜索属性定义树。
+
+	属性树的构造：
+		
+		1、实例属性是由对方法内self属性进行赋值运算而产生的。
+		
+		2、类属性是通过class语句内的语句而产生的。
+
+		3、超类的链接是通过class语句首行的括号内列出类而产生的。
+
+
+继承方法的专有化：
+
+	重新定义继承变量名的概念引出各种专有化技术。子类完全取代继承属性
+
+抽象超类：
+
+	class Super:
+		def method(self):
+			print('in Super.mothod')
+		def delegate(self):
+			self.action()
+
+	class Provider(Super):
+		def action(self):
+			print('in Provider.action')
+
+
+	if __name__ == '__main__':
+		x = Provider()
+		x.delegate()
+
+	当通过Provider实例调用delegate方法时，有两个独立的搜索会发生：
+		
+		1、在最初x.delegate的调用中，Python会搜索Provider实例和它上层的对象，知道在Super中找到delegate的方法。
+		实例x会像往常一样传递给这个方法的self参数。
+
+		2、在Super.delegate方法中，self.action会对self以及它上层的对象启动新的独立继承搜索。因为self指的是
+		Provider实例，在Provider子类中就会找到action方法。
+
+	从delegate方法角度来看，超类有时也称作抽象超类--也就是类的部分默认是其子类所提供的。如果预期的方法子类没有
+	定义，python会引发未定义变量名异常。
+
+
+Python2.6和Python 3.0的抽象超类：
+
+	前面的抽象超类，需要由子类填充的方法，可以以特殊的类语法来实现，如下:
+	
+	在python 3.0中，我么在一个class头部使用一个关键字参数，已经特殊的@装饰器语法。
+
+	from abc import ABCMeta,abstractmethod
+
+	class Super(metaclass=ABCMeta):
+		@abstractmethod
+		 def method(self,...):
+			 pass
+
+	在python2.6中，使用一个类属性：
+
+	class Super:
+		__metaclass__ = ABCMeta
+		@abstractmethod
+		def method(self,...):
+			pass
+
+
+	等价语法如下：
+	from acb import ABCMeta,abstractmethod
+	class Super(metaclass=ABCMeta):
+		def delegate(self):
+			self.action()
+		@abstractmethod
+		 def action(self):
+			 pass
+
+
+
+命名空间：完整的内容
+
+	点号和无点号的变量名，会用不同的方式处理，而有些作用域是用于对对象命名空间做初始设定的。
+
+		1、无点号运算的变量名于作用域想对应。
+			
+			无点号变量名遵循函数LEGB作用域法则。
+	
+		2、点号的属性名使用的是对象的命名空间
+
+		3、有些作用域会对对象的命名空间进行初始化（模块和类）
+
+
+属性名称：对象命名空间
+
+	点号属性名指的是特定对象的属性，并且遵循模块和类的规则。
+	
+	赋值语句(object.X = value)
+		在进行点号运算的命名空间内创建或修改属性名X，并没有其他作用。继承树的搜索只是发生在属性引用时，
+		而不是属性赋值运算时。
+
+	引用(object.X)
+		就基于类的对象而言，会在对象内搜索属性名称X，然后是其上所有可读取的类，对于不是类的对象而言(模块)
+	则是从对象中直接读取X。
+
+
+Python命名空间的"禅"：赋值将变量名分类
+
+	在python中，赋值变量名的场所相当重要，这完全决定了变量名所在作用域或对象。
+
+	x = 11
+
+	def ():
+		print(x)
+
+	def g():
+		x =22
+		print(x)
+
+	class C:
+		x = 33
+		def m(self):
+			x = 44
+			self.x = 55
+
+	模块属性（11）、函数内的本地变量(22)、类属性(33)、方法中的本地变量(44)、实例属性(55)
+
+
+命名空间字典：
+
+	类和实例对象和模块一样，命名空间实际上是以字典的形式实现的，属性点号运算其实内部就是
+	字典的索引运算，而属性继承其实就是搜索链接字典而已。
+
+	class super:
+		def hello(self):
+			self.data1 = 'spam'
+
+	class sub(super):
+		def hola(self):
+			self.data2 = 'eggs'
+
+	我们制作子类的实例时，该实例一开始会是空的命名空间字典，但是有链接会指向它的类，让继承搜索能顺着寻找。
+	实例中有一个__class__属性链接到了它的类，而类中有个__bases__属性，是一个元组，其中包含了通往更高的
+	超类链接。
+
+	X = sub()
+	X.__dict__
+		{}
+	X.__class__
+		<class '__main__.sub'>
+	sub.__bases__
+		(<class '__main__.super'>,)
+	super.__bases__
+		(<class 'object'>,)
+
+	当类为self属性赋值时，会填入实例对象，也就是说，属性最后会位于实例的属性命名空间字典内，而不是类。
+	实例对象的命名空间保存了数据，会随着实例不同而不同，而self正是进入其命名空间的钩子。
+
+	Y = sub()
+	X.hello()
+	X.__dict__
+		{'data1': 'spam'}
+	X.hola()
+	X.__dict__
+		{'data1': 'spam', 'data2': 'eggs'}
+	sub.__dict__.keys()
+		dict_keys(['__module__', 'hola', '__doc__'])
+	super.__dict__.keys()
+		dict_keys(['__module__', 'hello', '__dict__', '__weakref__', '__doc__'])
+	
+	Y.__dict__
+		{}
+
+	因为属性实际上是python字典键，所有有两种方式可以读取并对其进行赋值：通过点号运算或索引运算。
+	X.data1,X.__dict__['data1']
+	('spam','spam')
+
+	X.data3 = 'toast'
+	X.__dict__
+		{'data1': 'spam', 'data2': 'eggs', 'data3': 'toast'}
+
+
+	dir(x)
+		['__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', 'data1', 'data2', 'data3', 'hello', 'hola']
+
+	dir(sub)
+		['__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', 'hello', 'hola']
+		
+	dir(super)
+		
+		['__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', 'hello']
+
+
+
+类和模块的关系：
+
+	模块：
+		
+		是数据/逻辑包
+		通过编写python文件或C扩展来创建
+		通过导入来使用
+
+	类：
+		实现新的对象
+		由class语句创建
+		通过调用使用
+		总是在一个模块中
+
+	类支持：运算符重载、多实例生成、继承。
+
+
+
+本章习题：
+	
+	1、什么是抽象类？
+		抽象类是会调用方法的类，但没有继承或定义该方法，而是期待改方法由子类填补。
+
+	2、为什么类可能会需要手动调用超类的__init__方法？
+
+		如果类定义自身的__init__构造函数，但是必须启用超类的构建起代码，就要手动调用超类__init__方法。
+
+
+
+
+
+"--------------------------------------------------------------------------------------------------"
+
+							第29章  运算符重载
+
+"--------------------------------------------------------------------------------------------------"
+		
+基础知识：
+
+	1、运算符重载让类拦截常规的pyhton运算。
+
+	2、类可重载所有Python表达式运算符。
+
+	3、类也可重载打印、函数调用、属性点号运算等内置运算。
+
+	4、重载使类实例的行为像内置类型。
+
+	5、重载是通过提供特殊名称的类方法来实现的。
+
+
+构造函数和表达式：__init__和__sub__:
+	构造函数:__init__
+	捕捉减法表达式：__sub__,这种特殊方法是钩子，可与内置运算相绑定。
+
+	文件number.py
+	class Number:
+		def __init__(self,start):
+			self.data = start
+		def __sub__(self,other):
+			return Number(self.data - other)
+
+	from number import Number
+	X = Number(5)
+	Y = X - 2
+	Y.data
+		3
+
+常见的运算符重载方法：
+
+方法                     重载                 调用
+
+__init__               构造函数               对象建立：X = Class(args)
+
+__del__                析构函数               X 对象收回
+
+__add__                运算符+                如果没有_iadd_, X + Y, X += Y
+
+__or__                 运算符|                如果没有_ior_,X|Y, X|=Y
+
+__repr__,__str__       打印、转换             print(X)，repr(X)，str(X)
+
+__call__               函数调用               X( *args,**kargs)
+
+__getattr__            点号运算               X.undefined
+
+__setattr__            属性赋值语句           X.any = value
+
+__delattr__            属性删除               del  X.any
+
+__getattribute__       属性获取               X.any
+
+__getitem__            索引运算               X[key],X[i:j],没有__iter__时的for循环和其他迭代器
+
+__setitem__            索引赋值语句           X[key] = value, X[i:j] = sequence
+
+__delitem__            索引和分片删除         del X[key],del X[i:j]
+
+__len__                长度                   len(x),如果没有__bool__,真值测试
+
+__bool__               布尔测试               bool(x)
+
+__lt__,__gt__          特定的比较             X < Y,X>Y 
+
+__le__,__ge__                                 X<=Y, X>=Y
+
+__eq__,__ne__                                 X == Y, X != Y
+
+__radd__               右侧加法               other + X
+
+__iadd__               实地（增强的）加法     X += Y
+
+__iter__,__next__       迭代环境              I = iter(X),next(I)
+
+__contains__           成员关系测试           item in X
+
+__index__              整数值                 hex(X),bin(X),oct(X)
+
+__enter__,__exit__     环境管理                with obj as  var:
+
+__get__,__set__        描述符属性             X.attr,X.attr = value
+
+__delete__
+
+__new__                创建                   在__init__之前创建对象
+
+
+所有重载方法前后都有两个下划线字符，以便同类中定义的变量名区分开，特殊方法名称和表达式或运算符的映射关系
+是由python语言预先定义好的。
+
+
+
+
+
+
+"---------------------------------------------------------------------------------------------------"
+
+							第30 章     类的设计	
+
+"---------------------------------------------------------------------------------------------------"
 
 
 
@@ -5591,6 +5995,52 @@ import语句和from语句的as扩展：
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+	
 
 
 
