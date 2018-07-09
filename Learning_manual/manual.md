@@ -5974,6 +5974,946 @@ __new__                创建                   在__init__之前创建对象
 
 "---------------------------------------------------------------------------------------------------"
 
+python常用的OOP设计模式：继承、组合、委托和工厂。
+
+
+Python 和 OOP:
+
+继承：
+	
+	继承是基于python中属性查找的(在X.name表达式中)
+
+多态：
+
+	在X.method方法中，method的意义取决于X的类型(类)
+
+	因为python没有类型声明，属性总是在运行期解析，实现相同接口的对象是可互相交换的，
+	所有客户端不需要知道实现它们调用方法是对象种类。
+
+
+
+封装：
+
+	方法和运算符实现行为，数据隐藏默认是一种惯例。
+	
+	封装指的是在pyhon中打包，也就是把实现的细节隐藏在对象接口之后，封装可让对象接口的实现出现变动时，
+	不影响对象的用户。
+
+
+OOP和继承："是一个" 关系(is-a)。
+
+OOP和组合："有一个" 关系(has-a)。
+	
+	从程序员的角度来看，组合涉及把其他对象嵌入容器对象内，并使其实现容器方法。
+	对设计来说，组合是另一种表示文件领域中关系的方式，但是，组合不是集合的成员关系，而是组件
+	整体的组成部分。
+
+	组合也反应了各组成部分之间的关系，
+	组合就是指内嵌对象集合体。组合类一般都提供自己的接口，并通过内嵌的对象来实现接口。
+
+	from employees import PizzaRobot,Server
+
+	class Customer:
+		
+		def __init__(self,name):
+			self.name = name
+		def order(self,server):
+			print(self.name,"Orders from",server)
+		def pay(self,server):
+			print(self.name,"pays for item to",server)
+
+	class Over:
+		def break(self):
+			print("oven bakes")
+
+	class PizzaShop:
+		def __init__(self):
+			self.server = Seerver('Pat')
+			self.chef = PizzaRobot('Bob')
+			sefl.oven = Oven()
+
+		def order(self,name):
+			customer = Customer(name)
+			customer.order(self.server)
+			self.chef.work()
+			self.oven.bake()
+			customber.pay(self.server)
+
+	if __name__ == "__main__":
+		scene = PizzaShop()
+		scene.order('Homer')
+		print('...')
+		scene.order('Shaggy')
+
+	PizzaShop类是容器和控制器，其构造函数会创建员工类实例并将其嵌入。
+
+
+OOP和委托："包装"对象：
+
+	面向对象程序员时常谈到所谓的委托，通常就会指控制器对象内嵌其他对象，而把运算请求传给那些对象。
+	控制器负责管理工作，例如，记录存取等。
+	在python中，委托通常以__getattr__(点号运算)钩子方法实现。
+
+	class wrapper:
+		def __init__(self,object):
+			self.wrappend = object
+
+		def __getattr__(self,attrname):
+			print('Trace:',attrname)
+			return getattr(self.wrapped,attrname)
+
+	你可以使用这个模块包装类的做法，管理任何带有属性的对象的存取：列表，字典，甚至是类和实例。
+	在这里，wrapper类只是在每个属性读取时打印跟踪消息，并把属性请求委托给嵌入的wrapped对象。
+
+	from trace import wrapper
+
+	x = wrapper([1,2,3])
+	
+	x.append(4)
+
+		Trace:wrappend
+	x.wrappend
+		[1,2,3,4]
+
+	x = wrapper({"a":1,"b":2})
+	x.keys()
+		Trace: keys
+		dict_keys(['a', 'b'])
+
+
+
+
+类是伪私有属性：
+
+	python支持变量名压缩（mangling，相当于扩张）的概念，让类内某些变量局部化。
+	压缩后的变量名有时被误认为"私有属性"，但这其实是一个把类所创建的变量名局部化方式而已。
+	名称压缩无法阻止类外代码读取，只是避免实例内命名空间冲突，而不是限制变量名读取。
+	压缩称为"伪私有"。
+
+	变量名压缩的工作方式：class语句开通内两个下划线，但结尾没有两个下划线的变量名，会自动扩张，
+	从而包含了类的名称。例如：像Spam类内__X这样的变量名会自动变成_Spam__X。
+
+	变量名压缩只发生在class语句内，而且只针对开头有两个下划线的变量名。
+
+
+为什么使用伪私有属性：
+
+	伪私有属性功能是为了缓和域实例属性存储方式有关的问题。在python中，所有实例属性最后都会在类树
+	底部的单个实例对象内。
+	在python的类方法内，每当方法赋值self的属性时（self.attr = value）,就会在实例内修改或创建该属性。
+	
+	class C1:
+		def meth1(self):
+			self.X = 88
+		def meth2(self):
+			print(self.X)
+
+	class C2:
+		def metha(self):
+			self.X = 99
+		def methb(self):
+			print(self.X)
+
+	这两个类都在各行其事，如果这两个类混合在相同类树中时，问题就产生了。
+
+	class C3(C1,C2):
+
+
+
+多重继承："混合" 类
+
+	所谓的多重继承：类和其实例继承了列出的所有超类的变量名。
+
+编写混合显示类：
+
+	class Spam:
+		def __init__(self):
+			self.data1 = "food"
+
+	X = Spam()
+	print(X)
+		<__main__.Spam object at 0x7fac72c055f8>
+
+	用__dict__列出实例属性：
+
+		#File lister.py
+
+	class ListInstance:
+		def __str__(self):
+			return '<Instance of %s,address %s:\n%s?' % (self.__class__.name,id(self),self.__attrnames())
+
+		def __attrnames(self):
+			result = ''
+			for attr in sorted(self.__dict__):
+				result += '\tname %s=%s\n' % (attr,self.__dict__[attr])
+			return result
+
+	from  lister import ListInstance
+
+	class Spam(ListInstance):
+		def __init__(self):
+			self.data1 = 'food'
+
+	x = Spam()
+	print(x)
+		<Instance of Spam,address 4024088o:
+					name data1 = food
+		>
+
+
+类是对象：通用对象的工厂：
+
+	类是对象，很容易传递，保存在数据结构中，也可以把类传给任意种类对象的函数，这类函数在OOP设计领域汇总
+	偶尔称为工厂。
+
+	def factory(aClass, *args):
+		return aClass( *args)
+
+	class Spam:
+		def doit(self,message):
+			print(message)
+
+	class Person:
+		def __init__(self,name,job):
+			self.name = name
+			self.job = job
+
+
+	object1 = factory(Spam)
+	object2 = factory(Person,"Guido","guru")
+
+	我们定义了一个对象生成器函数，称为factory。它传入类对象。
+
+
+
+与设计有关的其他话题：
+
+	继承、复合、委托、多继承、绑定方法、工厂，这些是Python程序中组合类的所有常用模式。
+
+	抽象超类、装饰器、类型子类、静态方法和类方法、管理属性、元类
+
+
+
+本章习题：
+
+	1、什么是多继承
+		
+		类从一个以上超类继承时，就发送了多重继承。
+
+	2、什么是委托
+		
+		委托涉及把对象包装在代理类中，这样代理类会增加额外的行为，而把其他运算传给被包装的对象。
+		代理类包含了被包装的对象接口。
+
+	3、什么是组合
+
+		组合是一种技术，让控制类嵌入和引导一群对象，并自行提供接口。
+
+	4、什么是绑定方法
+
+		绑定方法结合实例和方法函数。
+
+	5、为什么使用伪私有属性
+
+		用了吧名称本地化到包含类中。
+
+
+"-----------------------------------------------------------------------------------------------"
+
+									第31章      类的高级主题
+
+"-----------------------------------------------------------------------------------------------"
+
+	如何建立内置类型的子类、新式类的变化和扩展、静态方法和类方法、函数装饰器等。
+
+
+通过子类扩展类型：
+
+	所有的内置类型现在都能直接创建子类。像list、str、dict以及tuple,这些类型转换函数都变成
+	内置类型的名称：虽然脚本看不见，但是类型转换调用其实是启用了类型的对象构造函数。
+
+	class  Mylist(list):
+		def __getitem__(self,offset):
+			print('(indexing %s at %s)' % (self,offset))
+			return list.__getitem__(self,offset-1)
+
+	if __name__ == '__main__':
+		print(list('abc'))
+		x = Mylist('abc')
+		print(x)
+
+		print(x[1])
+
+		pirnt(x[3])
+
+	
+
+新式类：
+
+	python3中所有的类都是新式类。
+	class newstyle(object):
+		....normal code...
+
+	新式类变化：
+
+		1、类与类型合并
+			
+			类自身就是类型。type对象产生类作为自己的实例，并且类产生它们的类型的实例。
+
+			从技术上讲，每个类都由一个元类生成--元类是这样的一个类，它要么是type自身，要么是它定制来
+			扩展或管理生成的类的一个子类。
+
+			所有对象派生自object,每个对象都派生自object内置类，不管是直接地或通过一个超类。
+
+		2、继承搜索顺序
+		
+			对经典类而言，继承搜索程序是绝对深度优先，然后才是由左至右。
+			新式类：搜索相对来说是宽度优先的。Python先寻找第一个搜索的右侧的所有超类，然后才一路往
+			上搜索至顶端共同的超类。
+
+
+		3、针对内置函数的属性获取
+
+		4、新的高级工具
+
+
+	新式类的扩展：
+		
+		1、slots实例：
+			将字符串属性名称顺序赋值给特殊的__slots__类属性。
+
+			这个特殊属性在class语句顶层内将字符串名称顺序赋值给变量__slots__而设置：
+			只有__slots__列表内的这些变量名可赋值为实例属性，
+
+			class limiter(object):
+				__slots__ = ['age','name','job']
+
+			x = limiter()
+			x.age
+				AttributeError: age
+			x.age = 40
+			x.age
+				40
+			x.ape = 100
+				AttributeError: 'limiter' object has no attribute 'ape'
+
+		slots对应python动态特殊是一种违背。
+
+
+
+静态方法和类方法：
+
+	静态方法大致与一个类中的简单的无实例函数类似地工作。
+
+	类方法传递一个类而不是一个实例。
+	
+	要使用这些方法，必须在类中调用特殊内置函数，分别名为staticmethod 和 classmethod,或者遇到装饰符语法来调用。
+	
+	在python3.0中，无实例的方法只能通过一个类名调用，不需要staticmethod声明。
+
+	python通过静态方法的概念来支持这样的目标---嵌套在一个类中的没有self参数的简单函数，并且旨在操作类属性
+	而不是实例属性。静态方法不会接受一个自动的self参数，不管是通过一个类还是一个实例调用。
+
+
+	使用静态方法统计实例：
+
+		class Spam:
+			numInstances = 0
+			
+			def __init__(self):
+				Spam.numInstances += 1
+			
+			def printNumInstances():
+				print("Number of instances:",Spam.numInstances)
+
+			printNumInstances = staticmethod(printNumInstances)
+
+	使用静态方法内置函数，程序允许类或其他实例调用无self方法。
+
+		a = Spam()
+		b = Spam()
+		c = Spam()
+	
+		Spam.printNumInstances()
+			Number of instances: 3
+
+		a.printNumInstances()
+			Number of instances: 3
+
+
+
+	用类方法统计实例：
+
+		class Spam:
+			numInstances = 0
+			def __init__(self):
+				Spam.numInstances += 1
+
+			def printNumInstances(cls):
+				print("Number of instances:",cls.numInstances)
+			printNumInstances = classmethod(printNumInstances)
+
+	它接受类而不是实例：
+		a,b = Spam(),Spam()
+		a.printNumInstances()
+			Number of instances: 2
+		Spam.printNumInstances()
+			Number of instances: 2
+
+				
+装饰器和元类: 第一部分
+	
+	函数装饰器：提供了一种方式，替函数明确了特定的运算模式，也就是讲函数包裹了另一层，在另一个函数
+	的逻辑内实现。
+
+	函数装饰器基础：
+
+		从语法上讲：函数装饰器是它后边的函数的运行时的声明。函数装饰器是写成一行，就在定义函数或方法的
+		def语句之前，而且由@符号、后面跟着所谓的元函数组成：也就是管理另一个函数（或其他可调用对象）的函数。
+
+		静态方法可用装饰器语法编写：
+
+			class C:
+				@staticmethod
+				def meth():
+					...
+
+		从内部来看，这个语法和下面的写法有相同效果：
+			
+			class C:
+				def meth():
+					...
+				meth=staticethod(meth)
+
+		结果是，调用方法函数的名称，实际上是触发了它staticmethod装饰器的结果。
+		因为装饰器会传回任何种类的对象，这也可以让装饰器在每次调用上增加一层逻辑。装饰器函数可返回
+		原始函数，或者新对象。
+
+			class Spam:
+				numInstances = 0
+				def __init__(self):
+					Spam.numInstances = Spam.numInstances + 1
+
+				@staticmethod
+				def printNumInstances():
+					print("Number of instances created:",Spam.numInstances)
+
+			a = Spam()
+			b = Spam()
+			c = Spam()
+			
+			Spam().printNumInstances()
+
+	
+	
+	类装饰器和元类：
+
+		类装饰器类似于函数装饰器，但是，它们在一条class语句的末尾运行，并且把一个类名重新绑定到一个可调用对象。
+
+		def decorator(aClass):...
+
+		@decoracor
+		class C:...
+	
+	被映射为下列相当代码：
+
+		def decorator(aClass):...
+
+		class C:...
+		C = decorator(C)
+
+	元类是一种类似的基础类的高级工具，器用途往往与类装饰器有所重合。它们提供了一种可选的模式，
+	会把一个类对象的创建导向到顶级type类的一个子类。
+
+
+类陷阱：
+
+	1、修改类属性的副作用
+		
+		class X:
+			a = 1
+
+		I = X()
+		I.a
+			1
+		X.a 
+			1
+
+		X.a = 2
+		I.a 
+			2
+		J = X()
+		J.a	
+			2
+
+	2、修改可变的类属性也可能产生副作用
+	
+	由于类属性属于所有实例共享，所以如果一个类属性引用一个可变对象，那么从任何实例来原处修改
+	都会立刻影响到所有实例：
+
+	class C:
+		shared = []
+
+		def __init__(self):
+			self.perobj = []
+
+	x = C()
+	y = C()
+
+	y.shared,y.perobj
+		([], [])
+	x.shared.append('spam')
+	x.perobj.append('spam')
+
+	y.shared,y.perobj 
+		(['spam'], [])
+
+
+	可变对象通过简单变量来共享，全局变量由函数共享，模块级的对象由多个导入者共享，
+	可变的函数参数由调用者和被调用者共享。
+
+
+
+	3、多重继承：顺序很重要：
+
+	4、类、方法以及嵌套作用域：
+
+	5、“过度包装”
+
+	
+本章小结：
+
+	列举出两种能够扩展内置对象类型的方法？
+		
+		1、在包装类中内嵌内置对象。
+		
+		2、直接做内置类型的子类。
+
+	函数装饰器用来做什么的？
+
+		函数装饰器通常是用来给现存的函数增加函数每次被调用时都会运行的一层逻辑。
+
+	
+	
+
+"================================================================================================="
+
+							第七部分     异常和工具
+
+"================================================================================================="
+
+
+"------------------------------------------------------------------------------------------------"
+							第 32 章        异常基础
+"------------------------------------------------------------------------------------------------"
+
+	异常由四个语句处理：
+
+	1、try/except
+		
+		捕捉由python或你引起的异常并恢复。
+
+	2、try/finally
+
+		无论异常是否发生，执行清理行为。
+
+	3、raise
+		
+		手动在代码中触发异常
+
+	4、assert
+
+		有条件地在程序代码中触发异常
+
+	5、with/as
+
+		在pyhton2.6和后续版本中实现环境管理器
+
+
+为什么使用异常：
+
+	异常让我们从一个程序中任意大的代码中跳出来。
+
+	异常是一种结构化的"超级goto"，异常处理器(try语句)会留下标识，并可执行一些代码。
+
+
+异常的角色:
+	
+	在python中，异常通常用于各种用途，最常见的几种角色。
+
+	1、错误处理
+		
+		每当在运行时检测到程序错误时，python就会发生异常。如果忽略错误，python默认的异常处理行为将
+		启动：停止程序，打印错误消息。如果不想启动默认行为，就要写try语句来捕捉异常并从异常中恢复：
+		当检测到错误时，python会跳到try处理器，而程序在try之后从新继续执行。
+
+
+	2、事件通知
+
+	3、特殊情况处理
+
+	4、终止行为
+
+	5、非常规控制流程
+
+
+异常处理：简明扼要
+	
+	捕捉异常：
+
+		def fetcher(obj,index):
+			return obj[index]
+
+		x = 'spam'
+
+		try:
+		
+			fetcher(x,4)
+		except IndexError:
+			print('got exception')
+
+		当try代码块执行时触发异常，python会自动跳至处理器（except分句下面的代码块）。
+
+
+	引发异常：
+
+		手动触发异常，直接执行raise语句。用户触发异常的捕捉方式和python引用的异常一样。
+
+		try:
+			raise IndexError	
+		except IndexError:
+			print('got exception')
+
+
+	用户定义的异常：
+
+		用户定义异常能够通过类编写，它继承自一个内置的异常类：通过这个类想名称叫做：Exception。
+
+		class Bad(Exception)
+			pass
+
+		def doomed():
+			raise Bad()
+
+		try:
+			doomed()
+		except Bad:
+			print('got Bas')
+
+
+	终止行为：
+
+		try/finally组合，无论try中是否发生异常，一定会最后执行finally。
+
+		try：
+			fetcher(x,3)
+		finally:
+			print('after fetch')
+
+
+		def after():
+			try:
+				fetcher(x,3)
+			finally:
+				print('after fetch')
+				print('after try?')
+
+
+为什么要在意：错误检查：
+
+	了解异常是多么有用的方法之一就是，比较python以及没有异常的语言的代码风格。例如C语言，
+	如下想以C语言编写稳健的程序，一般在每个可能出错的运算之后测试返回值或状态码，然后在程序执行时传递测试结果。
+
+
+
+
+"-------------------------------------------------------------------------------------------"
+	
+						第 33 章         异常编码细节
+
+"-------------------------------------------------------------------------------------------"
+
+try/except/else 语句：
+
+	try是复合语句，后面紧跟着缩进的语句代码，然后是一个或多个except分句来识别要捕捉的异常，
+	最后一个可选的else分句。
+
+		try:
+			<statements>
+		except <name1>:
+			<statements>
+		except(name2,name3):
+				<statements>
+		except <name4> as <data>:
+			<statements>
+		except:
+			<statements>
+		else:
+			<statemnets>
+
+	try首行底下的代码块代码次语句的主要动作：试着执行的程序代码。Except子句是定义try代码块内引发
+	的异常处理器，而else字句则是提供没有发生异常时要执行的处理器。
+
+
+	try语句分句：
+
+		分句形式                                 说明
+		except:                             捕捉所有异常类型
+		except name:                        只捕捉特定的异常
+		except name,value:                  捕捉所列的异常和其额外的数据
+		except (name1,name2):               捕捉任何列出的异常
+		except (name1，name2),value:        捕捉任何列出的异常，并取得其额外数据
+		else:                               如果没有引发异常，就运行
+		finally                             总是会运行此代码块
+
+
+
+	空的except子句是一种通用功能：因为这里捕捉任何东西，可以让处理器通用化或具体化。
+		try:
+			action()
+		except:
+			...
+
+	不过，空except也会引发一下设计问题:尽管方便，也可能捕捉程序代码无关、意料之外的系统异常，而且可能
+	意外拦截其他处理器异常。
+
+	python3.0引入了替代方案--捕捉一个名为Exception的异常几乎和except具有相同的效果，
+	但是忽略和系统退出相关的异常：
+
+		try:
+			action()
+		except Exception:
+			...
+
+
+	try/finally:
+		
+		如果try代码块运行时有异常发生，python依然会回来运行finally代码块，但是会把异常向上传递
+		到较高的try语句或顶层默认处理器。和except不同，finally不会终止异常，而是在finally代码
+		执行后，一直处于发生状态。
+
+
+
+raise语句：
+
+	要显示的触发异常，可以用raise语句，其一般形式相当简单。raise语句的组成是：
+	raise关键字，后面跟着可选的要引发的类或者类的一个实例：
+
+	raise  <instance>
+	raise  <class>
+	raise
+
+
+	示例：
+	raise IndexError
+	raise IndexError()
+
+	我们也可以提前创建实例--因为raise语句接收任何类型的对象引用。如下两个示例像前两个一样引发了IndexError:
+
+	exc = IndexError()
+	raise exc
+
+	excs = [IndexError,TypeError]
+	raise excs[0]
+
+	
+	利用raise传递异常：
+
+		raise语句不包括异常名称或额外数据值时，就是重新引发当前异常。
+
+		try:
+			raise IndexError('spam')
+		except IndexError:
+			print('propagating')
+			raise
+
+			
+			propagating
+			Traceback (most recent call last):
+				File "<stdin>", line 2, in <module>
+			IndexError: spam
+
+	通过这种方式执行raise时，会重新引发异常，将其传递给更高层的处理器。
+
+
+assert语句：
+
+	assert可视为条件式的raise语句，该语句形式为：
+
+		assert <test>,<data>
+
+	执行起来就行如下代码：
+		if __debuf__:
+			if not <test>:
+				raise AssertionError(<data>)
+
+	换句话说，如果test计算为假，python就会引发异常：data项是异常的额外数据。
+
+	例子：收集约束条件（但不是错误）
+
+		def f(x):
+			assert x < 0, 'x must be negative'
+			return x ** 2
+
+		f(1)
+			
+			Traceback (most recent call last):
+				File "<stdin>", line 1, in <module>
+				File "<stdin>", line 2, in f
+			AssertionError: x must be negative
+
+
+	牢记：assert几乎都是用来收集用户的约束条件，而不是捕捉内在的程序设计错误。
+
+
+with/as环境管理器：
+
+	python2.6和python3.0引入了一种新的异常相关的语句：with语句已经可选的as子句。
+	这个语句的设计是为了和环境管理器对象一起工作。
+	简而言之，with/as语句设计是为常见try/finally用法模式的替代方案。
+	wit/as语句也是用于定义必须执行的终止或"清理"行为，无论处理步骤中是否发生异常。
+	不过，和try/fianlly不同的是，with语句支持更丰富的基于对象的协议，可以为代码块定义
+	支持进入和离开动作。
+
+	基本使用：
+	
+		with expression [as variable]:
+			with-block
+
+	在这里expression要返回一个对象，从而支持环境管理协议。如果选用的ad子句存在时，次对象也可返回
+	一个值，赋值给变量名variable。
+
+	注意：variable并非赋值为expression的结果，expression的结果是支持环境协议的对象，而variable则是
+	赋值给其他的东西。然后，expression返回的对象可在with-block开始前，先执行启动程序，并且在该代码
+	块完成后，执行终止程序代码，无论该代码块是否发生异常。
+
+
+	例如：文件对象有环境管理器，可在with代码块后自动关闭文件，无论是否发生异常。
+
+		with open("/home/data.txt")  as myfile:
+			for line in myfile:
+				print(line)
+				...more code here...
+
+	这里，对open的调用，会返回一个简单文件对象，赋值给变量名myfile。我们可以用一般文件工具来使用myfile：
+	就此而言，文件迭代器会在for循环内逐行读取。
+
+
+
+本章习题:
+
+	1、try语句用途？
+		捕捉异常并从中恢复，try语句两种常见的变体是try/except/else以及try/finally
+
+	2、raise语句有什么作用？
+
+		引发异常
+
+	3、assert语句有什么用？和其他那些语句相似？
+		
+		条件为假时，引发AssertionError异常，就像包裹在if语句中的条件式raise语句
+
+	4、with/as语句有什么用？和其他那些语句相似？
+
+		为了让必须在程序代码块周围发生的启动和终止活动一定会发生。
+
+
+
+
+"--------------------------------------------------------------------------------------------"
+
+						第 34 章         异常对象
+
+"--------------------------------------------------------------------------------------------"
+
+	内置异常和用户定义的异常都是通过类实例对象来表示。
+
+	基于类的异常由如下特点：
+
+		1、提供了类型分类，对今后的修改有更好的支持。
+
+		2、它们附加了状态信息。
+
+		3、它们支持继承。
+
+	
+基于类的异常：
+
+	基于类的基础更好支持异常状态信息（附加在实例上），而且可以让异常参与继承层次(获得通用的行为)。
+
+	class General(Exception):pass
+	class Specific1(General):pass
+	class Specific2(General):pass
+
+	def raiser0():
+		X = General()
+		raise X
+
+	def raiser1():
+		X = Specific1()
+		raise X
+
+	def raiser2():
+		X = Specific2()
+		raise X
+
+	for func in (raiser0,raiser1,raiser2):
+		try:
+			func()
+		except General:
+			import sys
+			print('caught:',sys.exc_info()[0])
+
+
+内置Exception类：
+
+	python自身能够引发所有的内置异常，都是预定义的类对象。
+
+BaseException:
+	
+	异常的顶级根类。这个类不能由用户定义的类直接继承的。它提供了子类所继承的默认的打印和状态保存行为。
+
+Exception:
+	
+	这是BaseException的一个直接子类，并且是所有其他内置异常的超类，除了系统退出事件之外(SystemExit、
+			KeyboardInterrupt和GeneratorExit)
+
+ArithmeticError
+	
+	所有数值错误的超类。
+
+OverflowError
+
+	识别特定的数值错误的子类。
+
+
+本章习题：
+	1、在python3.0 中，对于用户定义异常的两个新限制是什么？
+
+		异常必须有类定义，异常必须派生内置类BaseException
+
+	2、基于类的异常是怎样和处理器匹配的？
+	
+		基于类的异常是由超类的关系匹配的：在异常处理器中指定超类，
+		就会捕捉该类的实例，以及类树中任何更低的子类实例。
+
+	3、环境信息附加到异常对象上的两种方法
+		
+		通过在引发的实例对象中填充实例属性，来把环境信息附加到基于类的异常，通常是在一个定制类构造函数
+		中做到这点。
+
+
+	4、异常对象指定出错误消息的两种方法
+
+		可以用一个定制__str__运算符重载方法来指定。
+
+
+
+"---------------------------------------------------------------------------------------------------"
+
+								第 35 章     异常的设计
+
+"---------------------------------------------------------------------------------------------------"
 
 
 
@@ -5984,6 +6924,137 @@ __new__                创建                   在__init__之前创建对象
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+			
+
+
+
+
+	
 
 
 
@@ -6040,7 +7111,317 @@ __new__                创建                   在__init__之前创建对象
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
