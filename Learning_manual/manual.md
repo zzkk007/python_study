@@ -7209,209 +7209,515 @@ Python 3.0中的字符串应用：
 
 	因此，python 3.0基本上要求遵守一种类型或另一种类型，或手动执行显示转换：
 
+		str.encode() 和 bytes(S, encoding)把一个字符串转换为其raw bytes形式，
+			并且在此过程中根据一个str创建一个bytes.
+
+		bytes.decode() 和 str(B, endcoding)把raw bytes转化为其字符串形式，
+			并且在此过程中根据一个bytes创建一个str.
+
+		S = 'eggs'
+		S.encode()
+			b'eggs'
+
+		bytes(S,encoding='ascii')
+			b'eggs'
+
+		B = b'spam'
+		B.decode()
+			'spam'
+			
+		str(B,encoding='ascii')
+			'spam'
+
+
+		import sys
+		sys.platform
+			'linux'
+		sys.getdefaultencoding()
+			'utf-8'
+
+
+编码Unicode字符串：
+
+	当我们处理真正非ASCII Unicode文本的时候，编码和解码变得更有意义。
+
+	编码ASCII文本：
+
+		ASCII文本是一种简单的Unicode，存储为表示字符的字节值的一个序列：
+
+		ord('X')
+			88
+		chr(88)
+			'X'
+
+		S = 'XYZ'
+		S
+			'XYZ'
+		len(S)
+			3
+		[ord(c) for c in S]
+			[88,89,90]
+
+	编码非ASCII文本：
+
+		可能在字符串中使用16进制或Unicode转义；16进制转义限制于单个字节的值
+		但Unicode转义可以指定其值有两个或四个字节宽度的字符。
+
+		chr(0xc4)
+			'Ä'
+		chr(0xe8)
+			'è'
+
+使用Python 3.0 Bytes对象：
+
+	方法调用：
 		
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+		如果想看看str拥有哪些bytes所没有是属性，可以查看dir内置函数。
+
+		set(dir('abc')) - set(dir(b'abc'))
+			{
+				'format_map', 'isnumeric', 'isdecimal', 'isprintable', 'isidentifier', 
+				'encode', 'casefold', 'format'
+			}
+
+		set(dir(b'abc')) - set(dir('abc'))
+
+			{
+				'fromhex', 'decode', 'hex'
+			}
 
 
 		
+python 3.0 中其他字符串工具的变化：
 
+	re模式匹配模块：
 
+	struct二进制数据模块:
+		用来从字符串创建和提取打包的二进制数据。但是打包的数据只是
+		作为bytes和bytearray对象显示，而不是str对象。
 
+		from struct import pack 
+		pack(b'>i4sh',7,b'spam',8)
+			b'\x00\x00\x00\x07spam\x00\x08'
+		
+	pickle对象序列化模块：
 
+		pickle模块是python3总是创建一个bytes对象，我们可以使用该模块dumps调用来返回一个pickle字符串。
 
+		import pickle
+		pickle.dumps([1,2,3])
+			b'\x80\x03]q\x00(K\x01K\x02K\x03e.'
 
+		dump调用直接把试图把pickle字符串写入一个打开的输出文件中，必须以二进制读取。
 
+		pickle.dump([1,2,3],open('temp','wb'))
+		pickle.load(open('temp','rb'))
+			[1, 2, 3]
 
+	XML解析工具
 
 
 
+本章小结：
 
+	如何把非ASCII Unicode字符编写到字符串中？
 
+		可以以十六进制转移(\xNN) 和 Unicode转义(\uNNN,\UNNNNN)编写到一个字符串中。
 
 
 
 
+"---------------------------------------------------------------------------------------"
 
+					第 37 章 管理属性
 
+"---------------------------------------------------------------------------------------"
+	
+	本章将展开介绍前面所提到的属性拦截技术。
 
 
+特性：
 
+	特性协议允许我们把一个特定属性的get和set操作指向我们所提供的函数或方法，使得我们能够插入在属性
+	访问的时候自动运行的代码。
 
+	通过property内置函数来创建特性并将其分配给类属性，就像方法函数一样。
 
+	一个特性管理一个单个的、特定的属性。
 
+	基础知识：
 
+	通过一个内置函数的结果赋给一个类属性来创建一个特性：
 
+	attribute = property(fget,fset.fdel,doc)
+		
+	内置函数参数不是必需的，所有都可默认为None。
+		fget 传递一个函数的拦截属性访问
+		fset 传递一个函数进行赋值
+		fdel 传递一个函数进行属性删除
+		doc  接受一个文档字符串
 
 
+	第一个例子：
 
+		class Person:
+			def __init__(self,name):
+				self._name = name
+			def getName(self):
+				print('fetch...')
+				return self._name
+			def setName(self,value):
+				print('change...')
+				self._name = value
+			def delName(self):
+				print('remove...')
+				del self._name
 
+			name = property(getName,setName,delName,"name property docs")
 
+		bob = Person('Bob Smith')
+		print(bob.name)              #Runs getName
+		bob.name = 'Robert Smith'    #Runs setName
+		print(bob.name)              
+		del bob.name                 #Runs dleName
+		
 
+描述符：
 
+	描述符提供了拦截属性访问的一种替代方法，实际上。特性是描述符的一种---从技术上讲，property内置函数
+	只是创建一个特定类型的描述符的一种简化方式，而这个描述符在属性访问时运行方法函数。
 
+	描述符作为独立的类创建，并且她们就像方法函数一样分配给类属性。
 
+	和特性一样，描述符也管理一个单个的、特定的属性。
 
+	基础知识:
 
+		描述符作为单独的类编写，并且针对想要拦截的属性访问提供命名的访问器方法。
 
+		class Descriptor:
+			"docstring goes here"
+			def  __get__(self,instance,owner):...
+			def  __set__(self,instance,value):...
+			def	 __delete__(self,instance):...
 
+		带有任何这些方法的类都可以看做是描述符，并且当它们的一个实例分配给另一个类的属性的时候。
+		它们的这些方法是特殊的--当访问属性的时候，会自动调用它们。
 
 
+		第一个示例：
 
+			class Name：
+				"name descriptor docs"
+				def __get__(self,instance,owner):
+					print('fetch ...')
+					return instance._name
+				def __set__(self,instance,value):
+					print('change ...')
+					instance._name = vuale
+				def __delete__(self,instance):
+					print('remove...')
+					del instance._name
 
 
+			class Person:
+				def __init__(self,name):
+					self._name = name
 
+				name = Name()
+			
+			
+			bob = Person('Bob Smith')
+			print(bob.name)            #Runs Name.__get__
+			bob.name = 'Robert Smith'  #Runs Name.__set__
+			print(bob.name)
+			del bob.name               #Runs Name.__delete__
 
 
+		注意上段代码中：
+			self 是Name类实例
+			instance 是Person类实例
+			owner是Person类实例
 
 
+__getattr__ 和 __getattribute__:
+			
+	特性和描述符--管理特定属性的工具，__getattr__ 和 __getattribute__操作符重载方法提供了拦截类实例的
+	属性获取的另一种方法。
 
+	__getattr__ 针对未定义属性--也就是说，属性没有存储在实例上。
 
+	__getattribute__ 针对每个属性。
 
+	与特性和描述符不同，这些都是python的操作符重载协议的一部分，是类的特殊命名的方法，有子类继承，
+	并且在隐式的内置操作使用实例的时候自动调用。
 
+	第一个示例：
 
+		class Person:
+			def __init__(self,name):
+				self._name = name
 
+			def __getattr__(self,attr):
+				if attr == 'name':
+					print('fetch...')
+					return self._name
+				else:
+					raise AttributeError(attr)
 
+			def __setattr__(self,attr,value):
+				if attr == 'name':
+					print('changer...')
+					attr = '_name'
+				self.__dict__[attr] = value
 
+			def __delattr__(self,attr):
+				if attr == 'name':
+					print('remove...')
+					attr = '_name'
+				del self.__dict__[attr]
 
 
+			bob = Person('Bob Smit')
+			print(bob.name)            #Runs __getattr__
+			bob.name = 'Robert Smith'  #Runs __setattr__
+			print(bob.name)
+			del bob.name
 
 
+本章小结：
 
+	1、__getattr__ 和 __getattribute__有何区别？
 
+		__getattr__方法针对未定义属性的获取运行
+		__getattribute__方法针对所有的属性获取运行
+
+	2、特性和描述符有何区别？
+
+		特性充当一个角色，而描述符更为通用。
+
+	3、特性和装饰器有何关联
+
+		特性可以用装饰器语法编写。
+
+	4、__getattr__和__getattribute__已经特性和描述符之间主要的功能区别是什么？
+
+		__getattr__ 和 __getattribute__更通用，特性和描述符只针对一个特定属性提供访问拦截。
+
+
+
+
+
+
+
+"----------------------------------------------------------------------------------------"
+
+						第 38 章  装饰器
+
+"----------------------------------------------------------------------------------------"
+	
+本章深入装饰器内部工作机制，学习编写新装饰器更高级方法。
+
+什么是装饰器：
+
+	装饰是为函数和类指定管理代码的一种方式。装饰器本身的形式是处理其他的可调用对象的可调用的对象。
+	python装饰器以两种相关形式呈现：
+
+		函数装饰器在函数定义的时候进行名称重绑定，提供一个逻辑层来管理函数和方法或随后对它们的调用。
+
+		类装饰器在类定义的时候进行名称重绑定，提供了一个逻辑层来管理类，或管理随后调用它们所创建的示例。
+
+	简而言之，装饰器提供了一种方法，在函数和类定义语句的末尾插入自动运行代码--对函数装饰器，在def的末尾
+	对应类装饰器，在class的末尾。
+
+
+为什么使用装饰器：
+
+	1、装饰器有一种非常明确的语法，使得那些可能任意地远离主体函数或类的辅助函数调用更容易为人们发现。
+
+	2、当主体函数或类定义的时候，装饰器应用一次，在对类或函数每次调用的时候不必添加额外代码。
+
+	3、由于前面两点，装饰器使得一个API的用户不太可能忘记根据API需求扩展一个函数或类。
+		
+	
+	装饰器自然地促进了代码的封装
+
+	装饰器有潜在的缺点---当它们插入包装类的逻辑，它们可以修改装饰的对象的类型，并且它们可能引发额外的调用。
+
+
+
+基础知识：
+
+	装饰器的很多神奇之处可归结为自动重绑定操作。
+
+	函数装饰器：
+
+		函数装饰器是一种关于函数的运行时声明，函数的定义需要遵守次声明。
+		
+		语法：
+
+			@decorator
+			def F(arg):
+				...
+
+			F(99)
+
+		映射为一对等的形式，器中装饰器是一个单参数的可调用对象，它返回与F具有相同数目的参数的一个可调用对象：
+
+		def F(arg):
+			...
+
+		F = decorator(F)
+
+		F(99)
+
+
+
+		def decorator(F):           #F is func or method without instance
+			def wrapper( *args):    #class instance in args[0] for method
+				return wrapper
+
+		@decorator              
+		def fun(x,y):               #func = decorator(func)
+			...
+		func(6,7)                   #Really calls wrapper(6,7)
+
+
+		class C:
+			@decorator
+			 def method(self,x,y):    #method = decorator(method)
+				 ...
+
+		X = C()
+		X.method(6,7)                #really calls wrapper(X,6,7)
+
+
+装饰器嵌套：
+
+	语法：
+			@A
+			@B
+			@C
+
+			def f(...):
+				...
+
+			如下这样运行：
+				
+				def f(...):
+					...
+				f = A(B(C(f)))
+
+
+
+编写函数装饰器:
+
+	class tracer:
+		def __init__(self,func):
+			self.calls = 0
+			self.func = func
+
+		def __call__(self,*args):
+			self.calls += 1
+			print('call %s to %s' % (self.calls,self.func.__name))
+			self.func( *args)
+
+	@tracer
+	def spam(a,b,c):        #spam = tracer(spam)
+		print(a+b+c)
 	
 
+为什么使用装饰器：
 	
+	装饰器有两个潜在缺陷：
+
+		1、类型修改：
+
+			当插入包装器的时候，一个装饰器函数或了不会保持其最初的类型--其名重新绑定到一个包装器对象。
+
+		2、额外调用：
+
+			每次调用装饰器对象的时候，会引发一次额外调用所需的额外性能成本
+
+	好处:
+
+		1、明确的语法
+
+		2、代码可维护性
+		
+		3、一致性
 
 
 
 
+"------------------------------------------------------------------------------------------------------"
+
+					第 39 章          元 类
+
+"-----------------------------------------------------------------------------------------------------"
+	
+	元类只是扩展了装饰器的代码插入模式。
+	元类允许我们拦截并扩展类创建
+
+提高魔力层次：
+
+	1、内省属性：
+		
+		像__class__和__dict__这样的属性允许我们查看python对象的内部实现方面
+
+	2、运算符重载方法：
+
+		像__str__和__add__这样特殊命名的方法，来编写来拦截并提供应用于类实例的内置操作的行为。
+
+	3、属性拦截方法：
+
+		__getattr__,__setattr__和__getattribute__允许包装的类插入自动运行的代码
+
+	4、类特性：
+
+		内置函数property允许我们把代码和特殊的类属性关联起来，当获取、赋值或删除该属性的时候自动运行代码
+
+	5、类属性描述符：
+		
+		描述符允许我们在单独类中编写__get__、__set__和__delete__处理程序方法
+
+	6、函数和类装饰器
+
+
+	元类是这些技术的延续---允许我们在一条class语句的末尾，插入当创建一个类对象的时候自动运行的逻辑。
 
 
 
+元类模型：
+
+	类是类型，类型也是类，即：
+
+		1、类型由派生自type的类定义。
+
+		2、用户定义的类是类型类的实例。
+
+		3、用户定义的类是产生它们自己的实例的类型。
 
 
+	元类是Type的子类:
+
+		type是产生用户定义的类的一个类
+
+		元类是type类的一个子类
+
+		类对象是type的一个实例，或一个子类
+
+		实例对象产生字一个类
 
 
+本章小结：
 
+	1、什么是元类
 
+		元类是用来创建一个类的类
 
+	2、如果什么一个元类
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+		class C(metaclass = M)
 
 
