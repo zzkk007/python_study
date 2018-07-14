@@ -549,7 +549,24 @@
 	reload(module)               重新导入模块module。
 	type(object)                 返回object对象的类型。
 
+12、请写出一段 Python 代码实现分组一个 list 里面的元素,比如 [1,2,3,...100]变成 [[1,2,3],[4,5,6]....]
+	
+	list = []
+	for i in range(101):
+		list.append(i)
+	b = []
+	for i in range(0,len(list),3):
+		b.append(list[i:i+3])
+	print(b)
+	
 
+
+
+
+
+		
+		
+		
 
 
 
