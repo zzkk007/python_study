@@ -1221,82 +1221,582 @@ python是动态语言：
 		
 闭包：
 
+	1、什么是闭包？
+	
+	在函数内部再定义一个函数，并且这个函数用到了外边函数的变量，那么将这个函数以及用到的一些变量称之为闭包
+	
+	闭包涉及到数据函数里面属性使用的问题，想要改变外面函数的变量，必须使用nonlocal或者global
+
+	def test(number):
+
+		def test_in(numer_in):
+			print("in test_in 函数，number_in is %d" % number_in)
+			return number+number_in
+
+		return test_in
+
+	
+
+	给test函数赋值，这个20就是给参数number
+	ret = test(20)
+
+	#注意这里的100其实给参数number_in
+	print(ret(100))
+
+	
+	2、闭包再理解
+
+	内部函数对外部函数作用域里变量的引用（非全局变量），则称内部函数为闭包。
+
+	def counter(start=0):
+		count=[start]
+		def incr():
+			count[0] += 1
+			return count[0]
+		return incr
     
-    
-    
+    nonlocal访问外部函数的局部变量(python3)
+
+	def counter(start=0):
+		def incr():
+			nonlocal start
+			start += 1
+			return start
+		return incr
+
+	3、 看一个闭包的实际例子：
+
+	def line_conf(a, b):
+		def line(x):
+			return a*x + b
+		return line
+
+		
+	line1 = line_conf(1, 1)
+	line2 = line_conf(4, 5)
+	print(line1(5))
+	print(line2(5))
+
+	这个例子中，函数line与变量a,b构成闭包。在创建闭包的时候，
+	我们通过line_conf的参数a,b说明了这两个变量的取值，
+	这样，我们就确定了函数的最终形式(y = x + 1和y = 4x + 5)。
+	我们只需要变换参数a,b，就可以获得不同的直线表达函数。
+	由此，我们可以看到，闭包也具有提高代码可复用性的作用。
 
 
+	闭包思考：
+
+		1.闭包似优化了变量，原来需要类对象完成的工作，闭包也可以完成
+		2.由于闭包引用了外部函数的局部变量，则外部函数的局部变量没有及时释放，消耗内存
 
 
+装饰器：
+
+	1、装饰器(decorator)功能
+		
+		引入日志
+		函数执行时间统计
+		执行函数前预备理
+		执行函数后清理功能
+		权限校验等场景
+		缓存
 
 
+	2、无参数的函数
+
+	from time import ctime,sleep
+
+	def timefunc(func):
+
+		def wrappedfunc():
+			print("%s called at %s"%(func.__name__,ctime()))
+			func()
+		return wrappedfunc
+
+	@timefunc
+	def foo():
+		print('I am foo')
+
+	foo()
+	sleep(2)
+	foo()
+
+	上面代码理解装饰器执行行为可理解成
+	foo = timefun(foo)
+	foo先作为参数赋值给func后,foo接收指向timefun返回的wrappedfunc
+	foo()
+	调用foo(),即等价调用wrappedfunc()
+	内部函数wrappedfunc被引用，所以外部函数的func变量(自由变量)并没有释放
+	func里保存的是原foo函数对象
 
 
+	3、被装饰的函数有参数
+	
+	from time import ctime, sleep
+
+	def timefun(func):
+		def wrappedfunc(a, b):
+			print("%s called at %s"%(func.__name__, ctime()))
+			print(a, b)
+			func(a, b)
+		return wrappedfunc
+
+	@timefun
+	def foo(a, b):
+		print(a+b)
 
 
+	foo(3,5,7)
 
 
+	4、被装饰的函数有不定长参数：
+
+	from time import ctime, sleep
+
+	def timefun(func):
+		def wrappedfunc( *args, **kwargs):
+			print("%s called at %s"%(func.__name__, ctime()))
+			func( *args, **kwargs)
+		return wrappedfunc
+
+	@timefun
+	def foo(a, b, c):
+		print(a+b+c)
+
+	foo(3,5,7)
 
 
+	
+	5、类装饰器
+
+	装饰器函数其实是这样一个接口约束，它必须接受一个callable对象作为参数，然后返回一个callable对象。
+	在Python中一般callable对象都是函数，但也有例外。只要某个对象重写了 __call__() 方法，
+	那么这个对象就是callable的。
+
+		class Test():
+			def __call__(self):
+				print('call me!')
+							
+		t = Test()
+		t()  # call me'')
 
 
+	类装饰器demo:
+
+	class Test(object):
+		def __init__(self, func):
+			print("---初始化---")
+			print("func name is %s"%func.__name__)
+			self.__func = func
+		def __call__(self):
+			print("---装饰器中的功能---")
+			self.__func()
 
 
+	说明：
+	1. 当用Test来装作装饰器对test函数进行装饰的时候，首先会创建Test的实例对象
+		并且会把test这个函数名当做参数传递到__init__方法中
+		即在__init__方法中的func变量指向了test函数体
 
+	2. test函数相当于指向了用Test创建出来的实例对象
 
+	3. 当在使用test()进行调用时，就相当于让这个对象()，因此会调用这个对象的__call__方法
 
+	4. 为了能够在__call__方法中调用原来test指向的函数体，所以在__init__方法中就
+	  需要一个实例属性来保存这个函数体的引用 所以才有了self.__func = func这句代码，
+	  从而在调用__call__方法中能够调用到test之前的函数体
+			
+	@Test
+	def test():
+		print("----test---")
+	test()
+	showpy()     #如果把这句话注释，重新运行程序，依然会看到"--初始化--"
 
-
-
-
-
-
-
-
-
-
-
-
-
-    
+	
+	运行结果如下：
+		---初始化---
+		func name is test
+		---装饰器中的功能---
+		----test---
 	
 
 
+作用域:
+
+	LEGB 规则:
+	Python 使用 LEGB 的顺序来查找一个符号对应的对象
+	locals -> enclosing function -> globals -> builtins
+
+	locals，当前所在命名空间（如函数、模块），函数的参数也属于命名空间内的变量
+	enclosing，外部嵌套函数的命名空间（闭包中常见）
+	globals，全局变量，函数定义所在模块的命名空间
+	builtins，内建模块的命名空间。
+
+		Python 在启动的时候会自动为我们载入很多内建的函数、类，
+		比如 dict，list，type，print，这些都位于 __builtin__ 模块中，
+		可以使用 dir(__builtin__) 来查看。
+		这也是为什么我们在没有 import任何模块的情况下，
+		就能使用这么多丰富的函数和功能了。
+
+		在Python中，有一个内建模块，该模块中有一些常用函数;在Python启动后，
+		且没有执行程序员所写的任何代码前，Python会首先加载该内建函数到内存。
+		另外，该内建模块中的功能可以直接使用，不用在其前添加内建模块前缀，
+		其原因是对函数、变量、类等标识符的查找是按LEGB法则，其中B即代表内建模块
+		比如：内建模块中有一个abs()函数，其功能求绝对值，如abs(-20)将返回20。
 
 
+
+==、is:
+
+	a = [11,22,33]
+	b = a
+
+	a == b
+		True
+	
+	a is b
+		True
+
+	c = copy.deepcopy(a)
+
+	a == c 
+		True
+
+	a is c
+		False
+
+
+	is 是比较两个引用是否指向了同一个对象（引用比较）。
+	== 是比较两个对象是否相等。
+
+
+深拷贝、浅拷贝：
+
+	1、浅拷贝:
+		
+		浅拷贝是对于一个对象的顶层拷贝
+		通俗的理解是：拷贝了引用，并没有拷贝内容
+
+		a = [11,22,33]
+		b = a
+
+		id(a)
+			139862797085256
+		id(b)
+			139862797085256
+
+		a.append(44)
+			[11, 22, 33, 44]
+		b
+			[11, 22, 33, 44]
+
+		id(a)
+			139862797085256
+		id(b)
+			139862797085256
+
+
+	2、深拷贝:
+
+		深拷贝是对于一个对象所有层次的拷贝(递归)
+
+		import copy
+
+		a = [11,22,33]
+
+		b = copy.deepcopy(b)
+		
+		id(a)
+			139862797085256
+		id(b)
+			139862797151560
+
+		a.append(55)
+			[11, 22, 33, 44]
+		b
+			[11,22,33]
+
+	3、浅拷贝对不可变类型和可变类型的copy不同:
+
+		a = [11,22,33]
+		b = copy.copy(a)
+		
+		a.append(44)
+			[11, 22, 33, 44]
+		b
+			[11, 22, 33]
+
+
+		分片表达式可以赋值一个序列:
+			a = "abc"
+			b = a[:]
+
+		字典的copy方法可以拷贝一个字典
+		
+			d = dict(name="zhangsan", age=27)	
+			co = d.copy()
+			修改字典 d['age'] = 23
+
+
+		有些内置函数可以生成拷贝(list):
+			a = list(range(10))
+			b = list(a)
 
 		
+		copy模块中的copy函数:
+
+			import copy
+			a = (1,2,3)
+
+			b = copy.copy(a)
+
 		
+
+进制、位运算:
+
+	1、进制间转换
+
+	#10进制转为2进制
+	>>> bin(10)
+	'0b1010'
+	
+	#2进制转为10进制
+	>>> int("1001",2)
+	9
+	
+	
+	#10进制转为16进制
+	>>> hex(10)
+	'0xa'
+	
+	#16进制到10进制
+	>>> int('ff', 16)
+	255
+	
+	>>> int('0xab', 16)
+	171
+	
+	#16进制到2进制
+	>>> bin(0xa)
+	'0b1010'
+
+	#10进制到8进制
+	>>> oct(8)
+	'010'
+	
+	
+	#2进制到16进制
+	>>> hex(0b1001)
+	'0x9'
+
+
+	2、位运算
+
+		& 按位与
+		| 按位或
+		^ 按位异或
+		~ 按位取反
+		<< 按位左移
+		>> 按位右移
+
+		用途: 直接操作二进制,省内存,效率高
+
+		1）<< 按位左移
+			各二进位全部左移n位,高位丢弃,低位补0
+			左移1位相当于 乘以2
+			用途:快速计算一个数乘以2的n次方 (8<<3 等同于8*2^3)
 		
+		2)>> 右移
+
+			各二进位全部右移n位,保持符号位不变
+			右移1位相当于 除以2
+			x 右移 n 位就相当于除以2的n次方 用途:快速计算一个数除以2的n次方 (8>>3 等同于8/2^3)
+
+		3)& 按位与
+			
+			全1才1否则0 :只有对应的两个二进位均为1时,结果位才为1,否则为0
+
+		4) | 按位或
+
+			有1就1 只要对应的二个二进位有一个为1时,结果位就为1,否则为0
+
+		5) ^ 按位异或
+
+			不同为1 当对应的二进位相异(不相同)时,结果为1,否则为0
+
+
+私有化：
+	
+	xx: 公有变量
+	_x: 单前置下划线,私有化属性或方法，from somemodule import *禁止导入,类对象和子类可以访问
+	__xx：双前置下划线,避免与子类中的属性命名冲突，无法在外部直接访问(名字重整所以访问不到)
+	__xx__:双前后下划线,用户名字空间的魔法对象或属性。例如:__init__ , __ 不要自己发明这样的名字
+	xx_:单后置下划线,用于避免与Python关键词的冲突
+
+	__xx通过name mangling（名字重整(目的就是以防子类意外重写基类的方法或者属性)
+	如：_Class__object）机制就可以访问private了。
+	
+
+
+垃圾回收：
+
+	Python的垃圾回收机制是：
+		python采用的是引用计数机制为主，标记-清除和分代收集两种机制为辅的策略
+	
+	引用计数机制：
+	
+		python里每一个东西都是对象，它们的核心就是一个结构体：PyObject
+
+		typedef struct_object {
+
+			int ob_refcnt;
+			struct_typeobject *ob_type;
+		} PyObject;
+
+	
+		PyObject是每个对象必有的内容，其中ob_refcnt就是做为引用计数。
+		当一个对象有新的引用时，它的ob_refcnt就会增加，当引用它的对象被删除，它的ob_refcnt就会减少。
+
+	引用计数机制的优点：
+		
+		简单
+		实时性：一旦没有引用，内存就直接释放了。不用像其他机制等到特定时机。
+		实时性还带来一个好处：处理回收内存的时间分摊到了平时。
+
+	
+	引用计数机制的缺点：
+
+		维护引用计数消耗资源
+		循环引用
+
+			list1 = []
+			list2 = []
+			list1.append(list2)
+			list2.append(list1)
+
+		list1与list2相互引用，如果不存在其他对象对它们的引用，list1与list2的引用计数也仍然为1，
+		所占用的内存永远无法被回收，这将是致命的。 对于如今的强大硬件，缺点1尚可接受，
+		但是循环引用导致内存泄露，注定python还将引入新的回收机制。(标记清除和分代收集)
+
+	
+	有三种情况会触发垃圾回收：
+
+		1、调用gc.collect(),
+		2、当gc模块的计数器达到阀值的时候。
+		3、程序退出的时候
+
+	
+
+gc模块常用功能解析：
+
+	gc模块提供一个接口给开发者设置垃圾回收的选项。
+	采用引用计数的方法管理内存的一个缺陷是循环引用，而gc模块的一个主要功能就是解决循环引用的问题。
+
+	1、常用函数：
+
+		gc.set_debug(flags) 设置gc的debug日志，一般设置为gc.DEBUG_LEAK
+		gc.collect([generation]) 显式进行垃圾回收，可以输入参数，0代表只检查第一代的对象，
+				1代表检查一，二代的对象，2代表检查一，二，三代的对象，如果不传参数，
+				执行一个full collection，也就是等于传2。 返回不可达（unreachable objects）对象的数目
+		
+		gc.get_threshold() 获取的gc模块中自动执行垃圾回收的频率。
+		gc.set_threshold(threshold0[, threshold1[, threshold2]) 设置自动执行垃圾回收的频率。
+		gc.get_count() 获取当前自动执行垃圾回收的计数器，返回一个长度为3的列表
+
+
+模块进阶:
+
+	常用标准库:
+
+	标准库	             说明
+	builtins	    内建函数默认加载
+	os	              操作系统接口
+	sys	            Python自身的运行环境
+	functools	       常用的工具
+	json	        编码和解码 JSON 对象
+	logging            记录日志，调试
+	multiprocessing	      多进程
+	threading	          多线程
+	copy	               拷贝
+	time	               时间
+	datetime	        日期和时间
+	calendar	           日历
+	hashlib	            加密算法
+	random	           生成随机数
+	re	             字符串正则匹配
+	socket	        标准的 BSD Sockets API
+	shutil	         文件和目录管理
+	glob	       基于文件通配符搜索
 
 
 
+	常用扩展库:
+
+	扩展库               	说明
+	requests	    使用的是 urllib3，继承了urllib2的所有特性
+	urllib	           基于http的高层库
+	scrapy	                 爬虫
+	beautifulsoup4	   HTML/XML的解析器
+	celery	          分布式任务调度模块
+	redis	                 缓存
+	Pillow(PIL)	          图像处理
+	xlsxwriter	      仅写excle功能,支持xlsx
+	xlwt	          仅写excle功能,支持xls ,2013或更早版office
+	xlrd              	仅读excle功能
+	elasticsearch	    全文搜索引擎
+	pymysql	            数据库连接库
+	mongoengine/pymongo	mongodbpython接口
+	matplotlib	             画图
+	numpy/scipy            科学计算
+	django/tornado/flask	web框架
+	xmltodict	         xml 转 dict
+	SimpleHTTPServer	简单地HTTP Server,不使用Web框架
+	gevent	            基于协程的Python网络库
+	fabric	               系统管理
+	pandas                数据处理库
+	scikit-learn	      机器学习库
 
 
 
+调试:
+
+	pdb 
+	pdb是基于命令行的调试工具，非常类似gnu的gdb（调试c/c++）。
+
+		命令      	简写命令	       作用
+		break	        b	         设置断点
+		continue	    c	         继续执行程序
+		list	        l          	 查看当前行的代码段
+		step	        s	         进入函数
+		return	        r	         执行代码直到从当前函数返回
+		quit	        q	         中止并退出
+		next	        n	         执行下一行
+		print	        p	         打印变量的值
+		help	        h            帮助
+		args	        a	         查看传入参数
+		回车	                     重复上一条命令
+		break	        b          	 显示所有断点
+		break lineno	b lineno	在指定行设置断点
+		break file:lineno	b file:lineno	在指定文件的行设置断点
+		clear num		            删除指定断点
+		bt		                    查看函数调用栈帧
 
 
+	
+		执行时调试：
+
+			程序启动，停止在第一行等待单步调试。
+	
+			python -m pdb some.py
 
 
+		pdb 调试有个明显的缺陷就是对于多线程，远程调试等支持得不够好，
+		同时没有较为直观的界面显示，不太适合大型的 python 项目。
+		而在较大的 python 项目中，这些调试需求比较常见，因此需要使用更为高级的调试工具。
+	
+	日志调试:
 
+		print大法
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	
 
