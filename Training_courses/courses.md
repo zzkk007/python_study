@@ -559,6 +559,730 @@
 		b.append(list[i:i+3])
 	print(b)
 	
+	这里面涉及到了几个点：
+	1、range()
+			range(start, stop[, step])
+				start: 计数从 start 开始。默认是从 0 开始。例如range（5）等价于range（0， 5）;
+				stop: 计数到 stop 结束，但不包括 stop。例如：range（0， 5） 是[0, 1, 2, 3, 4]没有5
+				step：步长，默认为1。例如：range（0， 5） 等价于 range(0, 5, 1)
+				
+	2、列表在增加元素：
+	
+		列表不是C语言的数组，不能够使用 list[i]=i
+		extend: 通过extend可以将另一个集合中的元素逐一添加到列表中
+		  >>> a = [1, 2]
+			>>> b = [3, 4]
+			>>> a.append(b)
+			>>> a
+					[1, 2, [3, 4]]
+			>>> a.extend(b)
+			>>> a
+					[1, 2, [3, 4], 3, 4]
+					
+			append:通过append可以向列表添加元素,这个元素可以是列表、集合、元组，任何对象。
+			
+				b.append(set(list[i:i+3]))
+				b.append(tuple(list[i:i+3]))
+				
+			insert:insert(index, object) 在指定位置index前插入元素object
+				
+				>>> a = [0, 1, 2]
+				>>> a.insert(1, 3)
+				>>> a
+						[0, 3, 1, 2]
+			
+13:请写出一段 Python 代码实现删除一个 list 里面的重复元素
+
+		第一种方法：
+				a = [1,2,3,3,4,4,5,6]
+				b = dict.fromkeys(a)
+				a = list(b)
+				print(a)
+				
+				这里使用了字典的生成方法fromkeys()函数用于创建一个新字典
+				dict.fromkeys(seq[, value])
+						seq -- 字典键值列表。
+						value -- 可选参数, 设置键序列（seq）的值。
+						
+						seq = ('Google', 'Runoob', 'Taobao')
+						dict = dict.fromkeys(seq)
+								{'Google': None, 'Taobao': None, 'Runoob': None}
+						dict = dict.fromkeys(seq, 10)
+								{'Google': 10, 'Taobao': 10, 'Runoob': 10}
+						
+		第二种方法：
+				使用set,set是非重复的，无序集合。
+					可以用list来的排队对set进行排序，list()转换为列表，a.sort来排序
+    			a=[1,2,4,2,4,5,7,10,5,5,7,8,9,0,3]
+    			a=list(set(a)) 
+					print(a)
+					
+							
+14、python设计实现遍历目录与子目录,抓取.py文件
+
+	import os
+	def getFiles(dir, suffix):
+  		res = []
+    	for root, dirs, files in os.walk(dir):
+      	  for filename in files:
+        	    name, suf = os.path.splitext(filename)
+          	  if suf == suffix:
+            	    res.append(os.path.join(root, filename))
+   		print(res)  
+	getFiles("./", '.py')						
+						
+		os.walk() 方法用于通过在目录树中游走输出在目录中的文件名，向上或者向下。
+		os.walk() 方法是一个简单易用的文件、目录遍历器，可以帮助我们高效的处理文件、目录方面的事情。
+		在Unix，Windows中有效。
+	
+		os.walk(top[, topdown=True[, onerror=None[, followlinks=False]]])
+		
+		top -- 是你所要遍历的目录的地址, 返回的是一个三元组(root,dirs,files)。
+			root 所指的是当前正在遍历的这个文件夹的本身的地址
+			dirs 是一个 list ，内容是该文件夹中所有的目录的名字(不包括子目录)
+			files 同样是 list , 内容是该文件夹中所有的文件(不包括子目录)
+		
+		os模块概述
+		1、os.name
+
+			输出字符串指示正在使用的平台。如果是window 则用’nt’表示，对于Linux/Unix用户，它是’posix’。
+
+		2、os.getcwd()
+
+			函数得到当前工作目录，即当前Python脚本工作的目录路径。
+
+		3、os.listdir()
+
+			返回指定目录下的所有文件和目录名。
+
+			os.listdir(os.getcwd()) 
+				[‘Django’, ‘DLLs’, ‘Doc’, ‘include’, ‘Lib’, ‘libs’, ‘LICENSE.txt’, ‘MySQL-python-wininst.log’, ‘NEWS.txt’, ‘PIL-wininst.log’, ‘python.exe’, ‘pythonw.exe’, ‘README.txt’, ‘RemoveMySQL-python.exe’, ‘RemovePIL.exe’, ‘Removesetuptools.exe’, ‘Scripts’, ‘setuptools-wininst.log’, ‘tcl’, ‘Tools’, ‘w9xpopen.exe’]
+
+		4、os.remove()
+
+			删除一个文件。
+
+		5、os.system()
+
+			运行shell命令。
+
+		6、os.path.split()
+
+			函数返回一个路径的目录名和文件名
+			os.path.split(‘C:\Python25\abc.txt’) 
+				(‘C:\Python25’, ‘abc.txt’)
+
+		7、os.path.isfile()和os.path.isdir()函数分别检验给出的路径是一个文件还是目录。
+
+			os.path.isdir(os.getcwd()) 
+				True 
+			os.path.isfile(‘a.txt’) 
+				False
+
+		10、os.path.exists()函数用来检验给出的路径是否真地存在
+
+			os.path.exists(‘C:\Python25\abc.txt’) 
+				False 
+			os.path.exists(‘C:\Python25’) 
+				True
+
+		11、os.path.abspath(name):获得绝对路径
+		
+		12、os.path.normpath(path):规范path字符串形式
+		
+		13、os.path.getsize(name):获得文件大小，如果name是目录返回0L
+
+		14、os.path.splitext():分离文件名与扩展名
+
+			os.path.splitext(‘a.txt’) 
+				(‘a’, ‘.txt’)
+
+		15、os.path.join(path,name):连接目录与文件名或目录
+
+			os.path.join(‘c:\Python’,’a.txt’) 
+				‘c:\Python\a.txt’ 
+			os.path.join(‘c:\Python’,’f1’) 
+				‘c:\Python\f1’
+
+		16、os.path.basename(path):返回文件名
+
+			os.path.basename(‘a.txt’) 
+				‘a.txt’ 
+			os.path.basename(‘c:\Python\a.txt’) 
+				‘a.txt’
+
+		17、os.path.dirname(path):返回文件路径
+
+			os.path.dirname(‘c:\Python\a.txt’) 
+				‘c:\Python’
+
+			
+15、写出一个函数,给定参数 n,生成含有n个元素值为1~n的数组,元素顺序随机,但值不重复
+
+			import random
+			def random_list(n):
+    		list =random.sample(range(1,n+1),n)
+    		return list
+
+			print(random_list(6))			
+			
+			
+			random.seed(a=None, version=2)  # 初始化伪随机数生成器。如果未提供a或者a=None，则使用系统时间为种子。如果a是一个整数，则作为种子。
+ 			random.getstate()  # 返回一个当前生成器的内部状态的对象
+ 			random.setstate(state)  # 传入一个先前利用getstate方法获得的状态对象，使得生成器恢复到这个状态。
+ 			random.getrandbits(k)  # 返回range(0,2**k)之间的一个整数，相当于randrange(0,2**k)
+ 			random.randrange(stop)  # 返回range(0,stop)之间的一个整数
+ 			random.randrange(start, stop[, step])  # 返回range[start,stop)之间的一个整数，可加step，跟range(0,10,2)类似
+ 			random.randint(a, b)  # 返回range[a,b]之间的一个整数，等价于然的range(a,b+1)
+ 			random.choice(seq)  # 从非空序列seq中随机选取一个元素。如果seq为空则弹出 IndexError异常。
+			random.choices(population, weights=None, *, cum_weights=None, k=1)  # 3.6版本新增。从population集群中随机抽取K个元素（可重复）。weights是相对权重列表，cum_weights是累计权重，两个参数不能同时存在。
+ 			random.shuffle(x[, random])  # 随机打乱序列x内元素的排列顺序。只能针对可变的序列，对于不可变序列，请使用下面的sample()方法。
+ 			random.sample(population, k)  # 从population样本或集合中随机抽取K个不重复的元素形成新的序列。常用于不重复的随机抽样。返回的是一个新的序列，不会破坏原有序列。要从一个整数区间随机抽取一定数量的整数，请使用sample(range(10000000), k=60)类似的方法，这非常有效和节省空间。如果k大于population的长度，则弹出ValueError异常。
+ 			random.random()  # 返回一个介于左闭右开[0.0, 1.0)区间的浮点数
+ 			random.uniform(a, b)  # 返回一个介于a和b之间的浮点数。如果a>b，则是b到a之间的浮点数。这里的a和b都有可能出现在结果中。
+ 
+16：说明os,sys模块不同，并列举常用的模块方法？
+
+	os：  提供一种方便的使用操作系统函数的方法。 
+	sys： 提供访问由解释器使用或维护的变量和在与解释器交互使用到的函数		
+		
+	os 常用方法
+
+			方法	使用
+			os.remove()	删除文件
+			os.rename()	重命名文件
+			os.walk()	生成目录树下的所有文件名
+			os.chdir()	改变目录
+			os.mkdir/makedirs	创建目录/多层目录
+			os.rmdir/removedirs	删除目录/多层目录
+			os.listdir()	列出指定目录的文件
+			os.getcwd()	取得当前工作目录
+			os.chmod()	改变目录权限
+			os.path.basename()	去掉目录路径，返回文件名
+			os.path.dirname()	去掉文件名，返回目录路径
+			os.path.join()	将分离的各部分组合成一个路径名
+			os.path.split()	返回（dirname(),basename())元组
+			os.path.splitext()	(返回filename,extension)元组
+			os.path.getatime\ctime\mtime	分别返回最近访问、创建、修改时间
+			os.path.getsize()	返回文件大小
+			os.path.exists()	是否存在
+			os.path.isabs()	是否为绝对路径
+			os.path.isdir()	是否为目录
+			os.path.isfile()	是否为文件
+			
+			
+			sys 常用方法
+			方法	使用
+			sys.argv()	命令行参数List，第一个元素是程序本身路径
+			sys.modules.keys()	返回所有已经导入的模块列表
+			sys.exc_info()	获取当前正在处理的异常类,exc_type、exc_value、exc_traceback当前处理的异常详细信息
+			sys.exit(n)	退出程序，正常退出时exit(0)
+			sys.hexversion	获取Python解释程序的版本值，16进制格式如：0x020403F0
+			sys.version	获取Python解释程序的版本信息
+			sys.maxint	最大的Int值
+			sys.maxunicode	最大的Unicode值
+			sys.modules	返回系统导入的模块字段，key是模块名，value是模块
+			sys.path	返回模块的搜索路径，初始化时使用PYTHONPATH环境变量的值
+			sys.platform	返回操作系统平台名称
+			sys.stdout	标准输出
+			sys.stdin	标准输入
+			sys.stderr	错误输出
+			sys.exc_clear()	用来清除当前线程所出现的当前的或最近的错误信息
+			sys.exec_prefix	返回平台独立的python文件安装的位置
+			sys.byteorder	本地字节规则的指示器，big-endian平台的值是’big’,little-endian平台的值是’little’
+			sys.copyright	记录python版权相关的东西
+			sys.api_version	解释器的C的API版本
+			sys.getdefaultencoding()	返回当前你所用的默认的字符编码格式
+			sys.getfilesystemencoding()	返回将Unicode文件名转换成系统文件名的编码的名字
+			sys.setdefaultencoding(name)	用来设置当前默认的字符编码，如果name和任何一个可用的编码都不匹配，抛出 LookupError，这个函数只会被site模块的sitecustomize
+			sys.builtin_module_names	Python解释器导入的模块列表
+			sys.executable	Python解释程序路径
+			sys.getwindowsversion()	获取Windows的版本
+			sys.stdin.readline()	从标准输入读一行，sys.stdout.write(“a”) 屏幕输出a
+					
+					
+					
+"------------------------------------------------------------------------------------"
+	
+											第二部分      Python 高级
+
+"------------------------------------------------------------------------------------"
+
+元类：
+	
+	1、元类
+	
+		在大多数编程语言中，类就是一组用来描述如何生成一个对象的代码段。在Python中这一点仍然成立：
+		但是，Python中的类还远不止如此。类同样也是一种对象。是的，没错，就是对象。
+		只要你使用关键字class，Python解释器在执行的时候就会创建一个对象。
+			
+		下面的代码段：
+	
+					>>> class ObjectCreator(object):
+		       			pass
+		将在内存中创建一个对象，名字就是ObjectCreator。
+		这个对象（类对象ObjectCreator）拥有创建对象（实例对象）的能力。
+		但是，它的本质仍然是一个对象，于是乎你可以对它做如下的操作：
+	
+					你可以将它赋值给一个变量
+					你可以拷贝它
+					你可以为它增加属性
+					你可以将它作为函数参数进行传递		
+					
+			 print ObjectCreator     # 你可以打印一个类，因为它其实也是一个对象
+			 echo(ObjectCreator)                 # 你可以将类做为参数传给函数
+			 ObjectCreator.new_attribute = 'foo' #  你可以为类增加属性
+			 ObjectCreatorMirror = ObjectCreator # 你可以将类赋值给一个变量		
+					
+	2、使用type创建类：
+	
+		当你使用class关键字时，Python解释器自动创建这个对象。
+		还记得内建函数type吗？这个古老但强大的函数能够让你知道一个对象的类型是什么，就像这样：
+		
+				>>> print type(1) #数值的类型
+						<class 'int'>
+				>>> print type("1") #字符串的类型
+						<class 'str'>
+				>>> print type(ObjectCreator) #类的类型
+						<class 'type'>
+						
+		type还有一种完全不同的功能，动态的创建类。
+		type可以接受一个类的描述作为参数，然后返回一个类。
+		（要知道，根据传入参数的不同，同一个函数拥有两种完全不同的用法是一件很傻的事情，
+			但这在Python中是为了保持向后兼容性）
+			
+		type可以像这样工作：
+			type(类名, 由父类名称组成的元组（针对继承的情况，可以为空），包含属性的字典（名称和值）)				
+				
+		比如下面的代码：	
+			In [2]: class Test: #定义了一个Test类
+	   	...:     pass
+	   	...:
+			In [3]: Test() #创建了一个Test类的实例对象
+			Out[3]: <__main__.Test at 0x10d3f8438>
+			
+		可以手动像这样创建：	
+			
+		 Test2 = type("Test2",(),{}) #定了一个Test2类
+	   In [5]: Test2() #创建了一个Test2类的实例对象
+		 Out[5]: <__main__.Test2 at 0x10d406b38>	
+					
+	3. 使用type创建带有属性的类				
+					
+			type 接受一个字典来为类定义属性，因此			
+			>>> Foo = type('Foo', (), {'bar':True})
+			
+			可以翻译为：
+			>>> class Foo(object):
+	      	bar = True
+					
+			当然，你可以向这个类继承，所以，如下的代码：
+			>>> class FooChild(Foo):
+			…       pass		
+			
+			就可以写成：
+	
+			>>> FooChild = type('FooChild', (Foo,),{})
+			>>> print FooChild
+					<class '__main__.FooChild'>
+			>>> print FooChild.bar   # bar属性是由Foo继承而来
+					True		
+					
+			注意：
+					type的第2个参数，元组中是父类的名字，而不是字符串
+					添加的属性是类属性，并不是实例属性
+	
+	4、使用type创建带有方法的类
+	
+			最终你会希望为你的类增加方法。只需要定义一个有着恰当签名的函数并将其作为属性赋值就可以了。
+		
+			添加实例方法：
+			def echo_bar(self): #定义了一个普通的函数
+	    		print(self.bar)
+			
+			FooChild = type('FooChild', (Foo,), {'echo_bar': echo_bar})
+							 #让FooChild类中的echo_bar属性，指向了上面定义的函数
+	
+			添加静态方法：
+			 @staticmethod
+	     def testStatic():
+	     		print("static method ....")
+	     		
+	 		Foochild = type('Foochild', (Foo,), {"echo_bar":echo_bar, "testStatic":testStatic})
+	 		
+	 		添加类方法：
+	 		@classmethod
+	    		def testClass(cls):
+	    				print(cls.bar)
+	    				
+	    Foochild = type('Foochild', (Foo,), {"echo_bar":echo_bar, "testStatic":testStatic, "testClass":testClass})
+	    
+	   你可以看到，在Python中，类也是对象，你可以动态的创建类。
+	   这就是当你使用关键字class时Python在幕后做的事情，而这就是通过元类来实现的。 
+	   
+	   
+	5、到底什么是元类
+		
+		元类就是用来创建类的“东西”。你创建类就是为了创建类的实例对象，不是吗？
+		但是我们已经学习到了Python中的类也是对象。
+		
+		元类就是用来创建这些类（对象）的，元类就是类的类，你可以这样理解为：
+		MyClass = MetaClass() #使用元类创建出一个对象，这个对象称为“类”
+		MyObject = MyClass() #使用“类”来创建出实例对象
+		
+		你已经看到了type可以让你像这样做：
+		MyClass = type('MyClass', (), {})
+		
+		这是因为函数type实际上是一个元类。type就是Python在背后用来创建所有类的元类。
+		现在你想知道那为什么type会全部采用小写形式而不是Type呢？
+		好吧，我猜这是为了和str保持一致性，str是用来创建字符串对象的类，
+		而int是用来创建整数对象的类。
+		type就是创建类对象的类。
+		你可以通过检查__class__属性来看到这一点。
+		Python中所有的东西，注意，我是指所有的东西——都是对象。
+		这包括整数、字符串、函数以及类。
+		它们全部都是对象，而且它们都是从一个类创建而来，这个类就是type。
+	 
+	 
+	6、__metaclass__属性：
+	
+		你可以在定义一个类的时候为其添加__metaclass__属性。
+	
+		class Foo(object):
+	  	  __metaclass__ = something…
+	    	...省略...
+		
+		如果你这么做了，Python就会用元类来创建类Foo。小心点，这里面有些技巧。
+		你首先写下class Foo(object)，但是类Foo还没有在内存中创建。
+		Python会在类的定义中寻找__metaclass__属性，如果找到了，Python就会用它来创建类Foo，
+		如果没有找到，就会用内建的type来创建这个类。把下面这段话反复读几次。当你写如下代码时 :	
+	  
+	  class Foo(Bar):
+	    pass
+	    
+	  Python做了如下的操作：
+	
+		Foo中有__metaclass__这个属性吗？如果是，Python会通过__metaclass__创建一个名字为Foo的类(对象)
+		如果Python没有找到__metaclass__，它会继续在Bar（父类）中寻找__metaclass__属性，并尝试做和前面同样的操作。
+		如果Python在任何父类中都找不到__metaclass__，它就会在模块层次中去寻找__metaclass__，并尝试做同样的操作。
+		如果还是找不到__metaclass__,Python就会用内置的type来创建这个类对象。
+		现在的问题就是，你可以在__metaclass__中放置些什么代码呢？答案就是：可以创建一个类的东西。那么什么可以用来创建一个类呢？type，或者任何使用到type或者子类化type的东东都可以。   
+	  
+	7、自定义元类 
+	
+		元类的主要目的就是为了当创建类时能够自动地改变类。
+		通常，你会为API做这样的事情，你希望可以创建符合当前上下文的类。 
+	    
+	  假想一个很傻的例子，你决定在你的模块里所有的类的属性都应该是大写形式。
+	  有好几种方法可以办到，但其中一种就是通过在模块级别设定__metaclass__。
+	  采用这种方法，这个模块中的所有类都会通过这个元类来创建，
+	  我们只需要告诉元类把所有的属性都改成大写形式就万事大吉了。
+	
+		幸运的是，__metaclass__实际上可以被任意调用，它并不需要是一个正式的类。
+		所以，我们这里就先以一个简单的函数作为例子开始。  
+	  
+			  python2中：
+			  
+			  	#-*- coding:utf-8 -*-
+					def upper_attr(future_class_name, future_class_parents, future_class_attr):
+			
+			    #遍历属性字典，把不是__开头的属性名字变为大写
+			    	newAttr = {}
+			    	for name,value in future_class_attr.items():
+			      	  if not name.startswith("__"):
+			        	    newAttr[name.upper()] = value
+			
+			   		 #调用type来创建一个类
+			    	return type(future_class_name, future_class_parents, newAttr)
+			
+					class Foo(object):
+			    	__metaclass__ = upper_attr #设置Foo类的元类为upper_attr
+			    	bar = 'bip'
+			
+						print(hasattr(Foo, 'bar'))
+						print(hasattr(Foo, 'BAR'))
+			
+					f = Foo()
+					print(f.BAR)
+			    
+				python3中：
+				
+				#-*- coding:utf-8 -*-
+				def upper_attr(future_class_name, future_class_parents, future_class_attr):
+			
+			    #遍历属性字典，把不是__开头的属性名字变为大写
+			    newAttr = {}
+			    for name,value in future_class_attr.items():
+			        if not name.startswith("__"):
+			            newAttr[name.upper()] = value
+			
+			    #调用type来创建一个类
+			    return type(future_class_name, future_class_parents, newAttr)
+			
+				class Foo(object, metaclass=upper_attr):
+			    bar = 'bip'
+			
+				print(hasattr(Foo, 'bar'))
+				print(hasattr(Foo, 'BAR'))
+			
+				f = Foo()
+				print(f.BAR)	    
+			    
+	  现在让我们再做一次，这一次用一个真正的class来当做元类。  
+	  #coding=utf-8
+	
+			class UpperAttrMetaClass(type):
+	    	# __new__ 是在__init__之前被调用的特殊方法
+	    	# __new__是用来创建对象并返回之的方法
+	    	# 而__init__只是用来将传入的参数初始化给对象
+	   	 	# 你很少用到__new__，除非你希望能够控制对象的创建
+	    	# 这里，创建的对象是类，我们希望能够自定义它，所以我们这里改写__new__
+	    	# 如果你希望的话，你也可以在__init__中做些事情
+	    	# 还有一些高级的用法会涉及到改写__call__特殊方法，但是我们这里不用
+	   			
+	   		def __new__(cls, future_class_name, future_class_parents, future_class_attr):
+	        	#遍历属性字典，把不是__开头的属性名字变为大写
+	        	newAttr = {}
+	        	for name,value in future_class_attr.items():
+	          	  if not name.startswith("__"):
+	            	    newAttr[name.upper()] = value
+	
+	       		# 方法1：通过'type'来做类对象的创建
+	        	# return type(future_class_name, future_class_parents, newAttr)
+	
+	        	# 方法2：复用type.__new__方法
+	        	# 这就是基本的OOP编程，没什么魔法
+	        	# return type.__new__(cls, future_class_name, future_class_parents, newAttr)
+	
+	        	# 方法3：使用super方法
+	       	 	return super(UpperAttrMetaClass, cls).__new__(cls, future_class_name, future_class_parents, newAttr)
+	
+				#python2的用法
+				class Foo(object):
+				    __metaclass__ = UpperAttrMetaClass
+				    bar = 'bip'
+				
+				# python3的用法
+				# class Foo(object, metaclass = UpperAttrMetaClass):
+				#     bar = 'bip'
+				
+				print(hasattr(Foo, 'bar'))
+				# 输出: False
+				print(hasattr(Foo, 'BAR'))
+				# 输出:True
+				
+				f = Foo()
+				print(f.BAR)
+				# 输出:'bip'  
+	 
+			就是这样，除此之外，关于元类真的没有别的可说的了。但就元类本身而言，它们其实是很简单的：
+	
+			1、拦截类的创建
+			2、修改类
+			3、返回修改之后的类   
+	    
+
+python是动态语言：
+
+1、动态语言的定义：
+
+		动态编程语言 是 高级程序设计语言 的一个类别，在计算机科学领域已被广泛应用。
+		它是一类 在运行时可以改变其结构的语言 ：例如新的函数、对象、甚至代码可以被引进，
+		已有的函数可以被删除或是其他结构上的变化。动态语言目前非常具有活力。
+		例如JavaScript便是一个动态语言，除此之外如 PHP 、 Ruby 、 Python 等也都属于动态语言，
+		而 C 、 C++ 等语言则不属于动态语言。----来自 维基百科    
+
+		动态语言：可以在运行的过程中，修改代码
+		静态语言：编译时已经确定好代码，运行过程中不能修改	    
+
+		如果我们想要限制实例的属性怎么办？比如，只允许对Person实例添加name和age属性。
+		为了达到限制的目的，Python允许在定义class的时候，
+		定义一个特殊的__slots__变量，来限制该class实例能添加的属性：
+		
+		>>> class Person(object):
+    __slots__ = ("name", "age")
+
+		>>> P = Person()
+		>>> P.name = "老王"
+		>>> P.age = 20
+		>>> P.score = 100
+		Traceback (most recent call last):
+		  File "<pyshell#3>", line 1, in <module>
+		AttributeError: Person instance has no attribute 'score'
+		>>>
+		
+		注意:
+		使用__slots__要注意，__slots__定义的属性仅对当前类实例起作用，对继承的子类是不起作用的
+ 		
+ 		class Test(Person):
+         pass
+    
+		t = Test()
+		t.score = 100
+    
+    
+生成器：
+
+	1、什么是生成器：
+	通过列表生成式，我们可以直接创建一个列表。但是，受到内存限制，列表容量肯定是有限的。
+	而且，创建一个包含100万个元素的列表，不仅占用很大的存储空间，如果我们仅仅需要访问前面几个元素，
+	那后面绝大多数元素占用的空间都白白浪费了。所以，如果列表元素可以按照某种算法推算出来，
+	那我们是否可以在循环的过程中不断推算出后续的元素呢？这样就不必创建完整的list，
+	从而节省大量的空间。在Python中，这种一边循环一边计算的机制，称为生成器：generator。
+  
+  2、创建生成器方法1 
+  要创建一个生成器，有很多种方法。第一种方法很简单，只要把一个列表生成式的 [ ] 改成 ( )
+	
+	L = [ x*2 for x in range(5)]
+	G = ( x*2 for x in range(5))
+	
+	创建 L 和 G 的区别仅在于最外层的 [ ] 和 ( ) ， L 是一个列表，而 G 是一个生成器。
+	我们可以直接打印出L的每一个元素，但我们怎么打印出G的每一个元素呢？
+	如果要一个一个打印出来，可以通过 next() 函数获得生成器的下一个返回值。
+
+  生成器保存的是算法，每次调用 next(G) ，就计算出 G 的下一个元素的值，
+  直到计算到最后一个元素，没有更多的元素时，抛出 StopIteration 的异常。
+  当然，这种不断调用 next() 实在是太变态了，正确的方法是使用 for 循环，
+  因为生成器也是可迭代对象。所以，我们创建了一个生成器后，基本上永远不会调用 next() ，
+  而是通过 for 循环来迭代它，并且不需要关心 StopIteration 异常。	 
+    
+  3. 创建生成器方法2：
+  
+  generator非常强大。如果推算的算法比较复杂，用类似列表生成式的 for 循环无法实现的时候，
+  还可以用函数来实现，包含yield语句的函数。
+  
+  总结：
+  
+	生成器是这样一个函数，它记住上一次返回时在函数体中的位置。
+	对生成器函数的第二次（或第 n 次）调用跳转至该函数中间，而上次调用的所有局部变量都保持不变。
+	生成器不仅“记住”了它数据状态；生成器还“记住”了它在流控制构造（在命令式编程中，这种构造不只是数据值）中的位置。
+
+	
+	生成器的特点：
+
+	节约内存
+	迭代到下一次的调用时，所使用的参数都是第一次所保留下的，即是说，在整个所有函数调用的参数都是第一次所调用时保留的，而不是新创建的
+    
+    
+迭代器：
+
+	迭代是访问集合元素的一种方式。迭代器是一个可以记住遍历的位置的对象。
+	迭代器对象从集合的第一个元素开始访问，直到所有的元素被访问完结束。迭代器只能往前不会后退。    
+    
+  1. 可迭代对象
+  
+  	以直接作用于 for 循环的数据类型有以下几种：
+
+		一类是集合数据类型，如 list 、 tuple 、 dict 、 set 、 str 等；
+		一类是 generator ，包括生成器和带 yield 的generator function。
+		这些可以直接作用于 for 循环的对象统称为可迭代对象： Iterable 。  
+    
+  2. 判断是否可以迭代
+  
+  	可以使用 isinstance() 判断一个对象是否是 Iterable 对象：
+  	 from collections import Iterable
+			
+			isinstance([], Iterable)
+				True
+			
+			isinstance({}, Iterable)
+			 	True
+				
+			isinstance('abc', Iterable)
+				True
+			
+			isinstance((x for x in range(10)), Iterable)
+				True
+			
+			isinstance(100, Iterable)
+				False
+		
+		而生成器不但可以作用于 for 循环，还可以被 next() 函数不断调用并返回下一个值，
+		直到最后抛出 StopIteration 错误表示无法继续返回下一个值了。  
+			    
+	3.迭代器：
+	
+		可以被next()函数调用并不断返回下一个值的对象称为迭代器：Iterator。
+		可以使用 isinstance() 判断一个对象是否是 Iterator 对象：
+	
+		from collections import Iterator
+
+		isinstance((x for x in range(10)), Iterator)
+			True
+		
+		isinstance([], Iterator)
+			False
+		
+		isinstance({}, Iterator)
+			False
+		
+		isinstance('abc', Iterator)
+			False
+		
+		isinstance(100, Iterator)
+			False
+
+	4.iter()函数：
+	
+		生成器都是 Iterator 对象，但 list 、 dict 、 str 虽然是 Iterable ，却不是 Iterator 。
+		把 list 、 dict 、 str 等 Iterable 变成 Iterator 可以使用 iter() 函数：
+		
+		from collections import Iterator
+		isinstance(iter([]), Iterator)
+ 			True
+
+		isinstance(iter('abc'), Iterator)
+			True
+			    
+    总结：
+   
+		凡是可作用于 for 循环的对象都是 Iterable 类型；
+		凡是可作用于 next() 函数的对象都是 Iterator 类型
+		集合数据类型如 list 、 dict 、 str 等是 Iterable 但不是 Iterator ，
+		不过可以通过 iter() 函数获得一个 Iterator 对象。
+    
+    
+闭包：
+
+    
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+	
 
 
 
