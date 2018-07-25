@@ -177,7 +177,7 @@ ip地址的分类：
 	因此“255.255.255.0”是最常用的IP地址子网掩码；假如在一所大学具有1500多台电脑，
 	这种规模的局域网可以使用“255.255.0.0”。
 
-
+"---------------------------------------------------------------------------------------------"
 
 Socket:
 
@@ -402,211 +402,502 @@ udp总结:
 		这样就不会因为需要绑定的端口被占用而导致程序无法运行的情况
 
 
+TFTP协议介绍：
+
+	TFTP（Trivial File Transfer Protocol,简单文件传输协议）
+	是TCP/IP协议族中的一个用来在客户端与服务器之间进行简单文件传输的协议
+	
+	特点：
+
+		简单
+		占用资源小
+		适合传递小文件
+		适合在局域网进行传递
+		端口号为69
+		基于UDP实现
+
+	
+	TFTP下载过程:
+
+		TFTP服务器默认监听69号端口
+		当客户端发送“下载”请求（即读请求）时，需要向服务器的69端口发送
+		服务器若批准此请求,则使用一个新的、临时的 端口进行数据传输
+
+		当服务器找到需要现在的文件后，会立刻打开文件，把文件中的数据通过TFTP协议发送给客户端。
+		如果文件的总大小较大（比如3M），那么服务器分多次发送，每次会从文件中读取512个字节的数据发送过来
+
+		因为发送的次数有可能会很多，所以为了让客户端对接收到的数据进行排序，
+		所以在服务器发送那512个字节数据的时候，会多发2个字节的数据，用来存放序号，
+		并且放在512个字节数据的前面，序号是从1开始的
+
+		因为需要从服务器上下载文件时，文件可能不存在，那么此时服务器就会发送一个错误的信息过来，
+		为了区分服务发送的是文件内容还是错误的提示信息，所以又用了2个字节 
+		来表示这个数据包的功能（称为操作码），并且在序号的前面
+
+
+		因为udp的数据包不安全，即发送方发送是否成功不能确定，所以TFTP协议中规定，
+		为了让服务器知道客户端已经接收到了刚刚发送的那个数据包，
+		所以当客户端接收到一个数据包的时候需要向服务器进行发送确认信息，
+		即发送收到了，这样的包成为ACK(应答包)
+
+		为了标记数据已经发送完毕，所以规定，当客户端接收到的数据小于516
+		（2字节操作码+2个字节的序号+512字节数据）时，就意味着服务器发送完毕了
+		
+"----------------------------------------------------------------------------------"
+
+TCP:
+
+	客户端：
+
+	1、socket()
+	
+	2、connect()
+
+	3、write()
+
+	4、read()
+
+	5、close()
+
+
+	from socket import *
+
+	tcpClientSocket = socket(AF_INET,SOCK_STREAM)
+
+	serAddr = ('172.168.1.102',7788)
+
+	tcpClientSocket.conntct(serAddr)
+
+	sendData = input("send data:")
+	
+	tcpClientSocket.send(sendData)
+
+	recvData = tcpClientSocket.recv(1024)
+
+	tcpClientSocket.close()
+
+
+	服务器：
+
+	1、socket()
+
+	2、bind()
+
+	3、listen()
+
+	4、accept()
+
+	5、read()
+
+	6、write()
+
+	7、close()
+
+	from socket import *
+
+	tcpSerSocket = socket(AF_INET,SOCK_STREAM)
+
+	address = ('',7788)
+	tcpSerSocket.bind(address)
+
+	tcpSerSocket.listen(5)
+
+	
+	如果有新的客户端连接服务器，那么就产生一个新的套接字专门为这个客户端服务器
+	newSocket用来为这个客户端服务
+	tcpSerSocket就可以专门等待其他新客户端的连接
+
+	newSocket,clientAddr = tcpSerSocket.accet()
+
+	接收对方发送过来的数据，最大接收1024个字节
+
+	recvData = newSocket.recv(1024)
+	
+	发送一些数据到客户端
+	newSocket.send("thank you")
+
+	关闭这个客户端的套接字，只有关闭，就意味着不能再为这个客户端服务了，
+	如果需要服务，只能再次重新连接
+
+	newSocket.close()
+
+	关闭监听套接字，只要监听套接字关闭了，就意味着程序不能再次接收任何新的客户端的连接
+
+	tcpSerSocket.close()
+	
+	
+
+tcp长连接和短连接:
+
+	TCP在真正的读写操作之前，server与client之间必须建立一个连接，
+
+	当读写操作完成后，双方不再需要这个连接时它们可以释放这个连接，
+
+	连接的建立通过三次握手，释放则需要四次握手，
+
+	所以说每个连接的建立都是需要资源消耗和时间消耗的。
+
+
+	TCP短连接:
+
+		模拟一种TCP短连接的情况:
+
+		client 向 server 发起连接请求
+		server 接到请求，双方建立连接
+		client 向 server 发送消息
+		server 回应 client
+		一次读写完成，此时双方任何一个都可以发起 close 操作
+		在第 步骤5中，一般都是 client 先发起 close 操作。当然也不排除有特殊的情况。
+		从上面的描述看，短连接一般只会在 client/server 间传递一次读写操作！
+
+
+	TCP长连接:
+
+		再模拟一种长连接的情况:
+
+		client 向 server 发起连接
+		server 接到请求，双方建立连接
+		client 向 server 发送消息
+		server 回应 client
+		一次读写完成，连接不关闭
+		后续读写操作...
+		长时间操作之后client发起关闭请求
+
+	
+		长连接可以省去较多的TCP建立和关闭的操作，减少浪费，节约时间。
+		对于频繁请求资源的客户来说，较适用长连接。
+		client与server之间的连接如果一直不关闭的话，会存在一个问题，
+		随着客户端连接越来越多，server早晚有扛不住的时候，这时候server端需要采取一些策略，
+		如关闭一些长时间没有读写事件发生的连接，这样可以避免一些恶意连接导致server端服务受损；
+		如果条件再允许就可以以客户端机器为颗粒度，限制每个客户端的最大长连接数，
+		这样可以完全避免某个蛋疼的客户端连累后端服务。
+		短连接对于服务器来说管理较为简单，存在的连接都是有用的连接，不需要额外的控制手段。
+		但如果客户请求频繁，将在TCP的建立和关闭操作上浪费时间和带宽。
+
+	
+	listen的队列长度:
+
+
+		服务器端运行:
+
+		from socket import *
+		from time import sleep
+
+		# 创建socket
+		tcpSerSocket = socket(AF_INET, SOCK_STREAM)
+
+		# 绑定本地信息
+		address = ('', 7788)
+		tcpSerSocket.bind(address)
+	
+		connNum = int(input("请输入要最大的链接数:"))
+	
+		# 使用socket创建的套接字默认的属性是主动的，使用listen将其变为被动的，这样就可以接收别人的链接了
+		tcpSerSocket.listen(connNum)
+	
+		while True:
+	
+			# 如果有新的客户端来链接服务器，那么就产生一个新的套接字专门为这个客户端服务器
+			newSocket, clientAddr = tcpSerSocket.accept()
+			print clientAddr
+		    sleep(1)
+
+
+		客户端运行:
+
+		#coding=utf-8
+		from socket import *
+		connNum = raw_input("请输入要链接服务器的次数:")
+		for i in range(int(connNum)):
+			s = socket(AF_INET, SOCK_STREAM)
+			s.connect(("192.168.1.102", 7788))
+			print(i)
+
+	
+	listen中的black表示已经建立链接和半链接的总数
+	如果当前已建立链接数和半链接数以达到设定值，那么新客户端就不会connect成功，而是等待服务器
+
+
+
+手动配置ip
+
+	设置IP和掩码
+		ifconfig eth0 192.168.5.40 netmask 255.255.255.0
+
+	设置网关
+		route add default gw 192.168.5.1
+
+常见网络攻击案例
+	
+	1、tcp半链接攻击
+		
+		tcp半链接攻击也称为：SYN Flood (SYN洪水)
+		是种典型的DoS (Denial of Service，拒绝服务) 攻击
+		效果就是服务器TCP连接资源耗尽，停止响应正常的TCP连接请求
+
+	2、dns攻击
+
+		我们知道一个域名服务器对其区域内的用户解析请求负责，
+		但是并没有一个机制去监督它有没有真地负责。
+		也就是说域名服务器的权力并没有被关在笼子里，
+		所以它既可以认真地“为人民服务”，也可以“指鹿为马”。
+		于是有些流氓的域名服务器故意更改一些域名的解析结果，
+		将用户引向一个错误的目标地址。这就叫作 DNS 劫持，
+		主要用来阻止用户访问某些特定的网站，或者是将用户引导到广告页面。
+
+		dns欺骗
+
+		DNS 欺骗简单来说就是用一个假的 DNS 应答来欺骗用户计算机，
+		让其相信这个假的地址，并且抛弃真正的 DNS 应答。
+		在一台主机发出 DNS 请求后，它就开始等待应答，
+		如果此时有一个看起来正确（拥有和DNS请求一样的序列号）的应答包，
+		它就会信以为真，并且丢弃稍晚一点到达的应答。
+
+
+		查看域名解析的ip地址方法
+
+			nslookup 域名
+
+			例如：
+			    nslookup baidu.com
+	3、arp攻击
+
+
+"-----------------------------------------------------------------------------------"
+
+并发服务器、HTTP协议
+
+单进程服务器：
+
+	from socket import *
+
+	serSocket = socket(AF_INET,SOCK_STREAM)
+	
+	#重复使用绑定的信息
+	serSocket.setsockopt(SOL_SOCKET,SO_SEUSEADDR,1)
+	
+	localAddr = ('',7788)
+
+	serSocket.bind(localAddr)
+
+	serSocket.listen(5)
+
+	while True:
+
+		newSocket,destAddr = serSocket.accept()
+
+		try:
+			while True:
+				recvData = newSocket.recv(1024)
+				if len(recvData) > 0:
+					print('recv[%s]:%s'%(str(destAddr),recvData))
+
+				else:
+					print('[%s] close'%str(destAddr))
+					break
+
+		finally:
+			newSocket.close()
+
+	serSocket.close()
+
+	同一时刻只能为一个客户进行服务，不能同时为多个客户服务
+	类似于找一个“明星”签字一样，客户需要耐心等待才可以获取到服务
+	当服务器为一个客户端服务时，而另外的客户端发起了connect，只要服务器listen的队列有空闲的位置，
+	就会为这个新客户端进行连接，并且客户端可以发送数据，但当服务器为这个新客户端服务时，
+	可能一次性把所有数据接收完毕
+	
+	当recv接收数据时，返回值为空，即没有返回数据，那么意味着客户端已经调用了close关闭了；
+	因此服务器通过判断recv接收数据是否为空 来判断客户端是否已经下线
+
+
+多进程服务器:
+
+
+	from socket import *
+	from multiprocessing import *
+	from time import sleep
+
+	def dealWithClient(newSocket,destAddr):
+		while True:
+			recvData = newSocket.recv(1024)
+			if len(recvData)>0:
+		        print('recv[%s]:%s'%(str(destAddr), recvData))
+		    else:
+				print('[%s]客户端已经关闭'%str(destAddr))
+				break
+		newSocket.close()
+
+
+	def main():
+		
+		serSocket = socket(AF_INET,SOCK_STREAM)
+		serSocket.setsockopt(SOL_SOCKET,SO_SEUSEADDR,1)
+
+		serAddr = ('',7788)
+
+		serSocket.bind(serAddr)
+
+		serSocket.listen(5)
+
+		try:
+			while True:
+
+				newSocket,cliAddr = serSocket.accept()
+
+				client = Process(target=dealWithClient,args=(newSocket,cliAddr))
+				client.start()
+
+				因为已经向子进程中copy了一份（引用），并且父进程中这个套接字也没有用处了
+				所以关闭
+
+				newSocket.close()
+
+		finally:
+			#当为所有的客户端服务完之后再进行关闭，表示不再接收新的客户端的链接
+			serSocket.close()
+
+
+	if __name__ == '__main__':
+		main()
+
+
+	通过为每个客户端创建一个进程的方式，能够同时为多个客户端进行服务
+	当客户端不是特别多的时候，这种方式还行，如果有几百上千个，就不可取了，
+	因为每次创建进程等过程需要好较大的资源
 
 	
 
+多线程服务器：
 
-		
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	from socket import *
+	from multiprocessing import *
+	from time import sleep
+	
+	def dealWithClient(newSocket,destAddr):
+		while True:
+			recvData = newSocket.recv(1024)
+			if len(recvData)>0:
+		        print('recv[%s]:%s'%(str(destAddr), recvData))
+		    else:
+				print('[%s]客户端已经关闭'%str(destAddr))
+				break
+		newSocket.close()
 
 
+	def main():
 
+		serSocket = socekt(AF_INET,SOCK_STREAM)
+		serSocket.setsockopt(SOL_SOCKET,SO_SEUSEADDR,1)
 
+		serAddr = ('',7788)
+		serSocket.listen(5)
 
+		try:
+			while True:
 
+				newSocket,cliAddr = serSocket.accept()
 
+				client = Trhead(target=dealWithClient,args=(newSocket,cliAddr))
+				client.start()
+				
+				#因为线程中共享这个套接字，如果关闭了会导致这个套接字不可用，
+				#但是此时在线程中这个套接字可能还在收数据，因此不能关闭
+				#newSocket.close() 
 
+		finally:
 
-
-
-
-
-
-
-
+			serSocket.close()
 
 	
+	if __name__=='__main__':
+		main()
+
+
+单进程服务器-非堵塞模式:
+
+	
+服务器：
+
+	from socket import *
+	import time
+
+	g_socketList = []
+
+	def main():
+		    
+		serSocket = socket(AF_INET, SOCK_STREAM)
+		serSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR  , 1)
+		localAddr = ('', 7788)
+		serSocket.bind(localAddr)
+		#可以适当修改listen中的值来看看不同的现象
+		serSocket.listen(1000)
+
+		#将套接字设置为非堵塞
+	    #设置为非堵塞后，如果accept时，恰巧没有客户端connect，那么accept会
+	    #产生一个异常，所以需要try来进行处理
+	    serSocket.setblocking(False)
 		
+		while True:
 			
+			try:
+				
+				newClientInfo = serSocket.accept()
+			
+			except Exception as result:
 
+				pass
 
+			else:
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-	
-
+				print("一个新的客户端到来:%s"%str(newClientInfo))
+				newClientInfo[0].setblocking(False)
+				g_socketList.append(newClientInfo)
 		
-
-	
-
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+			# 用来存储需要删除的客户端信息
+			needDelClientInfoList = []
+
+			for clientSocket,clientAddr in g_socketList:
+				
+				try:
+					recvData = clientSocket.recv(1024)
+	                if len(recvData)>0:
+					    print('recv[%s]:%s'%(str(clientAddr), recvData))
+					else:
+						print('[%s]客户端已经关闭'%str(clientAddr))
+						clientSocket.close()
+	                    g_needDelClientInfoList.append((clientSocket,clientAddr))
+				except Exception as result:
+				        pass
+
+			for needDelClientInfo in needDelClientInfoList:
+				g_socketList.remove(needDelClientInfo)
+
+	if __name__== '__main__':
+
+		main()
+
+
+客户端：
+
+	#coding=utf-8
+	from socket import *
+	import random
+	import time
+
+	serverIp = input("请输入服务器的ip:")
+	connNum =  input("请输入要链接服务器的次数(例如1000):")
+	g_socketList = []
+
+	for i in range(int(connNum)):
+		s = socket(AF_INET, SOCK_STREAM)
+		s.connect((serverIp, 7788))
+		g_socketList.append(s)
+		print(i)
+
+	while True:
+		for s in g_socketList:
+		    s.send(str(random.randint(0,100)))
 
 
 
