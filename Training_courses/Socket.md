@@ -945,37 +945,278 @@ select版-TCP服务器:
 
 	在多路复用的模型中，比较常用的有select模型和epoll模型。这两个都是系统接口，
 	由操作系统提供。当然，Python的select模块进行了更高级的封装。
+	
+	网络通信被Unix系统抽象为文件的读写，通常是一个设备，由设备驱动程序提供，驱动可以知道自身的数据
+	是否可以，支持阻塞操作的设备驱动会实现一组自身的等待队列，如读/写等待队列用于支持上层(用户层)
+	所需的block或non-block操作，设备的文件的资源如果可用(可读或可写)则会通知进程，反之则会让进程
+	睡眠，等到数据到来的时候，再唤醒进程。
+
+	这些设备的文件描述符被放在一个数组中，然后select调用的时候遍历这个数组，
+	如果对于的文件描述符可读则会返回改文件描述符。当遍历结束之后，如果仍然没有一个可用设备文件描述符，
+	select让用户进程则会睡眠，直到等待资源可用的时候在唤醒，遍历之前那个监视数组。每次遍历都是依次进行判断。
+
+	它通过一个select()系统调用来监视多个文件描述符的数组，当select()返回后，该数组中就绪的
+	文件描述符便会被内核修改标志位，使得进程可以获得这些文件描述符从而进行后续的读写操作。
+
+2. 使用select：
+
+	在python中，select函数是一个对底层操作系统的直接访问的接口。
+	它用来监控sockets、files和pipes，等待IO完成（Waiting for I/O completion）。
+	当有可读、可写或是异常事件产生时，select可以很容易的监控到。 		
+
+	select.select(rlist,wlist,xlist[,timeout])
+	传递三个参数，一个为输入而观察的文件对象列表，
+	一个为输出而观察的文件对象列表和一个观察错误异常的文件列表。
+	第四个是一个可选参数，表示超时秒数。其返回3个tuple，
+	每个tuple都是一个准备好的对象列表，它和前边的参数是一样的顺序。
+
+	服务器：
+	
+	import select 
+	import socket
+	import Queue
+
+	server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+	server.setblocking(Flase)
+	server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+	server_address= ('192.168.1.102',10001)
+	server.bind(server_address)
+
+	server.listen(10)
+
+	inputs = [server]
+	outputs = []
+	message_queues = {}
+	timeout = 20
+
+	while inputs:
+		
+		readable,writeable,exceptional = select.select(inputs,outputs,inputs,timeout)
+
+		if not (readable or writeable or exceptional):
+			break;
+
+		for s in readable:
+			
+			if s is server:
+				
+				connection,client_address = s.accept()
+				connection.setblocking(False)
+				inputs.append(connection)
+				message_queues[connection] = Queue.Queue()
+			else:
+
+				data = s.recv(1024)
+				if data:
+					message_queues[s].put(data)
+					#Add output channel for response
+					if s not in outputs:
+						outputs.append(s)
+				else:
+					#Interpret empty result as closed connection
+					if s in outputs:
+						outputs.remove(s)
+					inputs.remove(s)
+					s.close()
+					#remove message queue 
+					del message_queues[s]
+
+		for s in writeable:
+
+			try:
+				next_msg = message_queues[s].get_nowait()
+			except Queue.Empty:
+				outputs.remove(s)
+			else:
+				s.send(next_msg)
+
+		for s in exception:
+
+			#stop listening for input on the connection
+
+			inputs.remove(s)
+			if s in outputs:
+				outputs.remove(s)
+			s.close()
+			del message_queues[s]
+
+
+	客户端：
+		
+		import socket
+
+		messages = ["This is the message" ,"It will be sent","in parts"]
+
+		server_address =("192.168.1.102",10001)
+
+		socks = []
+
+		for i in range(10):
+			socks.append(socket.socket(socket.AF_INET,socket.SOCK_STREAM))
+
+		for s in socks:
+			s.connect(server_address)
+		
+		cunter = 0
+		for message in messages:
+			counter += 1
+			s.send(message+" version "+str(counter))
+
+		for s in socks:
+			data = s.recv(1024)
+			print(" %s received %s" % (s.getpeername(),data))
+			
+			if not data:
+				s.close()
+
+3. 总结
+
+优点:
+
+	select目前几乎在所有的平台上支持，其良好跨平台支持也是它的一个优点。
+
+缺点:
+
+	select的一个缺点在于单个进程能够监视的文件描述符的数量存在最大限制，
+	在Linux上一般为1024，可以通过修改宏定义甚至重新编译内核的方式提升这一限制，但是这样也会造成效率的降低。
+
+	一般来说这个数目和系统内存关系很大，具体数目可以cat /proc/sys/fs/file-max察看。
+	32位机默认是1024个。64位机默认是2048.
+
+	对socket进行扫描时是依次扫描的，即采用轮询的方法，效率较低。
+
+	当套接字比较多的时候，每次select()都要通过遍历FD_SETSIZE个Socket来完成调度，
+	不管哪个Socket是活跃的，都遍历一遍。这会浪费很多CPU时间。
+
+
+
+epoll版-TCP服务器:
+
+1. epoll的优点：
+
+	没有最大并发连接的限制，能打开的FD(指的是文件描述符，通俗的理解就是套接字对应的数字编号)的上限远大于1024
+	效率提升，不是轮询的方式，不会随着FD数目的增加效率下降。
+	只有活跃可用的FD才会调用callback函数；即epoll最大的优点就在于它只管你“活跃”的连接，
+	而跟连接总数无关，因此在实际的网络环境中，epoll的效率就会远远高于select和poll。
+
+
+2、epoll使用参考代码：
+
+	import socket
+	import select
+
+	# 创建套接字
+	s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+	
+	# 设置可以重复使用绑定的信息
+	s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+
+	# 绑定本机信息
+	s.bind(("",7788))
+	s.listen(10)
+
+	# 创建一个epoll对象
+	epoll=select.epoll()
+
+	# 测试，用来打印套接字对应的文件描述符
+	# print s.fileno()
+	
+	# 注册事件到epoll中
+	# epoll.register(fd[, eventmask])
+	# 注意，如果fd已经注册过，则会发生异常
+	# 将创建的套接字添加到epoll的事件监听中
+
+
+	epoll.register(s.fileno(),select.EPOLLIN|select.EPOLLET)
+
+	connections = {}
+	addresses = {}
+
+	# 循环等待客户端的到来或者对方发送数据
+	while True:
+		
+		# epoll 进行 fd 扫描的地方 -- 未指定超时时间则为阻塞等待
+		epoll_list=epoll.poll()
+
+		# 对事件进行判断
+	    for fd,events in epoll_list:
+			
+		# 如果是socket创建的套接字被激活
+		if fd == s.fileno():
+			conn,addr = s.accept()
+			print('有新的客户端到来%s'%str(addr)
+
+			# 将 conn 和 addr 信息分别保存起来
+			connections[conn.fileno()] = conn
+			addresses[conn.fileno()] = addr
+
+			 # 向 epoll 中注册 连接 socket 的 可读 事件
+			epoll.register(conn.fileno(), select.EPOLLIN | select.EPOLLET)
+
+		elif events == select.EPOLLIN:
+
+			# 从激活 fd 上接收
+			recvData = connections[fd].recv(1024)
+
+			if len(recvData)>0:
+				print('recv:%s'%recvData)
+			else:
+			# 从 epoll 中移除该 连接 fd
+				epoll.unregister(fd)
+
+			# server 侧主动关闭该 连接 fd
+			connections[fd].close()
+
+			print("%s---offline---"%str(addresses[fd]))"")'')
+
+			
+说明：
+
+	EPOLLIN （可读）
+	EPOLLOUT （可写）
+	EPOLLET （ET模式）
+
+	epoll对文件描述符的操作有两种模式：LT（level trigger）和ET（edge trigger）。
+	LT模式是默认模式，LT模式与ET模式的区别如下：
+
+		LT模式：当epoll检测到描述符事件发生并将此事件通知应用程序，应用程序可以不立即处理该事件。
+		下次调用epoll时，会再次响应应用程序并通知此事件。
+
+		ET模式：当epoll检测到描述符事件发生并将此事件通知应用程序，应用程序必须立即处理该事件。
+		如果不处理，下次调用epoll时，不会再次响应应用程序并通知此事件。
+		
 
 
 
 
 
+协程:
+	
+	协程，又称微线程，纤程。Corutine
+
+	协程是比线程更小的执行单元，为啥说它是执行单元，因为他自带CPU上下文。
+	这样我们可以把一个协程切到另一个协程。只要这个过程中保存或恢复CPU上下文那么程序还是可以执行的。
+
+	通俗的理解：在一个线程中的某个函数，可以在任何地方保存当前函数的一些临时变量等信息，
+	然后切换到另外一个函数中执行，注意不是通过调用函数的方式做到的，并且切换的次数
+	以及什么时候再切换到原来的函数都由开发者自己确定
+
+协程和线程差异：
+
+	那么这个过程看起来比线程差不多。其实不然, 线程切换从系统层面远不止保存和恢复 CPU上下文这么简单。
+	操作系统为了程序运行的高效性每个线程都有自己缓存Cache等等数据，操作系统还会帮你做这些数据的恢复操作。
+	所以线程的切换非常耗性能。但是协程的切换只是单纯的操作CPU的上下文，所以一秒钟切换个上百万次系统都抗的住。
+
+协程的问题：
+
+	协程有一个问题，就是系统并不感知，所以操作系统不会帮你做切换，
+	那谁帮你切换？让需要执行的协程更多获得CPU时间才是问题的关键。
 
 
+例子：
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	
 
 
 
