@@ -118,10 +118,19 @@
 re模块的高级用法：
 
 	1、search
-
-
-
 	2、findall
+	
+	match
+	匹配string 开头，成功返回Match object, 失败返回None，只匹配一个。
+
+	search
+	在string中进行搜索，成功返回Match object, 失败返回None, 只匹配一个。
+
+	findall
+	在string中查找所有 匹配成功的组, 即用括号括起来的部分。返回list对象，每个list item是由每个匹配的所有组组成的list。
+
+	finditer
+	在string中查找所有 匹配成功的字符串, 返回iterator，每个item是一个Match object。
 
 
 	3、sub 将匹配到的数据进行替换
