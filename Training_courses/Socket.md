@@ -181,9 +181,70 @@ ip地址的分类：
 
 套接字：
 	
+	套接字是计算机网络数据结构，在任何类型的通信开始之前，网络应用程序必须创建套接字。
+	可以它们比作电话插孔，没有它将无法进行通信
+	
+套接字对象(内置)方法：
+ 
+ 	服务器套接字方法：
+ 	
+ 		s.bind()
+ 		s.listen()
+ 		s.accept()
+ 		
+ 	客户端套接字方法：
+ 	
+ 		s.connect()
+ 		s.connect_ex()       扩展版，此时会以错误码的形式返回问题，而不是抛出异常
+ 		
+ 	普通的套接字方法：
+ 	
+ 		s.recv()
+ 		s.recv_into()      接受TCP消息到指定的缓冲区
+ 		
+ 		s.send()
+ 		s.sendall()        完整的发送TCP消息
+ 		      
+ 	UDP接受和发送：
+ 		s.recvfrom()
+ 		s.recvfrom_into()  接受到指定的缓冲区
+ 		s.sendto()
+ 		
+ 		
+ 		s.getpeername()    连接到套接字（TCP）的远程地址
+ 		s.getsockname()    当前套接字的地址
+ 		s.getsockopt()     返回给定套接字选项的值
+		s.setsockopt()     设置给定套接字选项的值
+		s.shutdown()       关闭链接
+		s.close()          关闭套接字
+		s.detach()         在未关闭文件描述符的情况下关闭套接字，返回文件描述符
+		s.ioctl()          控制套接字的模式（仅支持windows）
+		
+	面向阻塞的套接字方法：
+	
+		s.setblocking()    设置套接字的阻塞和非阻塞模式
+		s.settimeout()     设置阻塞套接字操作的超时时间
+		s.getttimeout()    获取阻塞套接字操作的超时时间
+		
+		
+	面向文件的套接字方法：
+	
+		s.fileno()        套接字的文件描述符
+		s.makefile()      创建与套接字关联的文件对象
+		
+	数据属性：
+	
+		s.fmily          套接字家族
+		s.type           套接字类型
+		s.proto          套接字协议
+		
+		
+----------------------------
+tcp服务器：
 
-
-
+	所有的套接字都是通过使用socket.socket()函数创建
+			socket()          创建一个套接字（服务器、客户端）
+			accept()          返回一个独立的客户端套接字，用来与将到来的消息进行交换。
 
 
 Socket:
@@ -1268,9 +1329,39 @@ epoll版-TCP服务器:
 	    a = A()
 	    B(a)
 
+
+"-----------------------------------------------------------------------------------------------------"
+				
+
+socketserver模块：
+
+	socketserver是标准库中的一个高级模块，它的目标是简化很多样板代码
+	它们是创建网络客户端和服务器所必需的代码。这个模块中有为你创建的
+	各种各样的类。
+
+	socketserver模块类：
 	
-	
-	
+		BaseServer      包含核心服务器功能和mix-in类的钩子；仅用于推导，这样不会创建这个类的实例
+		
+		TCPServer/UDPServer 基础的网络同步TCP/UDP服务器
+		
+		UnixStreamServer/UnixDatagramServer  基于文件的基础同步TCP/UDP服务器
+		
+		ForkingMixIn/ThreadingMixIn         核心派出和线程功能，只用于min-in类与一个服务器类配合实现以些异步性。
+		
+		ForkingTCPServer/ForkingUDPServer   ForkingMinIN和TCPServer/UDPserver的组合
+		
+		ThreadingTCPServer/ThreadingUDPServer  ThreadingMixIn和TCPServer/UDPServer的组合
+		
+		StreamRequestHandler/DatagramRequestHandler  实现TCP/UDP服务器的服务处理器
+
+
+
+
+
+===================================================================
+
+Twisted	
 	
 	
 	
