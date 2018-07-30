@@ -1331,7 +1331,16 @@ epoll版-TCP服务器:
 	    B(a)
 
 
-"-----------------------------------------------------------------------------------------------------"
+"----------------------------------------------------------------------------------------"
+Python：Mix-in技术介绍:
+
+1、什么是Mix-in技术：
+
+	中文意思"混入"，作用是，在运行期间，动态改变类的基类或类方法，从而使得类的表现可以发生变化。
+	可以用在一个通用类接口中，根据不同的选择使用不同的底层类实现，而高层类不用发生变化。
+	而且这一实现可以在运行过程中动态进行改变。
+
+
 
 网络服务框架:
  
@@ -1346,7 +1355,11 @@ socketserver模块：
 	
 	socketserver模块处理网络请求的功能，可以通过两个主要的类来实现：一个是服务器类，一个是请求处理类。
 	
-	
+	服务器类:处理通信问题，如监听一个套接字并接受链接等。
+	请求处理类：处理"协议"问题，如解释到来的数据，处理数据，并把数据返回给客户端等。
+
+	这种实现将服务器实现过程和请求处理实现过程解耦，这意味着我们可以将不同的服务器实现
+	和请求处理实现结合起来处理一下定制的协议。
 	
 
 	socketserver模块类：
@@ -1367,6 +1380,68 @@ socketserver模块：
 
 
 
+1、要实现本模块，必须定义一个继承于基类BaseRequestHandler的处理程序类。
+	BaseRequestHandler类的实例可以实现以下方法：
+
+		h.handle() 调用该方法执行实际的请求处理，调用该方法可以不带任何参数，但是几个实例
+			变量包含有用的值：h.request包含请求、h.client_address包含客户端地址、
+			h.server包含调用处理程序的实例。
+			对于TCP之类的数据流服务，h.request属性是套接字对象
+			
+		h.setup() 该方法在handle()之前调用，不执行任何操作，
+				如果希望实现更多链接设置，可以在这里实现
+			
+		h.finish()调用本方法可以执行完handle()之后执行清除操作
+				 如果setup()和handle()都不产生异常，则无需调用该方法。
+
+		
+2、服务器，要处理程序，必须插入服务器对象，定义类四个基本的服务器类：
+
+	TCPServer :TCP协议的服务器类
+	UDPServer :UDP协议的服务器类
+	UnixStreamServer:使用UNIX套接字实现面向数据流协议的服务器，集成自TCPserver
+	UnixDatagramServer:集成UDPServer
+
+
+	四个服务器类的实例都有一下四个方法和变量：
+
+	s.socket  用于传入请求的套接字对象
+
+	s.server_address 监听服务器的地址
+
+	s.RequestHandleClass 传递给服务器构造函数并由用户提供的请求处理程序类
+
+	s.server_forever() 处理无限请求
+
+	s.shutdown()    停止server_forever()循环
+
+	s.fileno()     返回服务器套接字的文件描述符。
+
+
+
+server端：
+
+	import sockerserver
+
+	class Server(socketServer.BaseRequestHandler):
+		def handle(self):
+			print("new connection:",self.client_address)
+
+			while True:
+
+				data = self.request.recv(1024)
+				if not data:break
+				print('client data:',data.decode())
+
+				self.request.send(data)
+
+
+	if __name__=='__main__':
+
+	host,port ='127.0.0.1',8080
+	server = socketserver.ThreadingTCPServer((host,port),Server)
+	
+	server.server_forever()
 
 
 ===================================================================
