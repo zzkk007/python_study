@@ -878,7 +878,7 @@ hiredis的安装与使用：
 		# cat /etc/ld.so.conf
 		include ld.so.conf.d/*.conf
 		# echo "/usr/local/lib" >> /etc/ld.so.conf
-		# ldconfig""""
+		# ldconfig
 
 
 	8、redis C语言API简单函数使用介绍：
@@ -1188,7 +1188,293 @@ hiredis的安装与使用：
 		}
 
 
+"--------------------------------------------------------------------------------------"
 
+redis 数据操作：
+
+	redis 是key-value的数据，所以每个数据都是一个键值对
+	键的类型是字符串
+	值的类型分为5种：
+		字符串string
+		哈希hash
+		列表list
+		集合set
+		有序集合zset
+
+
+string:
+
+	string是reids最基本的类型
+	最大能存储512MB数据
+	string类型是二进制安全的，即可以为任何数据，比如数字、图片、序列化对象等。
+
+	命令：
+	
+	设置：	
+
+		1、设置键值
+			set key value
+
+		2、设置键值及过期时间，以秒为单位
+			SETEX key seconds value
+	
+		3、设置多个键值
+			MSET key value  key value ...
+
+	获取：
+
+		1、根据键获取值，如果存在此键返回nil
+			GET key
+
+		2、根据多个键获取多个值
+			MGET key key ...
+
+	运算：
+		
+		要求：值是数字
+
+		将key对应的value加1
+			INCR key
+
+		将key对应的value加整数
+			INCRBY key increment
+
+		将key对应的value减1
+			DECR key
+
+		将key对应的value减整数
+			DECRBY key decrement
+
+	其他：
+
+		追加值：
+			APPEND key value
+		
+		获取值长度:
+			STRLEN key
+
+
+键的命令：
+
+	查找键，参数支持正则
+		KEYS pattern
+
+	判断键是否存在，如果存在返回1，不存在返回0
+		EXISTS key [key ...]
+
+	查看键对应的value的类型
+		TYPE key
+
+	删除键以及对应的值
+		DEL key [key ..]	
+
+	设置过期时间，以秒为单位
+	创建时没有设置过期时间则一直存在，知道使用del移除
+		EXPIRE key seconds
+
+	查看有效时间，以秒为单位
+		TTL key
+
+
+哈希(Hash)类型:
+
+	Reids 哈希(Hash)类型是字符串key和字符串value之间的映射，所有它十分适合用来表示一个对象信息。
+	如我们可以将一个用户对象存储为一个哈希类型，将用户名、年龄、性别等属性各表示一个key-value对。
+
+	哈希在某些应用场景中是一个非常有用存储方式，你可以将数以百万计的对象存储在一个很小的 Redis实例中。
+	一个Redis 哈希值可存储232-1(40亿)个key-value对。
+	
+
+哈希类型中的设置命令以及使用：
+	
+	对哈希类型的操作，就是对一个哈希表的操作，对哈希表的设置及取值，就是对哈希表中字段的设置与取值。
+
+	HSET-设置值：
+
+		HSET key field value
+		
+		设置哈希表key的field字段值为value。如果key不存在，一个新的哈希表会被创建并进行HSET操作。
+		如果field字段已经存储，旧值将被覆盖。
+		使用HSET命令，每次只能设置一个属性(字段)值，如果需要同时设置多个，可以使用HMSET命令。
+	
+		复杂度、返回值：
+			时间复杂度：O(1)
+			返回值：如果field 是哈希表中的一个新字段，并且设置成功，返回1.如果field已存在，且旧值
+					已被新值覆盖，则返回0。
+
+		
+	HSETNX-字段不存则设置其值，如果存在该操作无效
+		
+		HSETNX key field value
+		
+		与HSET命令一样，HSETNX同样会设置哈希表key的field字段值为value。但仅当field不存在才会设置，
+		如果field字段已经存在，该操作无效。
+
+		复杂度、返回值：
+			时间复杂度：O(1)
+			返回值：设置成功，返回1，如果field已存在，则无操作且返回0
+
+	
+	HMSET - 设置多个字段及值
+
+		HMSET key field value [field value ...]
+
+		将一个或多个field-value对设置到哈希表key。如果要设置的field已存在，则会覆盖其值。
+		如果哈希表不存在，首先会创建再执行HMSET操作。
+		
+		复杂度、返回值：
+		时间复杂度：O(N)，N为field-value对的数量
+		返回值：执行成功，返回OK。如果key不是哈希类型，则返回一个错误。
+	
+
+	例子：
+	127.0.0.1:6379>	HMSET runoobkey name "redis tutorial" likes 20 visitors 23000
+	127.0.0.1:6379> HGETALL runoobkey
+					1) "name"
+					2) "redis tutorial"
+					3) "likes"
+					4) "20"
+					5) "visitors"
+					6) "23000"
+	127.0.0.1:6379> HGET runoobkey name
+					"redis tutorial"
+	127.0.0.1:6379>  hset abc f1 v1 
+					(integer) 1
+	127.0.0.1:6379> hget abc f1
+					"v1"
+	127.0.0.1:6379> HSETNX abc f1 bd
+					(integer) 0
+	127.0.0.1:6379> hget abc f1
+					"v1"
+	127.0.0.1:6379> HMGET runoobkey likes visitors
+					1) "20"
+					2) "23000"
+
+
+哈希类型中的获取命令以及使用：
+	
+	HGET - 获取指定字段值：
+		
+		HGET key field
+	
+		返回哈希表key中的field字段的值。
+		
+		复杂度、返回值：
+			时间复杂度：O(1)
+			返回值：key存在且field存在则返回其值。否则返回nil。
+
+	HGETALL - 获取所有字段及值
+	
+		HGETALL key
+	
+		返回哈希表key中所有的field和其值。
+		
+		复杂度、返回值：
+			时间复杂度：O(N)，N为哈希表的大小
+			返回值：以列表形式返回哈希表中的字段和值。若哈希表不存在，否则返回一个空列表。
+
+	HMGET - 返回多个字段值
+			
+		HMGET key field [field ...]
+
+		返回哈希表key中，一个或多个指定的定段。如果指定的字段在哈希表中不存在，则返回一个nil。
+		如果存在，返回field对应的值。
+
+		复杂度、返回值：
+			时间复杂度：O(N)，N为指定字段的数量
+			返回值：指定字段所关联值的列表。如果指定的key为哈段结构，则返回一个错误
+		
+
+	HKEYS -获取所有的属性
+		
+		HKEYS key
+
+		返回哈希表key中所有的字段。
+		
+		复杂度、返回值：
+			时间复杂度：O(N)，N为哈希表的大小
+			返回值：哈希表存在，返回字段列表。哈希表不存在，返回空列表。
+
+
+	HLEN - 返回字段数量
+		
+		HLEN key
+
+		返回哈希表key中字段的数量。
+
+		复杂度、返回值：
+			时间复杂度：O(1)
+			返回值：哈希表存在，返回字段数。哈希表不存在，返回0。
+
+
+	HVALS - 返回所有字段值
+
+		HVALS key
+
+		返回哈希表key中所有字段的值。
+	
+		复杂度、返回值：
+			时间复杂度：O(N)，N为哈希表的大小
+			返回值：哈希表存在，返回字段值的列表。哈希表不存在，返回空列表。
+
+	
+	HEXISTS - 判断字段是否存在
+
+		HEXISTS key field
+
+		判断哈希表key中字段field是否存在。
+
+		复杂度、返回值：
+			时间复杂度：O(1)
+			返回值：哈希表及指定字段存在，返回1。哈希表或指定字段不存在，返回0。
+
+	HDEL - 字段删除
+			
+		HDEL key field [field ...]
+		
+		返回哈希表key中一个或多个指定字段，不存在的字段将被忽略。
+	
+		复杂度、返回值：
+
+			时间复杂度：O(N)，N为要删除的字段数量
+			返回值：被成功删除的字段数。
+
+
+	
+
+哈希类型中的自增命令以及使用：
+	如果字段中存储的是数字值，我们可以对其进行加/减法操作。
+	
+	HINCRBY - 为指定字段值增加
+		
+		HINCRBY key field increment
+		
+		为哈希表key中的指定字段field增加一个增量increment。增量也可以为负数，相当于对为指定字段进行减法操作。
+		如果哈希表不存在，则会创建一个哈希表，再执行HINCRBY操作。
+		如果指定字段field不存在，那么会首先初始化为0，再执行HINCRBY。
+		
+		如果为非数字值执行HINCRBY操作，则返回一个错误。
+
+		复杂度、返回值：
+			时间复杂度：O(1)
+			返回值：执行HINCRBY操作后，哈希表key中字段field的值。
+		
+	
+	HINCRBYFLOAT - 为指定字段值增加浮点数
+		
+		HINCRBYFLOAT key field increment
+
+		为哈希表key中的指定字段field增加一个浮点数增量increment。
+		增量也可以为负数，相当于对为指定字段进行减法操作。
+		
+		如果哈希表不存在，则会创建一个哈希表，再执行HINCRBYFLOAT操作。
+		如果指定字段field不存在，那么会首先初始化为0，再执行HINCRBYFLOAT。
+		如果为非数字值执行HINCRBYFLOAT操作，则返回一个错误。
+
+		复杂度、返回值：
+
+			时间复杂度：O(1)
+			返回值：执行HINCRBYFLOAT操作后，哈希表key中字段field的值。
 
 
 
