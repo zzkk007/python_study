@@ -754,6 +754,9 @@ mysql日期时间函数:
 	one=helper.get_one(sql)
 	print(one)
 
+"--------------------------------------------------------------------------------"
+
+mongo:
 
 
 
@@ -762,35 +765,120 @@ mysql日期时间函数:
 
 
 
+"================================================================================="
+
+redis:
+
+NoSQL简介：
+
+	NoSQL,全名为Not Noly SQL，指的是非关系数据库
+	随着访问量的上升，网站的数据库性能出现了问题，于是nosql被设计出来
+	
+	优点:
+
+		高扩展性
+		分布式计算
+		低成本
+		架构的灵活性，半结构化数据
+		没有复杂的关系
+
+	缺点：
+
+		没有标准化
+		有限的查询功能（到目前为止）
+		最终一致时不直观的程序
+
+	分类：
+
+		类型                      部分代表                           特点
+
+
+		列存储                Hbase、Cassandra、Hypertable      顾名思义，是按列存储数据的。
+																最大的特点是方便存储结构化和半结构化数据，
+																方便做数据压缩，对针对某一列或
+																者某几列的查询有非常大的IO优势。  
+
+		文档存储              MongoDB、CouchDB        文档存储一般类似json的格式存储，存储的内容是文档型的
+													  这样也就有机会对某些字段建立索引，实现关系数据某些功能。
+
+
+		key-value           redis、memcacheDB         可以通过key快速查询到其value，一般来说，存储不管value的格式
+													  照单全收。(redis包含了其他功能)
+		  存储
+
+
+		图存储			    Neo4J、FlockDB           图形关系是最佳存储，使用传统关系数据库来解决的话性能低下，
+													 而且设计使用不方便。
+
+		对象存储            db4o、versant            通过类似面向对象语言的语法操作数据库，通过对象的方式存储数据
+
+
+		xml数据库           Berkeley DB XML BaseX    高效的存储XML数据，并支持XML内部查询语法，比如Xpath、XQuery
 
 
 
+Redis 
+
+安装：
+
+	1、下载redis 压缩包 wget http://download.redis.io/releases/redis-3.2.8.tar.gz
+		官网：https://redis.io/
+			
+	2、解压：tar xvf redis-3.2.8.tar.gz
+				
+	3、cd src & make
+					
+	4、 make完成之后,进行install,默认安装路径为/usr/local/bin下,这里我们把他安装目录放到/usr/local/redis下,
+		使用PREFIX指定目录:
+		make PREFIX=/usr/local/redis install
+		export PATH=/usr/local/redis/bin:/usr/local/mongodb/bin:$PATH:$HOME/bin
+
+	5、make install
 
 
+起服务：
+	
+	/usr/local/redis/bin目录下：
+	1、./redis-server 
+
+	2、./redis-cli -c -p 端口6379   看看是否连接成功
+			
+	3、停止redis:  （强行终止redis进程会导致数据丢失，因此应该正确停止redis,发送命令）
+		redis-cli SHUTDOWN
+		或者使用kill命令结束redis进程，效果同上。
 
 
+hiredis的安装与使用：
+
+	1、hiredis是Redis数据库的简约C客户端库，是redis官方的C语言客户端，
+		支持所有命令（command set），管道（pipelining），时间驱动编程（event driven programming）。
+
+	2、在redis的发行包中的deps目录中就包含hiredis的源码，手动编译安装。
+
+	3、cd  deps/hiredis
+		make
+		make install
+
+		mkdir /usr/lib/hiredis
+		cp libhiredis.so /usr/lib/hiredis //将动态连接库libhiredis.so至/usr/lib/hiredis
+		mkdir /usr/include/hiredis
+		cp hiredis.h /usr/include/hiredis   //头文件包含#include<hiredis/hiredis.h>	
 
 
+	4、gcc test.c -lhiredis   //编译链接
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	5、编译gcc local_redis.c -lhiredis 
+	6、./a.out
+		./a.out: error while loading shared libraries: libhiredis.so.0.11: 
+		cannot open shared object file: No such file or directory
+	
+	7、增加共享库：
+		如果共享库文件安装到了/usr/local/lib(很多开源的共享库都会安装到该目录下)或其它"非/lib或/usr/lib"目录下, 
+		那么在执行ldconfig命令前, 还要把新共享库目录加入到共享库配置文件/etc/ld.so.conf中, 如下:  
+		# cat /etc/ld.so.conf
+		include ld.so.conf.d/*.conf
+		# echo "/usr/local/lib" >> /etc/ld.so.conf
+		# ldconfig""""
 
 
 
