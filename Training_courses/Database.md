@@ -1675,16 +1675,65 @@ Redis value数据类型之列表(List)类型：
 			返回值：操作成功返回OK，否则返回错误信息。
 
 
+	RPOPLPUSH - 弹出尾元素，将弹出元素插入另一列表的开头
+		
+		RPOPLPUSH source destination
+	
+			RPOPLPUSH命令包含以下两个原子操作：
+			将列表source的尾元素弹出，并返回给客户端。
+			将source弹出的元素，作为destination列表的头元素插入。
+			如果source不存在，返回nil。如果source和destination相同，就会把尾元素移动至开头，这叫做列表的旋转(rotation)操作。
 
+			复杂度、返回值：
 
+			时间复杂度：O(1)
+			返回值：被弹出的元素。
+			
+	
+	BRPOPLPUSH - 阻塞并弹出尾元素，将弹出元素插入另一列表的开头
+	
+		BRPOPLPUSH source destination timeout
+		
+		BRPOPLPUSH是RPOPLPUSH命令的阻塞版本。当指定的源列表source不为空时，其表现和RPOPLPUSH一样。当source为空时，
+			连接将被BRPOP命令阻塞，直到等待超时或有可弹出元素为止。
+			timeout参数表示阻塞的时长，如果为0表示可以无限期延长阻塞。
 
+			复杂度、返回值：
+				时间复杂度：O(1)
+				返回值：如果指定时间内没有任何元素弹出，返回一个nil。 
+				否则，返回一个含有两个元素的列表，其中：第一个元素是被弹出元素所属的key，第二个元素是被弹出元素的值。
 
+6、元素删除/列表裁剪
 
+	通过LREM命令可以移除列表中不再需要的元素。而LTRIM可以从指定区间范围裁剪列表。
+	
+	LREM - 移除元素
+		
+		LREM key count value
+		
+			移除指定数量为count的value值。count可能有以下几种情况：
+			count >0 : 从表头开始向表尾搜索，移除值为value，数量为 count的元素。
+			count < 0 : 从表尾开始向表头搜索，移除值为value，数量为 count绝对值的元素。
+			count = 0 : 移除表中所值为value的元素。
+			
+			复杂度、返回值：
+				时间复杂度：O(N)，N列表长度
+				返回值：被移除元素的数量。key不存在时，返回0。
+	
 
+	LTRIM - 列表裁剪
+	
+		LTRIM key start stop
+			保留列表key中，偏移量start和stop指定的区间内的元素，裁剪其余元素。
+			
+			LTRIM使用闭区间，即：start和stop索引位的元素都包含在取值范围内(如：LTRIM list 0 10结果是一个包含11元素的列表)。
 
-
-
-
+			复杂度、返回值：
+				时间复杂度：O(N)，N移除元素的数量
+				返回值：操作成功返回OK，否则返回错误信息。
+				
+				
+"------------------------------------------------------------------------------------------------"
 
 
 
