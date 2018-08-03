@@ -550,7 +550,251 @@ mysql日期时间函数:
 
 	
 
+"-----------------------------------------------------------------------------------------------"
+
+数据库与Python交互：
+
+1、安装mysql模块
+
+	apt-get insatll python-mysql
+
+2、在文件中引入模块
+
+	import Mysqldb
+
+3、Connection 对象:
+
+	用于建立与数据库的连接
+	创建对象：调用connect()方法
+
+	conn = connect(参数列表)
+		
+		参数host：连接的mysql主机IP
+		参数port：连接的mysql主机的端口
+		参数db：数据库的名称
+		参数user:连接用户名
+		参数password:连接密码
+		参数charset：通信采用的编码方式，默认是'db2312'
+
+	对象的方法：
+		close()关闭连接
+		commit()事务，所以需要提交才会生效
+		rollback()事务，放弃之前的操作
+		cursor()返回Cursor对象，用于执行sql语句并获得结果
+
+4、Cursor对象：
+
+	执行sql语句
+	创建对象：调用Connection对象的cursor()方法
+	cursor1 = conn.cursor()
+
+	对象的方法：
+		
+		close()关闭
+		execute(operation,[,parameters])执行语句，返回受影响的行数
+		fetchone() 执行查询语句时，获取查询结果集的第一个行数据，返回一个元组
+		next()执行查询语句时，获取当前行的下一行
+		fetchall()执行查询时，获取结果集的所有行，一行构成一个元组，再将这些元组装入一个元组返回
+		scroll(value,[,mode])将行指针移动到某个位置
+			mode 表示移动的方式
+			mode的默认值为reltive，表示基于当前行移动到value,value为正则向下移动，value为负则向上移动。
+			mode的值为absolute，表示基于第一条数据的位置，第一条数据的位置为0
+
+	对象属性:
+		rowcount只读属性，表示最近一次excute()执行后受影响的行数
+		connection获得当前连接对象
+
+
+"-----------------------------------------------------------------------------------------"
+
+
+增加、更新、删除
+
+
+	#encoding=utf-8
+	import MySQLdb
+	try:
+		conn=MySQLdb.connect(host='localhost',port=3306,db='test1',user='root',passwd='mysql',charset='utf8')
+	    cs1=conn.cursor()
+	    count=cs1.execute("insert into students(sname) values('张良')")
+		count=cs1.execute("update students set sname='刘邦' where id=6")
+		count=cs1.execute("delete from students where id=6")
+
+		'''
+		sname=raw_input("请输入学生姓名：")
+		params=[sname]
+		count=cs1.execute('insert into students(sname) values(%s)',params)
+		'''
+
+		print(count)
+		conn.commit()
+	    cs1.close()
+	    conn.close()
+	except Exception,e:
+	    print(e.message)
+
+
+查询数据：
+
+	#encoding=utf8
+	import MySQLdb
+	try:
+		conn=MySQLdb.connect(host='localhost',port=3306,db='test1',user='root',passwd='mysql',charset='utf8')
+	    cur=conn.cursor()
+	    cur.execute('select * from students where id=7')
+		
+		"一行"
+		result=cur.fetchone()
+		"所有"
+		result=cur.fetchall()    
+
+		print(result)
+		cur.close()
+		conn.close()
+	except Exception,e:
+	    print(e.message)
+		
+
+封装：
+
+	观察前面的文件发现，除了sql语句及参数不同，其它语句都是一样的
+	创建MysqlHelper.py文件，定义类
 	
+	#encoding=utf8
+	import MySQLdb
+
+	class MysqlHelper():
+		def __init__(self,host,port,db,user,passwd,charset='utf8'):
+			self.host=host
+			self.port=port
+			self.db=db
+			self.user=user
+			self.passwd=passwd
+			self.charset=charset
+
+		def connect(self):
+	s		elf.conn=MySQLdb.connect(host=self.host,port=self.port,db=self.db,user=self.user,passwd=self.passwd,charset=self.charset)
+			self.cursor=self.conn.cursor()
+
+		def close(self):
+			self.cursor.close()
+			self.conn.close()
+
+		def get_one(self,sql,params=()):
+			result=None
+			try:
+				self.connect()
+				self.cursor.execute(sql, params)
+				result = self.cursor.fetchone()
+				self.close()
+			except Exception, e:
+				print(e.message)
+				return result
+
+		def get_all(self,sql,params=()):
+			list=()
+			try:
+				self.connect()
+				self.cursor.execute(sql,params)
+				list=self.cursor.fetchall()
+				self.close()
+			except Exception,e:
+				print(e.message)
+			return list
+
+		def insert(self,sql,params=()):
+			return self.__edit(sql,params)
+
+		def update(self, sql, params=()):
+			return self.__edit(sql, params)
+
+		def delete(self, sql, params=()):
+			return self.__edit(sql, params)
+
+		def __edit(self,sql,params):
+			count=0
+			try:
+				self.connect()
+				count=self.cursor.execute(sql,params)
+				self.conn.commit()
+				self.close()
+		   except Exception,e:
+				print e.message
+				return count
+
+
+
+添加:
+
+	创建testInsertWrap.py文件，使用封装好的帮助类完成插入操作
+	#encoding=utf8
+	from MysqlHelper import *
+
+	sql='insert into students(sname,gender) values(%s,%s)'
+	sname=raw_input("请输入用户名：")
+	gender=raw_input("请输入性别，1为男，0为女")
+	params=[sname,bool(gender)]
+	
+	mysqlHelper=MysqlHelper('localhost',3306,'test1','root','mysql')
+	count=mysqlHelper.insert(sql,params)
+	if count==1:
+	    print 'ok'
+	else:
+		print 'erro'
+
+查询一个
+
+	创建testGetOneWrap.py文件，使用封装好的帮助类完成查询最新一行数据操作
+	#encoding=utf8
+	from MysqlHelper import *
+
+	sql='select sname,gender from students order by id desc'
+
+	helper=MysqlHelper('localhost',3306,'test1','root','mysql')
+	one=helper.get_one(sql)
+	print(one)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
