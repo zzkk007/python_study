@@ -881,8 +881,311 @@ hiredis的安装与使用：
 		# ldconfig""""
 
 
+	8、redis C语言API简单函数使用介绍：
+	
+		#include <hiredis/hiredis.h>
+		#include "tommail.h"
+
+		//Convert characters to the timestamp
+		unsigned long strtotime(char *date) 
+		{
+			struct tm t;
+			unsigned long time;
+
+			sscanf(date,"%d-%d-%d",&t.tm_year,&t.tm_mon,&t.tm_mday);
+
+			t.tm_year-=1900; 
+			t.tm_mon-=1; 
+			t.tm_mday+=1;
+			t.tm_hour=0; 
+			t.tm_min=0;
+			t.tm_sec=0;
+			time=mktime(&t);    //将结构体时间转换成秒数 
+
+			return time;
+
+		}
+
+		//Get the timestamp in the morning
+		unsigned long get_timestamp()
+		{
+
+			unsigned int tamp;
+			time_t now_sec;
+			struct tm * now_local;
+			char now_date[10+1];
+			memset(now_date,0x00,sizeof(now_date));
+			time(&now_sec);
+			now_local = localtime(&now_sec);
+			strftime(now_date,sizeof(now_date),"%Y-%m-%d",now_local);
+
+			tamp = strtotime(now_date);
+
+			return tamp;
+		}
+
+		int redis_get_user_info(char *userid)
+		{
+
+		    //log_info("The get key[%s] in the redis",userid);
+			//记得把ip和端口写在配置文件里,ini.c ini.h md.cf
+
+			char *p;
+			int redis_port;
+			p = strchr(conf.redis_ip,':');
+			if(p)
+			{
+				*p = '\0';
+				redis_port = atoi(p+1);
+			}
+			else
+			{
+				redis_port = 6379;
+			}
 
 
+			redisContext *RedisC = redisConnect(conf.redis_ip,redis_port);
+			if(RedisC->err)
+			{
+				redisFree(RedisC);
+				log_info("Link the redis ip[%s],port[%d] FAIL!!",conf.redis_ip,redis_port);
+				return TOM_ERR;
+			}
+
+			char sql[512] = {0};
+			memset(sql, 0, sizeof(sql));
+
+			sprintf(sql, "get %s",userid);
+			//log_info("[%s] int the redis",sql);
+
+			redisReply* RedisR = (redisReply*)redisCommand(RedisC,sql); 
+			if(RedisR->type == REDIS_REPLY_NIL)
+			{
+				//返回nil对象，说明不存在要访问的数据。
+				log_info("There [%s] not int redis",sql);
+				freeReplyObject(RedisR);
+				redisFree(RedisC);
+				return REDIS_NOTDATA;
+
+			}
+			if(RedisR->type != REDIS_REPLY_STRING)
+			{
+				 log_info("Failed to execute sql[%s].\n",sql);
+				 freeReplyObject(RedisR);
+				 redisFree(RedisC);
+				 return TOM_ERR;
+			}
+
+			//log_info("The value of [%s] is [%s]",userid,RedisR->str);
+			int ret=atoi(RedisR->str);
+			freeReplyObject(RedisR);
+			redisFree(RedisC);
+			return ret;
+		}
+
+		//update send_number in the redis
+		int redis_incr_user_info(char *userid)
+		{
+
+			char *p;
+			int  redis_port;
+			p = strchr(conf.redis_ip,':');
+			if(p)
+			{
+				p = '\0';
+				redis_port = atoi(p+1);
+			}
+			else
+			{
+				redis_port = 6379;
+			}
+
+
+			redisContext *RedisC = redisConnect(conf.redis_ip,redis_port);
+			if(RedisC->err)
+			{
+				redisFree(RedisC);
+				log_info("Link the redis ip[%s],port[%d] FAIL!!",conf.redis_ip,redis_port);
+				return TOM_ERR;
+			}
+
+			char sql[512] = {0};
+			memset(sql, 0, sizeof(sql));
+
+			sprintf(sql, "incr %s",userid);
+			//log_info("[%s] int the redis",sql);
+
+			redisReply* RedisR = (redisReply*)redisCommand(RedisC,sql); 
+			if(RedisR->type != REDIS_REPLY_INTEGER)
+			{
+				 log_info("Failed to execute sql[%s].\n",sql);
+				 freeReplyObject(RedisR);
+				 redisFree(RedisC);
+				 return TOM_ERR;
+			}
+
+			freeReplyObject(RedisR);
+			redisFree(RedisC);
+
+			return TOM_SUC;
+		}
+
+		int redis_set_user_info(char *userid,int value)
+		{
+			//log_info("The set key[%s],value[%d] in the redis",userid,value);
+
+			char *p;
+			int  redis_port;
+			p = strchr(conf.redis_ip,':');
+			if(p)
+			{
+				p = '\0';
+				redis_port = atoi(p+1);
+			}
+			else
+			{
+				redis_port = 6379;
+			}
+
+
+			redisContext *RedisC = redisConnect(conf.redis_ip,redis_port);
+			if(RedisC->err)
+			{
+				redisFree(RedisC);
+				log_info("Link the redis ip[%s],port[%d] FAIL!!",conf.redis_ip,redis_port);
+				return TOM_ERR;
+			}
+
+			char sql[512] = {0};
+			memset(sql, 0, sizeof(sql));
+
+			sprintf(sql, "set %s %d",userid,value);
+			//log_info("[%s] int the redis",sql);
+
+			redisReply* RedisR = (redisReply*)redisCommand(RedisC,sql); 
+			if(NULL == RedisR)
+			{
+				redisFree(RedisC);
+				return TOM_ERR;
+			}
+
+			if(!(RedisR->type == REDIS_REPLY_STATUS && strcasecmp(RedisR->str,"OK") == 0))
+			{
+				log_info("Failed to execute sql[%s].",sql);
+				freeReplyObject(RedisR);
+				redisFree(RedisC);
+				return TOM_ERR;
+			}
+			freeReplyObject(RedisR);
+
+
+			//设置到期时间戳
+			unsigned long int timestamp;
+			timestamp = get_timestamp();
+			char timebuff[512] = {0};
+			memset(timebuff, 0, sizeof(timebuff));
+			sprintf(timebuff, "expireAt %s %ld",userid,timestamp);
+			//log_info("set time stamp [%s] int the redis",timebuff);
+
+			redisReply* RedisT = (redisReply*)redisCommand(RedisC,timebuff);
+			if(NULL == RedisT)
+			{
+				redisFree(RedisC);
+				return TOM_ERR;
+			}
+
+
+			if(1==RedisT->integer) 
+			{
+				freeReplyObject(RedisT);
+				redisFree(RedisC);
+			}
+			else
+			{
+				 log_info("Failed to execute timebuff[%s].",timebuff);
+				 freeReplyObject(RedisT);
+				 redisFree(RedisC);
+				 return TOM_ERR;
+			}
+
+			return TOM_SUC;
+		}
+
+		int redis_ttl_user_info(char *userid)
+		{
+
+			char *p;
+			int  redis_port;
+			p = strchr(conf.redis_ip,':');
+			if(p)
+			{
+				p = '\0';
+				redis_port = atoi(p+1);
+			}
+			else
+			{
+				redis_port = 6379;
+			}
+
+
+			redisContext *RedisC = redisConnect(conf.redis_ip,redis_port);
+			if(RedisC->err)
+			{
+				redisFree(RedisC);
+				log_info("Link the redis ip[%s],port[%d] FAIL!!",conf.redis_ip,redis_port);
+				return TOM_ERR;
+			}
+
+			char sql[512] = {0};
+			memset(sql, 0, sizeof(sql));
+
+			sprintf(sql, "ttl %s",userid);
+			//log_info("[%s] int the redis",sql);
+
+			redisReply* RedisR = (redisReply*)redisCommand(RedisC,sql); 
+			if(RedisR->type != REDIS_REPLY_INTEGER)
+			{
+				 log_info("Failed to execute sql[%s].\n",sql);
+				 freeReplyObject(RedisR);
+				 redisFree(RedisC);
+				 return TOM_ERR;
+			}
+
+			int ret = RedisR->integer;
+			freeReplyObject(RedisR);
+
+			log_info("ttl userid =%s RedisR->integer =%d",userid,ret);
+			if(-1==ret)
+			{
+				//设置到期时间戳
+				unsigned long int timestamp;
+				timestamp = get_timestamp();
+				char timebuff[512] = {0};
+				memset(timebuff, 0, sizeof(timebuff));
+				sprintf(timebuff, "expireAt %s %ld",userid,timestamp);
+				//log_info("set time stamp [%s] int the redis",timebuff);
+
+				redisReply* RedisT = (redisReply*)redisCommand(RedisC,timebuff);
+				if(NULL == RedisT)
+				{
+					redisFree(RedisC);
+					return TOM_ERR;
+				}
+				if(1==RedisT->integer) 
+				{
+					freeReplyObject(RedisT);
+					redisFree(RedisC);
+				}
+				else
+				{
+					 log_info("Failed to execute timebuff[%s].",timebuff);
+					freeReplyObject(RedisT);
+					redisFree(RedisC);
+					return TOM_ERR;
+				}
+			}
+			return TOM_SUC;
+		}
 
 
 
