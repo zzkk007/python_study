@@ -1989,7 +1989,262 @@ Redis 数据类型之有序集合(Sorted Set):
 		返回值：被成功移除的元素数量，如果key不是有序集合，返回错误
 
 	
+
+"--------------------------------------------------------------------------------------"
+
+reids 高级
+
+主要讨论发布订阅模块、主从配置两个知识点。
+
+
+1、redis 发布订阅：
+
+	Redis 通过PUBLISH 、SUBSCRIBE等命令实现了订阅与发布模式，这个功能提供了两种信息机制，
+	分别是订阅/发布到频道和订阅/发布到模式
+
+	发布者不是计划发送信息给特定的接受者（订阅者），而是发布的信息分到不同的频道，
+	不需要知道什么样的订阅者订阅
+	订阅者对一个或多个频道感兴趣，只需接收感兴趣的消息，不需要知道什么样的发布者的
+	发布者和订阅者的解耦合可以带来更大的扩展性和更加动态的网络拓扑
+	客户端发到频道的消息，将会被推送到所有订阅次频道的客户端
+	客户端不需要主动去获取消息，只需要订阅频道，这个频道的内容就会被推送过来。
 	
+2、消息的格式：
+
+	推送消息的格式包含三部分
+
+	part1:消息类型、包含三种类型
+
+		subscribe,表示订阅成功
+		unsubscribe,表示取消订阅成功
+		message，表示其它终端发布消息
+
+	如果第一部分的值为subscribe，则第二部分是频道，第三部分是现在订阅频道的数量
+
+	如果第一部分的是为unsubscribe,则第二部分是频道，第三部分是现在订阅频道的数量
+		如果为0则表示当前没有订阅任何频道，当在Pub/Sub以外状态，客户端可以发出任何redis命令。
+
+	如果第一部分的值为message，则第二部分是来源频道的名称，第三部分是消息内容。
+
+
+
+3、命令：
+
+	订阅：
+
+		SUBSCRIBE 频道名称 [频道名称 ...]
+	
+	取消订阅，如果不写参数，表示取消所有订阅
+
+		UNSUBSCRIBE 频道名称 [频道名称]
+
+	发布：
+
+		PUBLISH 频道 消息
+
+
+4、例子：
+
+	订阅频道名为 redisChat:
+
+	127.0.0.1:6379> SUBSCRIBE redisChat
+	Reading messages... (press Ctrl-C to quit)
+	1) "subscribe"
+	2) "redisChat"
+	3) (integer) 1
+	1) "message"
+	2) "redisChat"
+	3) "Learn reids by ruboo.com"
+	1) "message"
+	2) "redisChat"
+	3) "Learn reids"
+	
+	我们先重新开启个 redis 客户端，然后在同一个频道 redisChat 发布两次消息，
+	订阅者就能接收到消息
+
+	127.0.0.1:6379> PUBLISH redisChat "Learn reids by ruboo.com"
+	(integer) 1
+	127.0.0.1:6379>  PUBLISH redisChat "Learn reids"
+	(integer) 1
+
+
+
+"-------------------------------------------------------------------------"
+
+redis基本配置：
+
+	在源文件下/home/zhangkun/software/redis-3.2.9/redis.conf中
+	
+	绑定地址：如果需要远程访问，可将此行注释:
+		bind 127.0.0.1
+
+	端口，默认为6379:
+		port 6379
+
+	是否以守护进程运行:
+		如果以守护进程运行，则不会在命令行阻塞，类似于服务
+		如果以非守护进程运行，则当前终端被阻塞，无法使用
+		推荐改为yes，以守护进程运行
+
+		daemonize no|yes
+
+	数据文件:
+
+		dbfilename dump.rdb
+
+	数据文件存储路径:
+		
+		dir的默认值为./，表示当前目录
+		推荐改为：dir /var/lib/redis
+
+使用配置文件方式启动:
+
+	一般配置文件都放在/etc/目录下
+		cp /home/zhangkun/software/redis-3.2.9/redis.conf /etc/redis/
+
+	推荐指定配置文件启动:
+		redis-server /etc/redis/redis.conf
+
+	停止redis服务:
+		ps ajx|grep redis
+		sudo kill -9 redis的进程id
+
+
+redis 主从配置：
+
+	一个master可以拥有多个slave,一个slave又可以拥有多个slave,如此下去，形成了一个多级服务器集群架构。
+
+	比如：将ip为192.168.1.10的机器作为主服务器，将ip为192.168.1.11的机器作为从服务器
+
+
+	设置主服务器的配置：
+		bind 192.168.1.10
+
+	设置从服务器的配置：
+	注意：在slaveof 后写主机ip，再写端口，而且端口必须写：
+
+		bind 192.168.1.11
+		slaveof 192.168.1.10 6379
+
+	在master和slave分别执行info命令，查看输出信息
+	在master上写数据
+		set hello world
+
+	在slave上读数据
+		get hello
+
+
+Redis 数据备份与恢复:
+
+	Redis SAVE 命令用于创建当前数据库的备份。
+
+		redis 127.0.0.1:6379> SAVE 
+		OK
+	该命令将在 redis 安装目录中创建dump.rdb文件。/usr/local/redis/bin中
+
+	
+	恢复数据：
+
+		如果需要恢复数据，只需将备份文件 (dump.rdb) 移动到 redis 安装目录并启动服务即可。
+		获取 redis 目录可以使用 CONFIG 命令
+
+		redis 127.0.0.1:6379> CONFIG GET dir
+		1) "dir"
+		2) "/usr/local/redis/bin"
+
+
+"------------------------------------------------------------------------------------------"
+
+Python Reids:
+
+1、redis连接
+
+	redis 提供了两个类Redis 和 StrictRedis 用于实现Redis的命令。
+	StrictRedis用于实现大部分的官方的命令，并使用官方的语法和命令
+	Redis是StrictRedis的子类，用于向后兼容旧版本的redis-py
+
+	redis 连接实例是线程安全的，可以直接将redis连接实例设置为一个全局变量，直接使用。
+	如果需要另一个Redis实例（or Redis数据库）时，就需要重新创建redis连接实例来获取一个新的连接。
+	同理，python的redis没有实现select命令。
+
+
+2、安装：
+
+	联网安装
+		sudo pip install redis
+
+	使用源码安装
+		unzip redis-py-master.zip
+		cd redis-py-master
+		sudo python setup.py install
+
+
+3、交互代码
+
+	引入模块：
+
+		import redis
+	
+	连接：
+
+		try:
+			r = redis.StrictRedis(host='localhost',6379,decode_response=True)
+		except Exception as e:
+			print(e.message)
+
+	redis 取出的结果默认是字节，我们可以设定decode_responses=True 改成字符串。
+	方式1：根据数据类型的不同，调用相应的方法，完成读写
+
+		r.set('name','hello')
+		r.get('name')
+
+
+	方式2：pipline
+
+		缓存多条命令，然后一次性执行，减少服务器-客户端直接TCP数据包，从而提升效率
+
+		pipe = r.pipline()
+		pipe.set('name','world')
+		pipe.get('name')
+		pipe.execute()
+
+	连接池：
+
+		reids 使用Connection pool 来管理对一个redis server的所有连接，避免每次连接，释放连接的开销
+		默认，每个Redis实例都会维护一个自己的连接池，可以直接建立一个链接池，然后作为参数Redis，
+		这样就可以实现多个Redis实例共享一个连接池。
+
+		import redis
+		pool = redis.ConnectionPool(host='0.0.0.0', port=6379)
+		r = redis.Redis(connection_pool=pool)
+		r.set('age', '16')
+		print(r.get('age'))
+
+		# 使用 StrictRedis 连接池
+		import redis
+		pool = redis.ConnectionPool(host='47.92.114.20', port=6379)
+		r = redis.StrictRedis(connection_pool=pool)
+		r.set('age', '16')
+		print(r.get('age'))
+		# 结果
+		b'16'
+
+
+封装：
+
+	连接redis服务器部分是一致的
+	这里讲string类型的读写进行封装
+
+	import redis
+	
+	
+
+
+
+
+
+
+
 
 
 
