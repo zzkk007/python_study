@@ -2228,6 +2228,203 @@ Python Reids:
 	
 	
 
+"--------------------------------------------------------------------------"
+
+Mongodb:
+
+MongoDB 简介
+		
+	1、是一个基于分布式，文件存储的NoSQL数据库
+	2、由c++语言编写，运行稳定，性能高
+	3、旨在为WEB应用提供可扩展的高性能数据存储解决方案
+
+
+MongoDB 特点：
+
+	模式自由：可以把不同结构的文档存储在同一个数据库里
+
+	面向集合的存储：适合存储JSON风格文件的形式
+
+	完整的索引支持：对任何属性可索引
+
+	复制和高可用性：支持服务器之间的数据复制，支持主-从模式及服务器之间相互复制。
+					复制的主要目的是提供冗余及自动故障转移
+
+	自动分片：支持云级别的伸缩性：自动分片功能支持水平的数据库集群，可动态添加额外的机器。
+
+	丰富的查询：支持丰富的查询表达式，查询指令使用JSON形式的标记，可轻易查询文档中的内嵌的对象及数组
+
+	快速的更新：查询优化器会分析查询表达式，并生成一个高效的查询计划
+
+	高效的传统存储方案：支持二进制数据及大型对象(如照片和图片)
+
+
+
+基本操作：
+
+	MongoDB 将数据存储为一个文档，数据结构由键值(key=>value)对组成
+
+	MongoDB 文档类似于JSON对象，字段值可以包含其他文档、数组、文档数组
+
+	安装数据库管理mongodb环境
+
+	完成数据库、集合的管理
+
+	数据的增加、修改、删除、查询
+
+
+	名词：
+
+	SQL术语/概念            MongoDB术语/概念            解释说明
+
+	  database                database                  数据库
+
+	  table                   collection                数据库表/集合
+
+	  row                     document                  数据记录行/文档
+
+	  column                  field                     数据字段/域
+
+	  index                   index                     索引
+
+	  table joins                                       表连接，MongoDB不支持
+
+	  primary key             primary key               主键，MongoDB自动将_id字段设置为主键
+
+
+	MongoDB中的三元素： 数据库、集合、文档
+
+		1、集合就是关系数据库中的表
+		
+			集合类似于关系数据库中的表，储存多个文档，结构不固定，如果可以存储如下文档在一个集合中
+			{'name':'guojing','gender':'男'}
+			{'name':'huanggrong','age'"18"}
+			{'book':'shuihuzhuan','heros':'108'}
+
+
+		2、文档对应着关系数据库中的行
+	
+			文档，就是一个对象，有键值对构成，是json的扩展Bson形式。
+			{'name':'guojing','gender':'男'}
+	
+		3、数据库：是一个集合的物理容器，一个数据库中可以包含多个文档
+			一个服务器通常有多个数据库。
+
+
+安装MongoDB：
+
+	1、下载mongodb的版本，注意两点：
+
+		根据业界规则，偶数为稳定版，如1.6X,奇数为开发版，如1.7X
+
+		32bit的MongoBD最大只能存储2G的数据，64bit的没有限制。
+
+		到官网下载合适版本：https://www.mongodb.com/download-center#community
+		https://www.mongodb.org/dl/linux/x86_64
+		wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian71-3.5.6.tgz	
+
+	2、检查是否安装过mongodb：
+
+		rpm -qa|grep mongodb
+		service mongodb status
+		mongodb: unrecognized service
+
+	3、添加用户和用户组：
+		
+		groupadd mongodb
+		useradd mongodb -g mongodb
+
+	4、解压：
+
+		tar -zxvf mongodb-linux-x86_64-debian81-4.0.1.tgz
+
+		移动到/usr/local/目录下：
+			mv -r mongodb-linux-x86_64-debian81-4.0.1/ /usr/local/mongodb
+
+		将bin目录下的可执行文件添加到PATH路径中：
+
+		export PATH=/usr/local/mongodb/bin:$PAHT
+
+	5、建立数据和日志的文件夹：
+
+		MongoDB的数据库存储在data目录的db目录下，但是这个目录在安装过程中不会自动创建，
+		所以需要你收到创建data目录，并在data目录中创建db目录。
+
+		mkdir /usr/local/mongodb/data
+		mkdir /usr/local/mongodb/logs
+
+		以下实例中我们将data目录创建于根目录下(/)。
+		注意：/data/db 是 MongoDB 默认的启动的数据库路径(--dbpath)。
+
+
+	6、启动：
+		/usr/local/mongodb/bin/mongod --dbpath=/usr/local/mongodb/data/ --port=27017 
+		--logpath=/usr/local/mongodb/logs/mongodb.log --fork
+
+
+	7、启动MongoDB后台管理 Shell
+
+		如果你需要进入MongoDB后台管理，需要先打开mongodb安装目录下的bin目录，然后执行mongo命令文件。
+
+		MongoDB shell 是Mongodb自带的交互式javascript shell，用来对Mongodb进行操作管理和交互式环境。
+		当你进入mongoDB后台后，它默认会链接到 test 文档（数据库）：
+
+			$ cd /usr/local/mongodb/bin
+			$ ./mongo
+			MongoDB shell version: 3.0.6
+			connecting to: test
+			Welcome to the MongoDB shell.
+	
+			由于它是一个JavaScript shell，您可以运行一些简单的算术运算:
+
+
+	8、使用配置文件启动方式：
+
+	添加配置文件：
+		/usr/local/mongodb/mongodb.conf 
+
+		添加以下设置
+
+		port=27017 #端口号
+		dbpath=/usr/local/mongodb/data/   #数据库路径
+		logpath=/usr/local/mongodb/logs/mongodb.log #日志输出文件路径
+		pidfilepath=/usr/local/mongodb/mongo.pid
+		fork=true #设置后台运行
+		logappend=true #日志输出方式
+		shardsvr=true
+		directoryperdb=true
+		#auth=true  #开启认证
+
+
+	启动MongoDb
+		使用config命令指定配置文件的路径
+		[root@localhost ~] cd /usr/local/mongodb/bin/
+		[root@localhost bin]./mongod --config /usr/local/mongodb/mongodb.conf 
+	
+
+	9、Mongodb GUI：robomongo，解压后在bin目录下找到运行程序
+
+
+操作Mongodb数据库：
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
