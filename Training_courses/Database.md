@@ -2188,25 +2188,14 @@ Python Reids:
 	连接：
 
 		try:
-			r = redis.StrictRedis(host='localhost',6379,decode_response=True)
+			r = redis.StrictRedis(host='localhost',6379)
 		except Exception as e:
 			print(e.message)
 
-	redis 取出的结果默认是字节，我们可以设定decode_responses=True 改成字符串。
 	方式1：根据数据类型的不同，调用相应的方法，完成读写
 
 		r.set('name','hello')
 		r.get('name')
-
-
-	方式2：pipline
-
-		缓存多条命令，然后一次性执行，减少服务器-客户端直接TCP数据包，从而提升效率
-
-		pipe = r.pipline()
-		pipe.set('name','world')
-		pipe.get('name')
-		pipe.execute()
 
 	连接池：
 
