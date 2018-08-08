@@ -2395,9 +2395,7 @@ MongoDB 特点：
 	9、Mongodb GUI：robomongo，解压后在bin目录下找到运行程序
 
 
-操作Mongodb数据库：
-
-数据库切换：
+Mongodb数据库操作：
 
 	/usr/local/mongodb/bin/mongo
 
@@ -2422,22 +2420,583 @@ MongoDB 特点：
 	   默认的数据库为test，如果你没有创建新的数据库，集合将存放在test数据库中
 
 
-数据库删除：
-
-	1、删除当前指向的数据库
+	4、删除当前指向的数据库
 	   如果数据库不存在，则什么也不做
 
 	   db.dropDatabase()
 
 
-集合创建：
+Mongodb集合操作：
 
 	1、语法：
 		
-		db.createCollection(name,options)
+		集合创建:
+
+			db.createCollection(name,options)
 			
-			name是要创建的集合的名称
-			options是一个文档，用于指定集合的配置
+				name是要创建的集合的名称
+				options是一个文档，用于指定集合的配置
+				选项参数是可选的，所以只需要指定集合的名称
+				以下是可以使用的选项列表：
+
+			例1：不限制集合大小
+
+				db.createCollection("stu")
+
+			例2：限制集合大小，后面学会插入语句后可以查看效果
+
+				参数capped:默认值是false表示不设置上限，值为true表示设置上限
+				参数size:当capped值为true时，需要指定此参数，表示上限大小，
+						 当文件达到上限时，会将之前的数据覆盖，单位为字节。
+
+				db.createCollection("sub",{capped:true,size:10})
+
+		查看当前数据库的集合：
+
+			show collections
+
+		删除集合：
+
+			db.集合名.drop()
+
+
+数据类型：
+	
+	下表为Mongodb中常用的几种数据类型：
+
+	ObjectID :文档ID
+
+	String :字符串，最常用，必须是有效的UTF-8
+
+	Boolean:存储一个布尔值，true或false
+
+	Integer:整数可以是32或64，这取决于服务器
+
+	Double:存储浮点值
+
+	Arrays:数组和列表，多个值存储到一个键
+
+	Object:用于嵌入式的文档，即一个值为一个文档
+
+	Null:存储Null值
+
+	Timestamp:时间戳
+
+	Date:存储当前日期或时间的UNIX时间格式
+
+
+	ObjectID:
+
+		每个文档都有一个属性，为_id，保证每个文档的唯一性
+		可以自己去设置_id插入文档
+		如果没有提供，那么MongoDB为每个文档提供了一个独特的_id，类型为objectID
+		ObjectID是一个12字节的十六进制数
+			前4个字节为当前时间戳
+			接下来3个字节为机器ID
+			接下来的2个字节中Mongodb的服务进程id
+			最后3个字节是简单的增量值。
+
+
+Mongodb文档操作：			
+
+	1、创建
+
+		db.集合名称.insert(document)
+
+		插入文档时，如果不指定_id参数，Mongodb会为文档分配一个唯一的Objectid
+
+		例1：
+				db.stu.insert({name:'gj',gender:1})
+
+		例2:
+				s1={_id :'20160101',name:'hr'}
+				s1.gender=0
+				db.stu.insert(s1)
+
+	
+	2、查询
+
+		db.集合名字.find()
+
+
+
+	3、更新
+
+		db.集合名称.update(
+			
+			<query>,
+			<update>,
+			{multi:<boolean>})
+
+
+		参数query:查询条件，类似sql语句update中where部分
+
+		参数update：更新操作，类似sql语句update中set部分
+
+		参数multi：可选，默认是false，表示只更新找到的第一条记录，
+				   值为True表示把满足条件的文档全部更新。
+
+		例子：
+			db.stu.update({name:'hr'},{name:'mnc'})
+
+		指定属性更新，通过操作符$set,这里是只修改name这个属性，如果不加$set,则会把整条语句替换掉。
+		
+			db.stu.insert({name:'hr',gender:0})
+			db.sut.update({name:'hr'},{$set:{name:'hys'}})
+
+		修改多条匹配到的数据
+
+			db.stu.update({},($set:{gender:0},{multi:true}))
+
+	4、保存(这个和insert没有什么区别吧)
+
+		db.集合名称.save(document)
+		
+		如果文档的_id已经存在则修改，如果文档的_id不存在则添加
+
+		db.stu.save({_id:'20160102','name':'yk',gender:1})
+
+
+	5、删除
+
+		db.集合名称.remove(
+				<query>,
+				{
+					justOne:<boolean>
+				})
+
+		参数query:可选，删除文档的条件
+		参数justOne:可选，如果设为True或1，则只删除一条，默认为false，表示删除多条。
+
+		例子：只删除一条
+			
+			db.stu.remove({gender:0},{justOne:true})
+
+		删除全部：
+			
+			db.stu.remove({})
+
+
+	6、关于size的示例
+
+		创建集合：
+
+		db.createCollection('sub',{capped:true,size:10})	
+
+		插入第一条数据库查询
+
+			db.sub.insert({title:'linux',count:10})
+			db.sub.find()
+
+		插入第二条数据查询
+			
+			db.sub.insert({title:'web',count:15})
+			db.sub.find()
+
+		插入第三条数据查询
+			
+			db.sub.insert({title:'sql',count:18})
+			db.sub.find()
+
+		插入第四条数据库查询
+
+			db.sub.insert({title:'django',count:12})
+			db.sub.find()
+
+		插入第五条数据库查询
+		db.sub.insert({title:'python',count:14})
+		db.sub.find()
+
+
+Mongodb数据库数据查询:
+	
+	1、基本查询
+
+		方法find():查询
+			
+			db.集合名称.find({条件文档})
+
+		方法findOne():查询，只返回第一个
+
+			db.集合名称.findOne({条件文档})
+
+		方法pretty()：将结果格式化
+
+			db.集合名称.find({条件文档}).pretty()
+
+
+		limit():用于读取指定数量的文档
+			
+			语法：db.集合名字.find().limit(NUMBER)
+
+			参数NUMBER表示要获取文件的条数
+			如果没有指定参数则显示集合中所有的文档
+
+			例子：查询2条学生信息
+			db.stu.find().limit(2)
+
+		skip():用于跳过指定数量的文档
+			
+			语法：db.集合名称.find().skip(NUMBER)
+
+			参数NUMber表示跳过的记录条数，默认值是0
+
+			例子：查询从第3条开始的学生信息
+
+			db.stu.find().skip(2)
+
+		limit()和skip()一起使用，部分先后顺序
+
+			创建数据集:
+
+			for(i=0;i<15;i++){
+			db.t1.insert({_id:i})
+			}
+
+			查询第5到第8条数据
+
+			db.stu.find().limit(4).skip(5)
+			或
+			db.stu.find().skip(5).limit(4)
+
+
+	2、比较运算符：
+
+		等于，默认是等于判断，没有运算符
+
+		小于$lt
+
+		小于或等于$lte
+
+		大于$gt
+
+		大于或等于$gte
+
+		不等于$ne
+
+		例1：查询名称等于'gj'的学生
+		
+			db.stu.find({name:'gj'})
+
+		例2：查询年龄大于或等于18的学生
+
+			db.stu.find({age:{$get:18}})
+
+	3、逻辑运算符
+
+		查询时可以有多个条件，多个条件之间需要通过逻辑运算符连接
+
+		
+		逻辑与：默认是逻辑与的关系
+		例3、查询年龄大于或等于18，并且性别为1的学生
+
+			db.stu.find({age:{$get:18},gender:1})
+
+		逻辑或：使用$or
+		例4、查询年龄大于18或性别为1的学生
+
+			db.stu.find({$or:[{age:{$gt:18}},{gender:1}}]})
+
+		and和or一起使用
+		例5：查询年龄大于18或性别为0的学生，并且学生的姓名为gj
+			db.stu.find({$or:[{age:{$gte:18}},{gender:1}],name:'gj'})
+
+
+	4、范围运算符
+
+		使用"$in","$nin"判断是否在某个范围内
+		查询年龄为18,28的学生
+		db.stu.find({age:{$in:[18,28]}})
+
+	5、支持正则表达式
+
+		使用//或$regex编写正则表达式
+		查询姓黄的学生
+
+		db.stu.find({name:/^黄/})
+
+		db.stu.find({name:{$regex:'^黄'}})
+
+
+	6、自定义查询
+
+		使用$where后面写一个函数，返回满足条件的数据
+		例7：查询年龄大于20的学生
+
+		db.stu.find({$where:function(){return this.age>20}})
+
+
+投影：
+
+	在查询的返回结果中，只选择必要的字段，而不是选择一个文档的整个字段
+	如：一个文档有5个字段，需要显示只有3个，投影其中的3个字段即可
+	语法：
+
+	参数为字段与值，值为1表示显示，值为0不显示
+
+	db.集合名称.find({},{字段名称:1,...})
+
+	对于需要显示的字段，设置为1即可，不设即为不显示。
+	特殊：对于_id列默认是显示的，如果不显示，需要明确设置为0
+	
+	例1:
+		db.stu.find({},{name:1,gender:1})
+
+	例2：
+		db.stu.find({},{_id:0,name:1,gender:1})	
+
+
+排序：
+
+	方法sort(),用于对结果集进行排序
+
+	语法：
+
+		db.集合名称.find().sort({字段:1,...})
+	
+		参数为1为升序排序
+		参数为-1为降序排序
+
+		例子：根据性别降序，再根据年龄升序
+
+		db.stu.find().sort({gender:-1,age:1})
+
+
+统计个数：
+
+	方法count()用于统计结果集中文档条数
+	语法：
+		
+		db.集合名称.find({条件}).count()
+
+		也可以为：
+
+		db.集合名称.count({条件})
+
+		1、统计男生的人数
+			
+			db.stu.find({gender:1}).count()
+
+		2、统计年龄大于20的男生人数
+
+			db.stu.count({age:{$ge:20},gender:1})
+
+消除重复:
+
+	方法distinct()对数据进行去重
+
+	db.集合名称.distinct('去重字段',{条件})
+		
+		例1、查找年龄大于18的性别(去重)
+
+		db.stu.distinct('gender',{age:{$gt:18}})
+
+
+Mongodb高级操作：
+
+	Mongodb的高级操作，包括聚合、主从复制、分片、备份与恢复、MR
+	完成Python与mongodb的交互
+
+	1、聚合 aggregate
+
+		聚合(aggregate)主要用于计算数据，类似sql中的sum(),avg()
+
+		语法：
+			db.集合名称.aggregate([{管道:{表达式}}])
+
+
+			db.stu.aggregate([]) == db.stu.find()
+
+		管道：管道在Unix和Linux中一般讲当前命令的输出结果作为下一个命令的输入
+			ps ajx | grep mongo
+		
+		在mongodb中，管道具有同样的作用，文档处理完毕后，通过管道进行下一次处理
+		
+		常用管道：
+
+			$group :将集合中的文档分组，可用于统计结果
+				
+
+				将集合中的文档分组，可用于统计结果
+				_id表示分组的依据，使用某个字段的格式为'$'字段
+
+				例1：统计男生、女生的总人数
+
+					db.stu.aggregate([{$group:{_id:'$gender',counter:{$sum:1}}}])
+
+
+				Group by null
+				将集合中的所有文档分为一组
+				
+				例2：求学生总人数，平均年龄
+
+				db.stu.aggregate([
+					{$group:
+						{
+							_id:null,
+							counter:{$sum:1},
+							avgAge:{$avg:'$age'}
+						}
+					}			
+				])
+
+
+				透视数据：
+
+				例3：统计学生性别及学生姓名
+
+				db.stu.aggrate([
+						{$group:
+							{
+								_id:'$gender'
+								name:{$push:'$name'}
+							}
+						}
+				])
+
+				使用$$ROOT可以将文档内容加入到结果集的数组中，代码如下:
+
+				db.stu.aggregate([
+						    {
+								$group:
+							        {
+										_id:'$gender',
+										name:{$push:'$$ROOT'}
+									}
+							}
+				])
+
+
+			$match :过滤数据，只输出符合条件的文档
+
+				用于过滤数据，只符合条件的文档
+				
+				例1：查询年龄大于20的学生
+
+					db.stu.aggregate([{$match:{age:{$gt:20}}}])
+
+				例2：查询年龄大于20的男生，女生的人数
+					
+					db.stu.aggregate([
+							{$match:{age:{$gt:20}}},
+							{$group:{_id:'$gender',counter:{$sum:1}}}])
+
+	
+			$project:修改输入文档的结构，如重命名、增加、删除字段、创建计算结果
+	
+				例1：查询学生的姓名、年龄
+
+					db.stu.aggregate([{$project:{_id:0,name:1,age:1}}])
+
+				例2：查询男生、女生人数，输出人数
+					db.stu.aggregate([
+							{$group:{id:'$gender',counter:{$sum:1}}},
+							{$project:{_id:0,counter:1}}
+							])
+
+			$sort:将输入文档排序后输出
+				
+				将输入文档排序后输出
+				例1：查询学生信息，按年龄升序
+					b.stu.aggregate([{$sort:{age:1}}])
+
+				例2：查询男生、女生人数，按人数降序
+
+				db.stu.aggregate([
+						{$group:{_id:'$gender',counter:{$sum:1}}},
+						{$sort:{counter:-1}}
+						])
+
+			$limit:限制聚合管道返回的文档数
+
+				例1、查询2条学生信息
+				db.stu.aggregate([{$limit:2}])
+			
+			$skip：跳过指定数量的文档，并返回余下的文档
+				
+				例2：查询从第3条开始的学生信息
+				db.stu.aggregate([{$skip:2}])
+				
+			
+			$unwind:将数组类型的字段进行拆分
+
+				语法1：
+
+					对某字段值进行拆分
+					
+					db.集合名称.aggregate([{$unwind:'$字段名称'}])
+
+				例子1：
+					构造数据：db.t2.insert({_id:1,item:'t-shirt',size:['S','M','L']})
+					查询：db.t2.aggregate([{$unwind:'$size'}])
+
+					结果：
+
+						{"_id" : 1, "item" : "t-shirt", "size" : "S" }
+						{"_id" : 1, "item" : "t-shirt", "size" : "M" }
+						{"_id" : 1, "item" : "t-shirt", "size" : "L" }
+				语法2：
+
+					对某字段值进行拆分
+					处理空数组、非数组、无字段、null情况
+
+					db.inventory.aggregate([{
+						$unwind:{
+							path:'$字段名称',
+							preserveNullAndEmptyArrays:<boolean>#防止数据丢失
+						}
+					}])
+
+
+					例子
+
+					构造数据
+					
+					db.t3.insert([
+							{ "_id" : 1, "item" : "a", "size": [ "S", "M", "L"] },
+							{"_id" : 2, "item" : "b", "size" : [ ] },
+							{"_id" : 3, "item" : "c", "size": "M" },
+							{"_id" : 4, "item" : "d" },
+							{ "_id" : 5, "item" : "e", "size" : null })
+
+					使用语法1查询
+						db.t3.aggregate([{$unwind:'$size'}])
+
+						查看查询结果，发现对于空数组、无字段、null的文档，都被丢弃了
+						问：如何能不丢弃呢？
+						答：使用语法2查询
+							db.t3.aggregate([{$unwind:{path:'$sizes',preserveNullAndEmptyArrays:true}}])
+		表达式:
+
+			处理输入文档并输出
+
+			语法：
+				表达式：'$列名'
+
+			常用表达式：
+
+				$sum :计算总和，$sum:1同count表示计数。
+
+				$avg :计算平均值。
+
+				$min :计算最小值。
+
+				$max :计算最大值。
+
+				$push:在结果文档中插入值到一个数组中。
+
+				$first:根据资源文档的排序获取第一个文档数据。
+
+				$last:根据资源文档的排序获取最后一个文档数据。
+
+
+"-----------------------------------------------------------------------------------"
+
+
+
+
+
+
 
 
 
