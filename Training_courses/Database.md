@@ -3223,8 +3223,8 @@ python与mangodb的交互：
 
 
 		s1 = {
-			name:'gj',
-			age:18}
+			'name':'gj',
+			'age':18}
 		
 		s1_id = stu.insert_one(s1).inserted_id
 
