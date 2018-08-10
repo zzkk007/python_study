@@ -755,6 +755,355 @@ mysql日期时间函数:
 	print(one)
 
 
+
+Python 与 ORM 框架
+
+ORM框架：
+
+	ORM全程：Object Relational Mapping翻译过来就是对象关系映射，简单来说，ORM将数据库
+	中的表与面向对象语言中的类建立了一种对应关系。这样我们要操作数据库，数据库中的表
+	或者表中的一条记录，就可以直接通过操作类或者类实例来完成。
+
+ORM与SQLAlcheny简介：
+
+	SQLAlchemy是python社区最知名的ORM工具之一，为高效和高性能的数据库访问设计，实现了
+	完整的企业级持久模型。
+
+	1、先装SQLAlchemy:
+
+		pip install sqlalchemy
+
+	2、链接数据库：
+
+		from sqlalchemy import create_engine
+
+		engine = create_engine('mysql+mysqldb://root@localhost:3306/blog')
+
+		print(engine)
+
+		在上面的程序中我们默认运行在3306端口的MySQL中的blog数据库。
+
+		如果打印出Engine(mysql+mysqldb://root@localhost:3306/blog)说明我们已经链接成功了。
+
+
+	3、描述表结构：
+	
+		要使用ORM，我们需要将数据表的结构用ORM的语言描述出来。SQLAlchemy提供了一套Declarative
+		系统来完成这个任务，我们以创建一个user表为例，看看它是怎么用SQLAchemy的语言来描述的：
+
+		from sqlalchemy import create_engine
+		from sqlalchemy.ext.declarative import declarative_base
+		from sqlalchemy import Column,String,Integer
+
+		engine = create_engine('mysql+mysqldb://root@localhost:3306/blog?charset=utf8')
+
+		Base = declarative()
+
+		class User(Base):
+
+			__tablename__ = 'users'
+
+			id = Column(Integer,primary_key=True)
+			
+			username = Column(String(64),nullable=False,index=True)
+			
+			password = Column(String(64),nullable=False)
+
+			email = Column(String(64),nullable=False,index=True)
+
+			def __repr__(self):
+				return '%s(%r)'%(self.__class__.__name__,self.username)
+
+		在User类中，用__tablename__指定在MySQL中表的名字，我们创建了三个基本字段，
+		类中的每一个Column代表数据中的一列，在Column中，指定该列的一些配置，第一个字段
+		代表类的数据类型。上面我们使用了String、Integer，其他常用的还包括：Text、Boolean
+		SmallInteger、DateTime。
+
+		nullable = False代表此列不可以为空，index=True表示在该列创建索引，
+		另外定义__repr__是为了方便调试，你可以不定义，也可以定义更详细。
+
+	4、关系定义：
+
+		一对多关系：
+		
+		对于一个对于一个普通的博客应用来说，用户和文章显然是一个一对多的关系，
+		一篇文章属于一个用户，一个用户可以写很多篇文章，那么他们之间的关系可以这样定义：
+
+		class User(Base):
+		
+			__tablename__ = 'users'
+			
+			
+			id = Column(Integer,primary_key=True)
+			username = Column(String(64), nullable=False, index=True)
+			password = Column(String(64), nullable=False)
+			email = Column(String(64), nullable=False, index=True)
+			articles = relationship('Article')
+
+		class Article(Base):
+
+			__tablename__ = 'articles'
+
+			id = Column(Integer, primary_key=True)
+			title = Column(String(255), nullable=False, index=True)
+			content = Column(Text)
+			user_id = Column(Integer, ForeignKey('users.id'))
+			author = relationship('User')
+			
+			def __repr__(self):
+				return '%s(%r)' % (self.__class__.__name__, self.title)
+
+		表articles中有一个外键指向users表中的主键id,而在User中使用SQLAlchemy提供了relationship
+		描述关系，而用户与文章的关系是双向的，所有两张表中都定义了relationship。
+
+		SQLAlchemy 提供了 backref 让我们可以只需要定义一个关系：
+	
+			articles = relationship('Article',backref='author')
+		添加了这个可以不用在Article中定义relationship了。
+
+		
+		一对一关系：
+		
+		在User中我们只定义了几个必须的字段，但通常用户还需要其他信息，但这些信息可能不是必须
+		填写的，我们可以放到另外一张UserInfo表中，这样User和表Userinfo就形成了一对一的关系。
+
+		class User(Base):
+			
+			__tablename__ = 'users'
+
+			id = Column(Integer, primary_key=True)
+			username = Column(String(64), nullable=False, index=True)
+			password = Column(String(64), nullable=False)
+			email = Column(String(64), nullable=False, index=True)
+			articles = relationship('Article', backref='author')
+			userinfo = relationship('UserInfo', backref='user', uselist=False)
+			
+			def __repr__(self):
+				return '%s(%r)' % (self.__class__.__name__, self.username)
+
+		class UserInfo(Base):
+
+			__tablename__ = 'userinfos'
+
+			id = Column(Integer, primary_key=True)
+			name = Column(String(64))
+			qq = Column(String(11))
+			phone = Column(String(11))
+			link = Column(String(64))
+			user_id = Column(Integer, ForeignKey('users.id'))
+
+		定义方法和一对多相同，只是需要添加 userlist=False 。
+
+		
+		映射到数据:
+
+			表已经描述好了，在文件末尾使用下面的命令在我们连接的数据库中创建对应的表：
+			if __name__ == '__main__':
+			    Base.metadata.create_all(engine)
+	
+
+	5、CURD
+		
+		当你想打电话给朋友时，你是否得用手机拨通他的号码才能建立一个会话？同样的，你想和MySQL
+		交谈也得先通过SQLAlchemy建立一个会话：
+
+		from sqlalchemy.orm import sessionmaker
+
+		Session = sessionmaker(bin=engine)
+		session = Session()
+
+		你可以把sessionmaker想象成一个手机，engine当做MySQL的号码，拨通这个"号码"创建了一个Session类，
+		下面我梦通过这个类的实例与Mysql交谈了。
+
+		在python的世界中，Faker是用来生产虚假数据的库，安装它
+
+		pill install faker
+
+		结合Faker库创建一些测试数据：
+
+		faker = Factory.create()
+		
+		Session = sessionmaker(bind = engine)
+
+		session = Session()
+
+		faker_users = [User(
+			username=faker.name(),
+			password=faker.word(),
+			email=faker.email(),)for i in range(10)]
+	
+		ADD到数据库：
+
+			session.add_all(faker_users)
+			session.commit()
+
+			使用 SQLAlchemy 往数据库中添加数据，我们只需要创建相关类的实例，
+			调用 session.add() 添加一个，或者 session.add_all() 一次添加多个， 
+			最后 session.commit() 就可以了。
+
+
+
+		QUERY数据库：
+			
+			如果我们知道用户 id，就可以用 get 方法,filter_by 用于按某一个字段过滤，
+			而 filter 可以让我们按多个字段过滤，all 则是获取所有。获取某一字段值可以直接类的属性获取：
+
+			a = session.query(user).get(10)
+			b = session.query(User).all()
+
+		Update数据库：
+
+			a = session.query(User).get(10)
+			a.user = 'My test blog post'
+			session.add(a)
+			session.commit()
+
+		Delete数据库：
+
+			a = session.query(User).get(10)
+			session.delete(a)
+			session.commit（）
+
+		删除直接调用 delete 删除获取到的对象，提交 session 即可。
+
+
+	完整代码:
+
+		# coding: utf-8
+
+		import random
+		from faker import Factory
+
+		from sqlalchemy import create_engine, Table
+		from sqlalchemy.ext.declarative import declarative_base
+		from sqlalchemy import ForeignKey
+		from sqlalchemy import Column, String, Integer, Text
+		from sqlalchemy.orm import sessionmaker, relationship
+
+
+		engine = create_engine('mysql+mysqldb://root@localhost:3306/blog?charset=utf8')
+		Base = declarative_base()
+	
+	
+		class User(Base):
+		
+		    __tablename__ = 'users'
+			
+			id = Column(Integer, primary_key=True)
+			username = Column(String(64), nullable=False, index=True)
+			password = Column(String(64), nullable=False)
+			email = Column(String(64), nullable=False, index=True)
+			articles = relationship('Article', backref='author')
+		    userinfo = relationship('UserInfo', backref='user', uselist=False)
+			
+			def __repr__(self):
+				return '%s(%r)' % (self.__class__.__name__, self.username)
+							
+							
+		class UserInfo(Base):
+								
+			 __tablename__ = 'userinfos'
+									
+			id = Column(Integer, primary_key=True)
+			name = Column(String(64))
+			qq = Column(String(11))
+			phone = Column(String(11))
+			link = Column(String(64))
+			user_id = Column(Integer, ForeignKey('users.id'))
+	
+	
+		class Article(Base):
+		
+		    __tablename__ = 'articles'
+			
+			id = Column(Integer, primary_key=True)
+			title = Column(String(255), nullable=False, index=True)
+			content = Column(Text)
+			user_id = Column(Integer, ForeignKey('users.id'))
+			cate_id = Column(Integer, ForeignKey('categories.id'))
+		    tags = relationship('Tag', secondary='article_tag', backref='articles')
+			
+			def __repr__(self):
+				return '%s(%r)' % (self.__class__.__name__, self.title)
+							
+							
+		class Category(Base):
+								
+			__tablename__ = 'categories'
+									
+			id = Column(Integer, primary_key=True)
+			name = Column(String(64), nullable=False, index=True)
+			articles = relationship('Article', backref='category')
+	
+			def __repr__(self):
+				return '%s(%r)' % (self.__class__.__name__, self.name)
+					
+					
+		article_tag = Table(
+			'article_tag', Base.metadata,
+			Column('article_id', Integer, ForeignKey('articles.id')),
+			Column('tag_id', Integer, ForeignKey('tags.id'))
+			)
+					
+					
+		class Tag(Base):
+						
+			__tablename__ = 'tags'
+							
+			id = Column(Integer, primary_key=True)
+			name = Column(String(64), nullable=False, index=True)
+	
+			def __repr__(self):
+				return '%s(%r)' % (self.__class__.__name__, self.name)
+					
+					
+		if __name__ == '__main__':
+			Base.metadata.create_all(engine)
+	
+			faker = Factory.create()
+			Session = sessionmaker(bind=engine)
+			session = Session()
+	
+			faker_users = [User(
+				username=faker.name(),
+				password=faker.word(),
+				email=faker.email(),
+				) for i in range(10)]
+		    session.add_all(faker_users)
+	
+			faker_categories = [Category(name=faker.word()) for i in range(5)]
+			session.add_all(faker_categories)
+
+			faker_tags= [Tag(name=faker.word()) for i in range(20)]
+		    session.add_all(faker_tags)
+	
+			for i in range(100):
+		        article = Article(
+				title=faker.sentence(),
+				content=' '.join(faker.sentences(nb=random.randint(10, 20))),
+				author=random.choice(faker_users),
+				category=random.choice(faker_categories))
+			
+			for tag in random.sample(faker_tags, random.randint(2, 5)):
+				article.tags.append(tag)
+			session.add(article)
+																		 
+		session.commit()
+
+
+SQLObject 连接数据库:
+	
+	1、安装：
+
+		pip install -U SQLObject
+		or
+		easy_install -U SQLObject
+
+	2、
+
+		
+
+
 "======================================================================"
 
 redis:
@@ -3198,9 +3547,24 @@ python与mangodb的交互：
 
 	1、安装pymongo
 
+
+		第一种方式使用pip工具安装：
+
 		python -m pip install pymongo
 		python -m pip install pymongo==3.5.1
 		python -m pip install --upgrade pymongo
+
+		
+		第二种方式：
+
+		用easy_install + 包名
+
+		第三种方式：
+
+			下载安装包，并解压到磁盘下；
+			进入到该文件的setup.py 目录下 ，打开cmd，并切换到该目录下；
+			先执行 python setup.py build
+			然后执行 python setup.py install
 
 	2、引入包pymongo
 
