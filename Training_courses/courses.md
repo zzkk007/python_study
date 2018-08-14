@@ -133,7 +133,85 @@ python Number:
 
 
 
-3、字符串常见操作：
+字符串操作：
+
+	1、Python转义字符：
+
+		转义字符               描述
+
+		\(在行尾时)           续行符
+	
+		\a                    响铃
+
+		\b                    退格（Backspace）
+
+		\e                    转义
+
+		\000                  空
+
+		\n                    换行
+
+		\v                    纵向制表符
+
+		\t                    横向制表符
+
+		\r                    回车
+
+		\f                    换页
+	
+	
+	2、Python字符串运算符：
+
+		a = 'Hello'
+		b = 'Python'
+
+		操作符           描述                    实例    
+ 
+ 		  +             字符串链接                a + b   'HelloPython' 
+													
+		  *             重复输出字符串            a *2    'HelloHello'
+
+		  []			通过索引取字符串中的字符  a[1]    'e'
+
+		  [:]           截取字符串中的一部分      a[1:4]   'ell'
+
+		  in            成员运算符，包含给定返回True "H" in a  True
+
+		  not in        成员运算符，不包括返回True   "M" not in a  True
+
+		  r/R           原始字符串，没有转义特殊或不能打印的字符
+
+		  %             格式字符串
+
+
+	3、Python字符串格式化：
+
+		
+		符号		描述
+
+		%c			格式化字符及其ASCII码
+
+		%s          格式化字符串
+
+		%d          格式化整数
+
+		%u          格式化无符号整数
+
+		%o          格式化无符号八进制数
+
+		%x          格式化无符号十六进制数
+
+		%f          格式化浮点数，可指定小数点后的精度
+
+		%e          用科学计数法格式化浮点数
+
+		%E          作用同%e,用科学计数法格式化浮点数
+
+		%p          用十六进制数格式化变量的地址
+
+	
+	4、字符串内建函数：
+
 
 	find：检测 str 是否包含在 mystr中，如果是返回开始的索引值，否则返回-1
 
@@ -280,7 +358,104 @@ python Number:
 		mystr.join(str)
 
 
-4、 字典的常见操作
+	string.format():格式化字符串
+
+
+
+列表常见操作：
+
+
+	1、Python列表脚本操作符：
+		
+		Python 表达式	          结果	      描述
+	
+		len([1,2,3])                3         长度
+		
+		[1,2,3] + [4,5,6]        [1,2,3,4,5,6] 组合
+
+		['hi']*3                ['hi','hi','hi'] 重复
+
+		2 in [1,2,3]              True          元素是否存在列表中
+
+		for x in [1,2,3]          1 2 3         迭代
+
+
+	2、Python列表函数&方法
+
+		函数：
+
+		cmp(list1,list2)         比较两个列表的元素
+
+		len(list)                列表元素的个数
+
+		max(list)                元素最大值
+
+		min(list)                元素最小值
+
+		list(seq)                将元组转为列表
+
+		方法：
+
+		list.append(obj)		 在列表末尾添加新的对象
+
+		list.count(obj)          统计某个元素在列表中出现的次数
+
+		list.extend(seq)         在列表的末尾一次性追加另一个序列中的多个值
+
+		list.index(obj)          从列表中找出某个对象第一次匹配的索引位置
+
+		list.insert(index,obj)   将对象根据索引插入到列表中
+
+		list.pop(index=-1)       移除列表中的一个元素(默认最后一个)，返回该元素的值
+
+		list.remove(obj)         移除列表中某个值的第一个匹配项
+
+		list.reverse()           反向列表中的元素
+
+		list.sort(cmp=None,key=None,reverse=Flase) 对类别进行排序
+
+
+元组常见操作：
+
+	1、python元组运算符：
+
+		与字符串一样，元组之间可以使用 + 号和 * 号进行运算。
+		这就意味着他们可以组合和复制，运算后会生成一个新的元组。
+
+		Python 表达式				结果            	描述
+		len((1, 2, 3))				  3	            计算元素个数
+		(1, 2, 3) + (4, 5, 6)	  (1, 2, 3, 4, 5, 6)	连接
+		('Hi!',) * 4	('Hi!', 'Hi!', 'Hi!', 'Hi!')	复制
+		3 in (1, 2, 3)	True	                    元素是否存在
+		for x in (1, 2, 3): print x,	1 2 3	         迭代
+
+
+	2、元组索引，截取：
+
+		L = ('spam','Spam','SPAM')
+
+		表达式   结果	   描述
+		L[2]	'SPAM!'	  读取第三个元素
+		L[-2]	'Spam'	  反向读取，读取倒数第二个元素
+		L[1:]	('Spam', 'SPAM!')	截取元素
+
+		
+	3、元组内置函数
+
+		
+	方法及描述
+	cmp(tuple1, tuple2)	比较两个元组元素。
+	
+	len(tuple)	计算元组元素个数。
+	
+	max(tuple)	返回元组中元素最大值。
+	
+	min(tuple)	返回元组中元素最小值。
+	
+	tuple(seq)  将列表转换为元组。
+
+
+字典的常见操作:
 
 	dict = {"name":'zhangsan','sex':'m'}
 	
@@ -322,7 +497,47 @@ python Number:
 	dict.items()
 		dict_items([('name', 'zhangsan'), ('sex', 'm')])
 
-	
+
+	字典内置函数和方法：
+
+		函数：
+
+		cmp(dict1,dict2)      比较两个字典元素
+
+		len(dict)             计算字典元素个数，即键的个数
+
+		str(dict)             输出字典可打印的字符串表示
+
+		type(variable)        返回输入的变量类型。
+
+		
+		方法：
+
+		dict.clear()         删除字典所有元素
+
+		dict.copy()          返回一个字典的浅复制
+
+		dict.fromkeys(seq[,val])  创建一个新的字典，以seq中元素作为字典的键，val作为字典所有键对应值
+
+		dict.get(key,default=None) 返回指定键的值，如果值不存在字典中，返回default值。
+
+		dict.has_key(key) 如果键在字典dict里返回true,否则返回false
+
+		dict.items()  以列表返回可遍历的(键，值)元组数组
+
+		dict.keys()   以列表返回一个字典所有的键
+
+		dict.setdefault(key,default=None) 和get类似但是如果键不存在字典中，添加键并将值设为default。
+
+		dict.update(dict2)	将字典dict2的键/值对更新到字典中
+
+		dict.values()       以列表返回字典中的所有值
+
+		dict.pop(key[,default]) 删除字典给定键key所对应的值，返回值为被删除的值。
+
+		dict.popitem()         随机返回并删除字典中的一对键和值
+
+
 
 5、全局变量和局部变量名字相同问题：
 
