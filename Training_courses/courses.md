@@ -548,7 +548,161 @@ python Number:
 		dict.popitem()         随机返回并删除字典中的一对键和值
 
 
+Python 日期和时间：
 
+	1、时间 time：
+
+		Python 提供了一个time和calendar模块可以用于格式化日期和时间。
+		时间间隔是以秒为单位的浮点小数
+		每个时间戳都是以1970年1月1日经过多长时间来表示，
+
+		
+	2、时间元组：
+
+		python 函数用一个元组装起来9组数字处理时间：
+
+		就是struct_time元组结构如下：
+
+			属性                字段              值
+
+			tm_year              年               4位数年
+
+			tm_mon               月               1到12
+
+			tm_mday              日               1到31
+
+			tm_hour              时               0到23
+
+			tm_min               分               0到59
+
+			tm_sec               秒               0到60
+
+			tm_wday              一周第几日       0到6 （0是周一）
+
+			tm_yday              一年第几日       1到366
+
+			tm_isdst             夏时令           -1,0,1,-1是决定是否为夏令时的旗帜
+
+
+	3、import time 函数
+
+		1)函数time.time()用于获取当前时间戳。
+			
+			time.localtime(time.time())	
+				1534331815.217078
+
+		2)	time.localtime([secs])
+			接收时间戳（1970纪元后经过的浮点秒数）并返回当地时间下的时间元组t
+			从返回浮点数的时间戳方式向时间元组转换，只要将浮点数传递给如localtime之类的函数。
+			
+			time.localtime(time.time())
+			time.localtime()
+				time.struct_time(tm_year=2018, tm_mon=8, tm_mday=15, tm_hour=19, tm_min=17, 
+				tm_sec=23, tm_wday=2, tm_yday=227, tm_isdst=0)
+
+		3)获取格式化的时间,最简单的获取可读的时间模式的函数是asctime():
+
+			time.asctime()
+			time.asctime(time.local(time.time()))
+				'Wed Aug 15 19:35:20 2018'
+		
+		4)格式化日期，time模块strftime()方法来格式化日期：
+			time.strftime(format[,t])
+
+			格式化成2016-03-20 11:45:39形式
+			time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())
+			
+			格式化成Sat Mar 28 22:24:24 2016形式即asctime()形式
+			time.strftime("%a %b %d %H:%M:%S %Y", time.localtime())
+
+			将格式字符串转换为时间戳
+			a = "Sat Mar 28 22:24:24 2016"
+			time.mktime(time.strptime(a,"%a %b %d %H:%M:%S %Y"))
+			1534333517.0
+
+			python中时间日期格式化符号：
+
+				%y 两位数的年份表示（00-99）
+				%Y 四位数的年份表示（000-9999）
+				%m 月份（01-12）
+				%d 月内中的一天（0-31）
+				
+				%H 24小时制小时数（0-23）
+				%M 分钟数（00=59）
+				%S 秒（00-59）
+				
+				%a 本地简化星期名称
+				%A 本地完整星期名称
+				%b 本地简化的月份名称
+				%B 本地完整的月份名称
+				
+				%j 年内的一天（001-366）
+				%w 星期（0-6），星期天为星期的开始
+				%W 一年中的星期数（00-53）星期一为星期的开始
+
+		5)time.clock()
+		
+			用以浮点数计算的秒数返回当前的CPU时间。用来衡量不同程序的耗时，比time.time()更有用。
+
+		6)time.ctime([secs])
+		
+			作用相当于asctime(localtime(secs))，未给参数相当于asctime()	
+			
+		7)time.mktime(tupletime)
+
+			接受时间元组并返回时间戳（1970纪元后经过的浮点秒数）。
+		
+		8)time.sleep(secs)
+
+			推迟调用线程的运行，secs指秒数。
+
+		9)time.strptime(str,fmt='%a %b %d %H:%M:%S %Y')
+		
+			根据fmt的格式把一个时间字符串解析为时间元组。
+			a=time.asctime()
+			time.strptime(a,"%a %b %d %H:%M:%S %Y")
+			time.struct_time(tm_year=2018, tm_mon=8, tm_mday=15, tm_hour=19, tm_min=58,
+					tm_sec=14, tm_wday=2, tm_yday=227, tm_isdst=-1)
+
+		10)Time模块包含了两个重要的属性：
+
+			time.timezone:
+			属性time.timezone是当地时区（未启动夏令时）距离格林威治的偏移秒数
+
+			time.tzname：
+			属性time.tzname包含一对根据情况的不同而不同的字符串，
+			分别是带夏令时的本地时区名称，和不带的。
+				
+日历：calendar
+		
+	内置函数：
+
+	import calendar
+
+	1、calendar.calendar(year,w=2,l=1,c=6)
+		
+		返回一个多行字符串格式的year年年历，3个月一行，间隔距离为c。
+		每日宽度间隔为w字符。每行长度为21* W+18+2* C。l是每星期行数。
+	
+	2、calendar.month(year,month,w=2,l=1)
+
+		返回一个多行字符串格式的year年month月日历，两行标题，一周一行。
+		每日宽度间隔为w字符。每行的长度为7* w+6。l是每星期的行数。
+
+	3、calendar.monthrange(year,month)
+
+		返回两个整数。第一个是该月的星期几的日期码，第二个是该月的日期码。
+		日从0（星期一）到6（星期日）;月从1到12。
+
+	4、calendar.isleap(year)
+
+		是闰年返回True,否则返回False
+
+	5、calendar.leapdays(y1,y2)
+		
+		当y1和y2两个年份之间闰年总数
+
+	
 5、全局变量和局部变量名字相同问题：
 
 	例子1：
