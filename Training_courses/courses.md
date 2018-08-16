@@ -989,30 +989,31 @@ Python 日期和时间：
 	abs(x)                       返回x的绝对值
 	bin(x)                       将一个整数x转换为二进制字符串
 	chr(i)                       返回i对应的ASCII字符
+	float([x])                   返回x对应的浮点数。
 	complex([real[, imag]])      返回一个复数 read+imag1j*，或者将一个字符串或数转换为复数。
 	dict()                       返回一个字典。
+	globals()                    返回全局符号表字典。
+	len(s)                       返回s的长度。
+	type(object)                 返回object对象的类型。
+	max()                        返回最大值。
+	min()                        返回最小值。
 	dir([object])                无参数时，返回当前局部作用域中的属性；有参数时，返回参数对象的有效属性
 	enumerate(sequence，start=0) 返回可迭代对象sequence的（count，value）元组序列，其中count从start开始递增。
 	filter(function，iterable)   对可迭代对象iterable中的每个元素调用function函数，返回结果序列。
-	float([x])                   返回x对应的浮点数。
+	map(function，iterable，...) 应用function到每一个元素上，返回结果列表。
 	frozenset([iterable])        返回一个不可变的集合对象。
-	globals()                    返回全局符号表字典。
 	help([object])               返回帮助信息。
 	hash(object)                 返回对象object的哈希值。
 	id(object)                   返回对象object的唯一标识，通常是object在内存中的地址。
 	input([prompt])              读取输入值。
 	isinstance(object，classinfo)判断object是否是classinfo的一个实例，或者是其子类的实例
-	len(s)                       返回s的长度。
-	map(function，iterable，...) 应用function到每一个元素上，返回结果列表。
-	max()                        返回最大值。
-	min()                        返回最小值。
 	next(iterable[,default])     返回迭代器的下一个元素。
 	open(name[, mode[, buffering]]) 打开一个文件，返回文件对象。
 	pow(x, y[, z])               如果z存在，返回x^y % z，否则返回x^y。
 	print()                      输出
 	range(stop)                  返回从0到stop-1的列表。
 	reload(module)               重新导入模块module。
-	type(object)                 返回object对象的类型。
+	
 
 12、请写出一段 Python 代码实现分组一个 list 里面的元素,比如 [1,2,3,...100]变成 [[1,2,3],[4,5,6]....]
 	
@@ -1120,27 +1121,30 @@ Python 日期和时间：
 		删除一个文件。
 	5、os.system()
 		运行shell命令。
-	6、os.path.split()
-		函数返回一个路径的目录名和文件名
-		os.path.split(‘C:\Python25\abc.txt’) 
-		(‘C:\Python25’, ‘abc.txt’)
 
-	7、os.path.isfile()和os.path.isdir()函数分别检验给出的路径是一个文件还是目录。
+
+	6、os.path.isfile()和os.path.isdir()函数分别检验给出的路径是一个文件还是目录。
 		os.path.isdir(os.getcwd()) 
 			True 
 		os.path.isfile(‘a.txt’) 
 			False
 
-	8、os.path.exists()函数用来检验给出的路径是否真地存在
+	7、os.path.exists()函数用来检验给出的路径是否真地存在
 		os.path.exists(‘C:\Python25\abc.txt’) 
 			False 
 		os.path.exists(‘C:\Python25’) 
 			True
-	9、os.path.abspath(name):获得绝对路径
+	8、os.path.abspath(name):获得绝对路径
 		
-	10、os.path.normpath(path):规范path字符串形式
+	9、os.path.normpath(path):规范path字符串形式
 		
-	11、os.path.getsize(name):获得文件大小，如果name是目录返回0L
+	10、os.path.getsize(name):获得文件大小，如果name是目录返回0L
+
+		
+	11、os.path.split()
+		函数返回一个路径的目录名和文件名
+		os.path.split(‘C:\Python25\abc.txt’) 
+		(‘C:\Python25’, ‘abc.txt’)
 
 	12、os.path.splitext():分离文件名与扩展名
 		os.path.splitext(‘a.txt’) 
