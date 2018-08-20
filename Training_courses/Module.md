@@ -338,31 +338,537 @@ json(JavaScript Object Notation) 一种轻量级的数据交换格式，易于�
 	
 	impot json
 
-	json.dumps()         将Python 对象编码成JSON字符串
+	1、json.dumps()         将Python 对象编码成JSON字符串
+	
+		语法：json.dumps(obj,skipkeys=False,ensure_ascii=True,check_circular=True,allow_man=True,cls=None,
+						ident=None,separators=None,encoding='utf-8',default=None,sort_keys=Flase,**KW)
+
+		实例：
+
+			data = [{'a':1,'b':2,'c':3,'d':4,'e':5}]
+			json = json.dumps(data)
+			print(json)
+				[{"a":1,"c":3,"b":2,"e":5,"d":4}]
+
+
+			print(json.dumps({'a':'Runoob','b':7},sort_keys=True,indent=4,sparators=(',',':')))
+				{
+					"a":"Runoob",
+					"b":7
+				}
+
+		python 原始类型向json类型的转化对照表：
+
+		python                        json
+
+		dict                          object
+
+		list,tuple                    array
+
+		str,unicode                   string
+
+		int long float                number
+
+		True                          true
+
+		Flase                         flase
+
+		None                          null
+
+
 
 		
-	jsom.loads()         将已编码的JSON字符串解码为Python对象。
+	2、jsom.loads()         将已编码的JSON字符串解码为Python对象。
 
+		语法：json.loads(s[, encoding[, cls[, object_hook[, parse_float[, parse_int[, 
+						parse_constant[, object_pairs_hook[, **kw]]]]]]]])
 
+		实例：
+			
+			jsonData = '{"a":1,"b":2,"c":3,"d":4,"e":5}';
 
+			print(json.loads(jsonData))
+				{'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5}
 
+	3、使用第三方库：Demjson
 
+		Demjson 是python第三方库，可用于编码和解码JSON数据，包含了JSONLint的格式化及校验功能。
+	
+		安装：
+			pip install demjson
+	
+		JSON 函数：
 
+			encode        将python对象编码成json字符串
 
+				语法：demjson.encode(self,obj,nest_level=0)
 
+				实例：	import demjson
+						data = [{'a':1,'b':2,'c':3,'d':4,'e':5}]
+						json = demjson.encode(data)
+						print(json)
+							[{"a":1,"b":2,"c":3,"d":4,"e":5}]
 
+			decode        将已编码的json字符串解码为python对象
 
-
+				语法：	demjson.decode(self, txt)
+				实例： import demjson
+					   json = '{"a":1,"b":2,"c":3,"d":4,"e":5}';
+					   print(demjson.decode(json))
+					
 
 "---------------------------------------------------------------------------------"
+
 logging            记录日志，调试
+
+简单配置
+
+	1、日志级别：
+
+		级别                  使用说明
+
+		DEBUG                详细信息，典型地调试问题时会感兴趣
+
+		INFO                 证明事情按预期工作
+
+		WARNING              表明发生了一些意外，或者不久将来会发生的问题，软件还在正常工作
+
+		ERROR                由于更严重的问题，软件不能执行一些功能
+
+		CRITICAL             严重错误，表明软件已经不能继续运行了
+
+	
+	2、几个比较重要的概念：Logger、Handler、Formatter、Filter
+		
+	Logger 记录器，暴露了应用程序代码能直接使用的接口。
+	
+		Logger是一个树形层级结构，在使用接口debug,info,warn,error,critical之前必须创建Logger实例，
+		即创建一个记录器，如果没有显示的进行创建，则默认创建一个root logger,并应用默认的日志级别
+		（WARNING）,处理器Handler(StreamHandler,即将日志信息打印输出在标准输出上)
+		和格式化Formatter(默认格式)
+
+		创建方法：
+			logger = logging.getLogger(logger_name)
+
+		创建logger实例后，可以使用下面方法进行日志级别设置，增加处理器Handler.
+		设置日志级别，只有日志级别大于等于ERROR的日志才会输出：
+			logger.serLevel(logging.ERROR) 
+
+		为Logger实例增加一个处理器：
+			logger.addHandler(handler_name)
+
+		为Logger实例删除一个处理器：
+			logger.removeHandler(handler_name)
+
+
+	Handler 处理器，将（记录生产的）日志记录发送至合适的目的地。
+		
+		Handler处理器类型有很多种，比较常用的有三个：StreamHandler,FileHandler,NullHandler.
+
+		创建处理器的方法：
+
+		StreamHandler:
+			
+			sh = logging.StreamHanler(stream=None)
+	
+		FileHandler:
+			
+			fh = logging.FileHandler(filename,mode='a',encoding=None,delay=False)
+
+		NullHandler:
+
+			NullHandler 类位于核心logging包，不做任何的格式化或者输出。
+			本质上它是什么都不做的handler
+
+		创建处理器之后，通过下面方法设置日志级别，设置格式化器Formatter，增加或删除过滤器Filter.
+
+			设置日志级别：
+
+				ch.setLevel(logging.WARN) 
+			 
+			设置一个格式化器:
+
+				ch.setFormatter(formatter_name)
+		
+			增加一个过滤器：
+				
+				ch.addFilter(filter_name)
+
+			删除一个过滤器：
+
+				ch.removeFilter(filter_name)
+
+
+	Filter 过滤器，提供了更好的粒度控制，它可以决定输出那些日志记录。
+		
+		Handlers 和Loggers 可以使用Filter来完成比较复杂的过滤。
+		Filter基类只允许特定Logger层次一下的事件。
+
+		创建方法：filter = logging.Filter(name='')
+
+	
+	Formatter 格式化器，指明了最终输出中日志记录的布局。
+	
+		使用Formatter对象设置日志信息最后的规则、结构和内容，默认的时间格式为
+		%Y-%m-%d %H:%M:%S。
+
+		创建方法：
+
+			formatter = logging.Formatter(fmt=None,datefmt=None)
+		
+		其中，fmt是消息的格式字符串，datefmt是日期字符串。如果不指名fmt，将使用"%(message)s".
+
+	Logger是一个树形层级结构，Logger可以包含一个或多个Handler和Filter,即Logger与Handler或Filter
+	是一对多的关系。
+
+	
+logging模块使用：
+
+
+1、配置logging基本的设置，然后在控制台输出日志：
+
+	import logging
+
+	logging.basicConfig(level = logging.DEBUG,format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+	函数basicConfig()函数直接进行配置，basicConfig关键字参数如下：
+
+		关键字              描述
+		filename        创建一个FileHandler，使用指定的文件名，而不是使用StreamHandler
+
+		filemode		如果指明了文件名，指明文件的打开模式（如果没有指明filemode,默认为'a'）
+
+		format          hanler使用指明的格式化字符串         
+
+		datefmt         使用指明的日期/时间格式
+
+		level           指明logger的级别
+
+		stream  使用指明的流来初始化StreamHandler，该参数与filename不兼容，如果两者都有，'stream'被忽略
+
+
+	有用的format格式：
+
+			格式                   描述
+
+		%(levelno)s              打印日志级别的数值
+
+		%(levelname)s            打印日志级别名称
+		
+		%(pathname)s             打印当前执行程序的路径
+
+		%(filename)s             打印当前执行程序的名称
+		
+		%(funcName)s             打印日志的当前函数
+		
+		%(lineno)d               打印日志的当前行号
+		
+		%(asctime)s              打印日志的世界
+		
+		%(thread)d               打印线程id
+		
+		%(threadName)s           打印线程名称
+
+		%(process)d              打印进程ID
+
+		%(message)s              打印日志信息
+
+		
+	logger = logging.getLogger(__name__)
+	
+	logger.info("Start print log")
+	logger.debug("Do something")
+	logger.warning("Something maybe fail.")
+	logger.info("Finish")
+
+		2018-08-20 15:04:44,557 - __main__ - INFO - Start print log
+		2018-08-20 15:04:44,558 - __main__ - DEBUG - Do something
+		2018-08-20 15:04:44,558 - __main__ - WARNING - Something maybe fail.
+		2018-08-20 15:04:44,558 - __main__ - INFO - Finish
+	
+2、将日志写入到文件：
+
+	设置logging,创建一个FileHandler,并对输出消息格式进行设置，
+	将其添加到logger,然后将日志写入到指定的文件中。
+
+	import logging
+
+	logger = logging.getLogger(__name__)
+	logger.setLevel(level = logging.INFO)
+
+	handler = logging.FileHandler("log.txt")
+	handler.setLevel(logging.INFO)
+
+	formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+	
+	handler.setFormatter(formatter)
+	logger.addHandler(handler)
+
+	logger.info("Start print log")
+	logger.debug("Do something")
+	logger.warning("Something maybe fail.")
+	logger.info("Finish")
+
+	在log.txt中日志数据为：
+
+		2018-08-20 15:21:49,998 - __main__ - INFO - Start print log
+		2018-08-20 15:21:49,998 - __main__ - WARNING - Something maybe fail.
+		2018-08-20 15:21:49,998 - __main__ - INFO - Finish
+
+3、将日志同时输出到屏幕和日志文件
+
+	import logging
+
+	logger = logging.getLogger(__name__)
+	logger.setLevel(level=logging.INFO)
+
+	handler = logging.FileHandler('log.txt')
+	handler.setLevel(logging.INFO)
+
+	formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+	handler.setFormatter(formatter)
+
+	console = logging.StreamHanler()
+	console.setLevel(logging.INFO)
+
+	logger.addHandler(handler)
+	logger.addHandler(console)
+
+	logger.info("Start print log")
+	logger.debug("Do something")
+	logger.warning("Something maybe fail.")
+	logger.info("Finish")
+
+
+4、可以发现，logging有一个日志处理的主对象，其他处理方式都是通过addHandler添加进去，
+	
+	logging中包含的handler主要有如下几种:
+
+	handler 名称         位置         作用
+
+	StreamHandler：logging.StreamHandler；日志输出到流，可以是sys.stderr，sys.stdout或者文件
+	
+	FileHandler：logging.FileHandler；日志输出到文件
+	
+	BaseRotatingHandler：logging.handlers.BaseRotatingHandler；基本的日志回滚方式
+	
+	RotatingHandler：logging.handlers.RotatingHandler；日志回滚方式，支持日志文件最大数量和日志文件回滚
+	
+	TimeRotatingHandler：logging.handlers.TimeRotatingHandler；日志回滚方式，在一定时间区域内回滚日志文件
+	
+	SocketHandler：logging.handlers.SocketHandler；远程输出日志到TCP/IP sockets
+	
+	DatagramHandler：logging.handlers.DatagramHandler；远程输出日志到UDP sockets
+	
+	SMTPHandler：logging.handlers.SMTPHandler；远程输出日志到邮件地址
+	
+	SysLogHandler：logging.handlers.SysLogHandler；日志输出到syslog
+	
+	NTEventLogHandler：logging.handlers.NTEventLogHandler；远程输出日志到Windows NT/2000/XP的事件日志
+	
+	MemoryHandler：logging.handlers.MemoryHandler；日志输出到内存中的指定buffer
+	
+	HTTPHandler：logging.handlers.HTTPHandler；通过"GET"或者"POST"远程输出到HTTP服务器
+
+
+5、日志回滚
+
+	import logging
+	from logging.handlers import RotatingFileHandler
+	logger = logging.getLogger(__name__)
+	logger.setLevel(level = logging.INFO)
+	#定义一个RotatingFileHandler，最多备份3个日志文件，每个日志文件最大1K
+	rHandler = RotatingFileHandler("log.txt",maxBytes = 1*1024,backupCount = 3)
+	rHandler.setLevel(logging.INFO)
+	formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+	rHandler.setFormatter(formatter)
+	 
+	console = logging.StreamHandler()
+	console.setLevel(logging.INFO)
+	console.setFormatter(formatter)
+	 
+	logger.addHandler(rHandler)
+	logger.addHandler(console)
+	 
+	logger.info("Start print log")
+	logger.debug("Do something")
+	logger.warning("Something maybe fail.")
+	logger.info("Finish")
+
+
+"------------------------------------------------------------------------------"
 
 multiprocessing	      多进程
 
+os.fork:
+
+	pid = os.fork()
+	if pid<0:
+		失败
+	elif pid==0:
+		子进程
+	else:
+		父进程
+
+	os.getpid()   当前进程的进程号
+	os.getppid()  父进程的进程号
+
+multiprocessing:
+
+	1、Pricess 类
+	
+		Process 类用来描述一个进程对象。创建子进程的时候，只需要传入一个执行函数和
+		函数的参数即可完成Process实例的创建。
+
+		Process语法结构如下:
+		p = Process([group [, target [, name [, args [, kwargs]]]]])
+		
+			target：表示这个进程实例所调用对象；
+
+			args：表示调用对象的位置参数元组；
+
+			kwargs：表示调用对象的关键字参数字典；
+
+			name：为当前进程实例的别名；
+
+			group：大多数情况下用不到；
+
+
+		Process类常用方法：
+	
+			p.is_alive()：判断进程实例是否还在执行；
+
+			p.join([timeout])：是否等待进程实例执行结束，或等待多少秒；
+
+			p.start()：启动进程实例（创建子进程）；
+
+			p.run()：如果没有给定target参数，对这个对象调用start()方法时，就将执行对象中的run()方法；
+
+			p.terminate()：不管任务是否完成，立即终止；
+
+	2、Pool类
+
+		常用函数解析：
+		po = Pool(n)  #最大进程数为n
+
+		po.apply_async(func[, args[, kwds]]) ：使用非阻塞方式调用func
+			（并行执行，堵塞方式必须等待上一个进程退出才能执行下一个进程），
+			args为传递给func的参数列表，kwds为传递给func的关键字参数列表；
+
+		po.apply(func[, args[, kwds]])：使用阻塞方式调用func
+
+		po.close()：关闭Pool，使其不再接受新的任务；
+
+		po.terminate()：不管任务是否完成，立即终止；
+
+		po.join()：主进程阻塞，等待子进程的退出， 必须在close或terminate之后使用；
+
+
+	3、Queue类
+
+		q = Queue() #若括号中没有指定最大可接收的消息数量，
+					或数量为负值，那么就代表可接受的消息数量没有上限（直到内存的尽头）；
+
+		q.qsize() : 返回当前队列包含的消息数量
+
+		q.empty() : 如果队列为空,返回True,反之返回False
+
+		q.full()  : 如果队列满了，返回True,反之返回False
+
+		q.get(block,timeout): 获取队列中的一条消息，然后将其从列中移除.
+					如果block默认为True,直到从消息队列中读到消息为止，如果设置了timeout，则等待timeout秒
+					若还没有读到任何消息，则抛出Queue.emoty异常
+					如果block为False,消息队列为空，立刻抛Queue.Empty异常
+
+		q.get_nowait():想当于q.get(false)
+
+		q.put(item,block,timeout):将消息item写入到队列，block默认值为Ture
+					如果block默认值为Ture,消息队列中如果已经没有空间可以写了，此时程序将被阻塞，直到
+					从消息队列腾出空间为止，如果设置了timeout，则会等待timeout秒，若还没有空间
+					则抛Queue.Full异常。
+					如果block默认值为False,消息队列如果没有空间可写，则会立刻抛出Queue.Full异常
+		
+		q.put_nowait(item): 相当于q.put(false)
+
+
+	4、Manager类：
+
+		如果使用Pool创建进程，就需要使用multiprocessing.Manager()中的Queue(),而不是Multiprocessing.Queue().
+		否则报错：
+			RuntimeError: Queue objects should only be shared between processes through inheritance.
+	
+		from multiprocessing import Manager,Pool
+
+		q = Manager().Queue()
+		
+		po = Pool()
+
+		po.apply(writer,(q,))
+		po.apply(reater,(q,))
+
+
+"-------------------------------------------------------------------------------"
 threading	          多线程
 
+1、Thread:
+
+	创建线程实例，启动线程：
+	t = threading.Thread(target=,args=(,))
+	t.start()
+	
+	
+	查看正在运行线程数量：
+	threading.enumberate()
+
+	返回当前线程变量：
+	threading.currentThread()
+
+2、Lock：
+
+	创建锁：
+	mutex = threading.Lock()
+
+	锁定：
+	mutexFlag = mutex.acquire([blocking])
+	
+	if mutexFlag:
+		等待锁释放
+
+	释放：
+	mutex.release()
+
+	其中acquire可以有一个blocking参数，
+	如果设定blocking为true,则当前线程阻塞，知道获取这个锁为止。
+	如果设定blocking为false,则当前线程不会阻塞。
+
+
+	例子：
+
+	mutex = Threading.Lock()
+	def test1():
+		global g_num
+		for i in rang(10000):
+			mutexFlag = mutex.acquire(True)
+			if mutexFlag:   #得到锁
+				g_num +=1
+				mutex.release()  #释放
+
+
+"-----------------------------------------------------------------------------"
 copy	               拷贝
 
+
+
+
+
+
+
+
+
+
+
+
+"-------------------------------------------------------------------------------"
 time	               时间
 
 datetime	        日期和时间
