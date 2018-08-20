@@ -375,10 +375,27 @@ json(JavaScript Object Notation) 一种轻量级的数据交换格式，易于�
 
 		None                          null
 
+	2、dump 必须传文件描述符，将序列化的str保存到文件中:
 
+		语法：
+
+			def dump(obj, fp, skipkeys=False, ensure_ascii=True, check_circular=True,
+				    allow_nan=True, cls=None, indent=None, separators=None,
+					default=None, sort_keys=False, **kw):
+
+			一个动作是将”obj“转换为JSON格式的字符串，还有一个动作是将字符串写入到文件中，
+			也就是说文件描述符fp是必须要的参数
+
+		实例：
+
+			a = {"name":"Tom", "age":23}
+				with open("test.json", "w", encoding='utf-8') as f:
+				    # indent 超级好用，格式化保存字典，默认为None，小于0为零个空格
+				    f.write(json.dumps(a, indent=4))
+					#json.dump(a,f,indent=4)   # 和上面的效果一样
 
 		
-	2、jsom.loads()         将已编码的JSON字符串解码为Python对象。
+	3、jsom.loads()         将已编码的JSON字符串解码为Python对象。
 
 		语法：json.loads(s[, encoding[, cls[, object_hook[, parse_float[, parse_int[, 
 						parse_constant[, object_pairs_hook[, **kw]]]]]]]])
@@ -390,7 +407,25 @@ json(JavaScript Object Notation) 一种轻量级的数据交换格式，易于�
 			print(json.loads(jsonData))
 				{'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5}
 
-	3、使用第三方库：Demjson
+	4、load  只接收文件描述符，完成了读取文件和反序列化
+		
+		语法：
+
+			def load(fp, cls=None, object_hook=None, parse_float=None, parse_int=None, 
+					parse_constant=None, object_pairs_hook=None, **kw):
+	
+		实例：
+
+			import json
+			with open("test.json", "r", encoding='utf-8') as f:
+			    aa = json.loads(f.read())
+				f.seek(0)
+				bb = json.load(f)    # 与 json.loads(f.read())
+			print(aa)
+			print(bb)
+
+
+	5、使用第三方库：Demjson
 
 		Demjson 是python第三方库，可用于编码和解码JSON数据，包含了JSONLint的格式化及校验功能。
 	
@@ -415,7 +450,16 @@ json(JavaScript Object Notation) 一种轻量级的数据交换格式，易于�
 				实例： import demjson
 					   json = '{"a":1,"b":2,"c":3,"d":4,"e":5}';
 					   print(demjson.decode(json))
-					
+	6、pickle 模块：
+
+		json模块和pickle模块都有  dumps、dump、loads、load四种方法，而且用法一样。
+
+		不用的是json模块序列化出来的是通用格式，其它编程语言都认识，就是普通的字符串，
+
+		而picle模块序列化出来的只有python可以认识，其他编程语言不认识的，表现为乱码
+
+		不过picle可以序列化函数，但是其他文件想用该函数，在该文件中需要有该文件的定义
+		（定义和参数必须相同，内容可以不同）
 
 "---------------------------------------------------------------------------------"
 
