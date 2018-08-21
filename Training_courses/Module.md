@@ -900,27 +900,224 @@ threading	          多线程
 
 
 "-----------------------------------------------------------------------------"
+
 copy	               拷贝
 
+1、deepcopy()          深拷贝
 
 
+2、copy()              拷贝
 
 
+例子：
+
+	a = [[1],[2],[3]]
+
+	b = copy.copy(a)
+
+		拷贝的只是引用。
+
+	c = copy.deepcopy(a)
+		
+		拷贝了内存一块内存空间
 
 
+	a[1].append(0)
 
-
-
-
+	a
+		[[1], [2, 0], [3]]
+	b
+		[[1], [2, 0], [3]]
+	c
+		[[1], [2], [3]]
 
 "-------------------------------------------------------------------------------"
 time	               时间
 
+	1、time.tiem()				时间戳
+
+	2、time.localtime()		    时间元组
+
+	3、time.asctime()           格式化最简单的获取可读的时间模式的函数
+
+	4、time.strftime(format[,t]) 格式化日期
+
+	5、time.clock()              用以浮点数计算的秒数返回当前的CPU时间
+
+	6、time.ctime([secs])        作用相当于asctime(localtime(secs))
+
+	7、time.sleep(secs)          推迟调用线程的运行
+
+	8、time.mktime(tupletime)    接受时间元组并返回时间戳
+
+	9、time.strptime(str,fmt='%a %b %d %H:%M:%S %Y')  根据fmt的格式把一个时间字符串解析为时间元组。
+
+"-------------------------------------------------------------------------------"
+
 datetime	        日期和时间
+
+	datetime模块定义了5个类，分别是：
+	
+	1、datetime.date :表示日期的类
+		
+		静态方法和字段：
+			date.max、date.min：date对象所能表示的最大、最小日期；
+			date.resolution：date对象表示日期的最小单位。这里是天。
+			date.today()：返回一个表示当前本地日期的date对象；
+			date.fromtimestamp(timestamp)：根据给定的时间戮，返回一个date对象；
+
+			from datetime import *
+			import time
+
+			print   'date.max:', date.max
+			print   'date.min:', date.min
+			print   'date.today():', date.today()
+			print   'date.fromtimestamp():', date.fromtimestamp(time.time())
+																	  
+			Output==============
+			date.max: 9999-12-31
+			date.min: 0001-01-01
+			date.today(): 2016-10-26
+			date.fromtimestamp(): 2016-10-26
+
+		方法和属性：
+
+			d1 = date(2011,06,03)#date对象
+			d1.year、date.month、date.day：年、月、日；
+			d1.replace(year, month, day)：生成一个新的日期对象，用参数指定的年，月，日代替
+										  原有对象中的属性。（原有对象仍保持不变）
+			d1.timetuple()：返回日期对应的time.struct_time对象；
+			d1.weekday()：返回weekday，如果是星期一，返回0；如果是星期2，返回1，以此类推；
+			d1.isoweekday()：返回weekday，如果是星期一，返回1；如果是星期2，返回2，以此类推；
+			d1.isocalendar()：返回格式如(year，month，day)的元组；
+			d1.isoformat()：返回格式如'YYYY-MM-DD’的字符串；
+			d1.strftime(fmt)：和time模块format相同。'
+	
+	2、datetime.time:表示时间的类
+		
+		datetime.time(hour[,minute[,second[,microsecond[,tzinfo]]]]) 
+		
+		静态方法和字段：
+			time.min、time.max：time类所能表示的最小、最大时间。
+			其中，time.min = time(0, 0, 0, 0)， 
+			time.max = time(23, 59, 59, 999999)；
+			
+			time.resolution：时间的最小单位，这里是1微秒；
+
+		方法和属性：
+
+			t1 = datetime.time(10,23,15)  #time对象
+			t1.hour、t1.minute、t1.second、t1.microsecond：时、分、秒、微秒；
+			t1.tzinfo：时区信息；
+			t1.replace([ hour[,minute[,second[,microsecond[,tzinfo]]]]])：
+					创建一个新的时间对象，用参数指定的时、分、秒、微秒代替原有对象中的属性
+					（原有对象仍保持不变）；
+			t1.isoformat()：返回型如"HH:MM:SS"格式的字符串表示；
+			t1.strftime(fmt)：同time模块中的format。
+
+	3、datetime.datetime:表示日期时间的类
+		
+		datetime相当于date和time结合起来。
+		datetime.datetime (year, month, day[,hour[,minute[,second[,microsecond[,tzinfo]]]]])
+		
+		静态方法和字段:
+			
+			datetime.today()：返回一个表示当前本地时间的datetime对象；
+			datetime.now([tz])：返回一个表示当前本地时间的datetime对象，如果提供了参数tz，
+								则获取tz参数所指时区的本地时间；
+			datetime.utcnow()：返回一个当前utc时间的datetime对象；#格林威治时间
+			datetime.fromtimestamp(timestamp[, tz])：根据时间戮创建一个datetime对象，参数tz指定时区信息；
+			datetime.utcfromtimestamp(timestamp)：根据时间戮创建一个datetime对象；
+			datetime.combine(date, time)：根据date和time，创建一个datetime对象；
+			datetime.strptime(date_string, format)：将格式字符串转换为datetime对象；
+		
+		方法和属性:
+
+			dt=datetime.now()#datetime对象
+			dt.year、month、day、hour、minute、second、microsecond、tzinfo：
+			dt.date()：获取date对象；
+			dt.time()：获取time对象；
+			dt.replace([year[,month[,day[,hour[,minute[,second[,microsecond[,tzinfo]]]]]]]])：
+			dt.timetuple ()
+			dt.utctimetuple ()
+			dt.toordinal ()
+			dt.weekday ()
+			dt.isocalendar ()
+			dt.isoformat ([ sep] )
+			dt.ctime ()：返回一个日期时间的C格式字符串，等效于time.ctime(time.mktime(dt.timetuple()))；
+			dt.strftime (format)
+
+
+	4、datetime.timedelta:表示时间间隔，即两个时间点的间隔,时间加减
+		
+		dt = datetime.datetime.now()
+		#日期减一天
+		dt1 = dt + timedelta(days=-1)#昨天
+		dt2 = dt - timedelta(days=1)#昨天
+		dt3 = dt + timedelta(days=1)#明天
+		delta_obj = dt3-dt
+
+
+		dt = datetime.datetime.now()
+			2018-08-21 18:15:38.331288
+		dt1 = dt + datetime.timedelta(days=-1)
+			2018-08-20 18:15:38.331288
+		dt2 = dt - datetime.timedelta(days=1)
+			2018-08-20 18:15:38.331288
+		dt3 = dt + datetime.timedelta(days=1)
+			2018-08-22 18:15:38.331288
+
+
+	5、datetime.tzinfo:时区的相关信息
+		
+		tzinfo是关于时区信息的类
+		tzinfo是一个抽象类，所以不能直接被实例化
+
+"------------------------------------------------------------------------------"
 
 calendar	           日历
 
+	1、calendar.calendar(year,w=2,l=1,c=6)  
+	
+			返回一个多行字符串格式的year年年历
+			3个月一行，间隔距离为c。每日宽度间隔为w字符。
+			每行长度为21* W+18+2* C。l是每星期行数。
+											
+	2、calendar.month(year,month,w=2,l=1)  
+	
+			返回一个多行字符串格式的year年month月日历
+
+	3、calendar.monthrange(year,month)  
+			
+			返回两个整数。第一个是该月的星期几的日期码，第二个是该月的日期码。
+			日从0（星期一）到6（星期日）;月从1到12。
+	
+	4、calendar.isleap(year)
+			
+			是闰年返回True,否则返回False
+
+	5、calendar.leapdays(y1,y2)
+
+			当y1和y2两个年份之间闰年总数
+		
+
+"-----------------------------------------------------------------------------"
+
 hashlib	            加密算法
+	
+	python 中的hashlib模块用来进行hash或者md5加密，这里的加密，其实并非我们通常
+	所说的加密，简单的来说，这种加密一般是不可逆的，这种加密实际上是被称为"摘要算法"
+	包括MD5、SHA1等等，MD5的全称是Message-Digest Algorithm 5(信息-摘要算法)
+	SHA1是Secure Hash Algorithm(安全哈希算法)。SHA1基于MD5,加密后数据长度更长。
+
+	那么什么是摘要算法呢？摘要算法又称哈希算法、散列算法。
+	它通过一个函数，把任意长度的数据转换为一个长度固定的数据串(通常用16进制字符串表示)
+
+
+
+
+
+
 
 
 
@@ -960,12 +1157,20 @@ random	           生成随机数
 
 re	             字符串正则匹配
 
+
+
+"-----------------------------------------------------------------------------------------"
+
 socket	        标准的 BSD Sockets API
+
+
+"-----------------------------------------------------------------------------------------"
 
 shutil	         文件和目录管理
 
-glob	       基于文件通配符搜索
+"----------------------------------------------------------------------------------------"
 
+glob	       基于文件通配符搜索
 
 
 
