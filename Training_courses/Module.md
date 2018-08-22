@@ -65,49 +65,60 @@ os	              操作系统接口
 	6、os.system()
 		运行shell命令。
 
-	7、os.path.isfile()和os.path.isdir()函数分别检验给出的路径是一个文件还是目录。
+	7、os.getenv()  获取一个环境变量，如果没有返回none
+
+	8、os.putenv(key, value)    设置一个环境变量值
+
+	9、	os.curdir        返回当前目录 ('.')
+		os.mkdir(path)    创建一个目录
+		os.makedirs(path)    递归的创建目录
+		os.chdir(dirname)    改变工作目录到dirname       
+
+	10、os.path.isfile()和os.path.isdir()函数分别检验给出的路径是一个文件还是目录。
 		os.path.isdir(os.getcwd()) 
 			True 
 		os.path.isfile(‘a.txt’) 
 			False
 
-	8、os.path.exists()函数用来检验给出的路径是否真地存在
+	11、os.path.exists()函数用来检验给出的路径是否真地存在
 		os.path.exists(‘C:\Python25\abc.txt’) 
 			False 
 		os.path.exists(‘C:\Python25’) 
 			True
 	
-	9、os.path.abspath(name):获得绝对路径
+	12、os.path.abspath(name):获得绝对路径
 
 
-	10、os.path.getsize(name):获得文件大小，如果name是目录返回0L
+	13、os.path.getsize(name):获得文件大小，如果name是目录返回0L
 
 
-	11、os.path.split()
+	14、os.path.split()
 		函数返回一个路径的目录名和文件名
 		os.path.split(‘C:\Python25\abc.txt’) 
 			(‘C:\Python25’, ‘abc.txt’)
 
-	12、os.path.splitext():分离文件名与扩展名
+	15、os.path.splitext():分离文件名与扩展名
 			os.path.splitext(‘a.txt’) 
 				(‘a’, ‘.txt’)
 
-	13、os.path.join(path,name):连接目录与文件名或目录
+	16、os.path.join(path,name):连接目录与文件名或目录
 			os.path.join(‘c:\Python’,’a.txt’) 
 				‘c:\Python\a.txt’ 
 			os.path.join(‘c:\Python’,’f1’) 
 				‘c:\Python\f1’
 	
 	
-	14、os.path.basename(path):返回文件名
+	17、os.path.basename(path):返回文件名
 			os.path.basename(‘a.txt’) 
 				‘a.txt’ 
 			os.path.basename(‘c:\Python\a.txt’) 
 				‘a.txt’
 
-	15、os.path.dirname(path):返回文件路径
+	18、os.path.dirname(path):返回文件路径
 			os.path.dirname(‘c:\Python\a.txt’) 
 				‘c:\Python’
+	
+
 
 "-----------------------------------------------------------------"
 
@@ -1112,14 +1123,144 @@ hashlib	            加密算法
 
 	那么什么是摘要算法呢？摘要算法又称哈希算法、散列算法。
 	它通过一个函数，把任意长度的数据转换为一个长度固定的数据串(通常用16进制字符串表示)
+	摘要算法就是通过摘要算法f(),对任意长度的数据data计算固定长度的摘要digest。摘要算法
+	可以用来检验数据是否改变。
+
+	摘要算法之所以能指出数据是否被篡改过，就是因为摘要函数是一个单向函数，计算f(data)
+	很容易，但是digest反推data却非常困难。而且，对原始数据做一个bit的修改，都会导致计算
+	出的摘要完全不同。
+
+	hashlib是个摘要算法相关的操作，里面包括md5、sha1、sha224、sha226、sha384、sha512。
+	代替了原来的md5和sha模块。
+
+	hashlib是一个摘要算法库，不是加密，加密是可以解码的，摘要算法不可逆向，用于文件校验，密码转换等。
+	SHA的用法比MD5一样，但是会比MD5更安全，但是效率也更低。
+
+
+	1、方法：
+
+		new(name,string='')    创建指定加密模式的hash对象
+			
+			d= hashlib.new('md5','ddd'.encode('utf-8'))
+			print(d.hexdigest())
+
+	2、update(arg)     更新哈希对象以字符串参数
+			
+			hash = haslib.md5()
+			hash.update('admin'.encode('utf-8'))
+			hash.hexdigest()
+
+	3、digest()        返回摘要，作为二进制数据字符串
+
+
+	4、hexdigest()     返回摘要，作为十六进制数据串
+			
+		
+	5、密码验证，由于hashlib摘要加密不能反解，只能正解比较是否相等。
+
+例子：
+
+	1、md5 加密:
+
+		hash = hashlib.md5()
+		hash.update('admin'.encode('utf-8'))
+		print(hash.hexdigest())
+		21232f297a57a5a743894a0e4a801fc3
+
+	2、sha1加密
+		
+		hash = hashlib.sha1()
+		hash.update('admin'.encode('utf-8'))
+		print(hash.hexdigest())
+		d033e22ae348aeb5660fc2140aec35850c4da997
+
+	3、sha256加密
+		
+		hash = hashlib.sha256()
+		hash.update('admin'.encode('utf-8'))
+		print(hash.hexdigest())
+		8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
+
+	4、sha384加密
+		
+		hash = hashlib.sha384()
+		hash.update('admin'.encode('utf-8'))
+		print(hash.hexdigest())
+		9ca694a90285c034432c9550421b7b9dbd5c0f4b6673f05f6dbce58052ba2
+		0e4248041956ee8c9a2ec9f10290cdc0782
+
+	5、sha512加密
+		
+		hash = hashlib.sha512()
+		hash.update('admin'.encode('utf-8'))
+		print(hash.hexdigest())
+		c7ad44cbad762a5da0a452f9e854fdc1e0e7a52a38015f23f3eab1d80b931dd4726
+		34dfac71cd34ebc35d16ab7fb8a90c81f975113d6c7538dc69dd8de9077ec
+
+加盐加密：
+
+	上面的算法虽然很厉害，但是仍然有缺陷，通过装库可以反解，所以必须要对加密算法
+	中添加自定义key再来做加密。
+
+	md5加密:
+
+		hash = hashlib.md5('python'.encode('utf-8'))
+		hash.update('admin'.encode('utf-8'))
+		print(hash.hexdigest())
+			75b431c498b55557591f834af7856b9f
+	
+	hmac加密：不可逆键值对方式加密
+		
+		hmac内部对我们创建的key和内容进行处理后再加密
+
+		import hmac
+
+		h = hmac.new('python'.encode('utf-8'))
+		h.update('helloworld'.encode('utf-8'))
+		print(h.hexdigest())
+			b3b867248bb4cace835b59562c39fd55
 
 
 
+"------------------------------------------------------------------------------"
 
+random	           生成随机数
 
+	random.seed(a=None, version=2)  # 初始化伪随机数生成器。如果未提供a或者a=None，																 则使用系统时间为种子。如果a是一个数，则作为种子。
+	random.getstate()				# 返回一个当前生成器的内部状态的对象
+	random.setstate(state)			# 传入一个先前利用getstate方法获得的状态对象，使得生成器恢复到这个状态。
+	random.getrandbits(k)			# 返回range(0,2**k)之间的一个整数，相当于randrange(0,2**k)
+	
 
+	random.randrange(stop)			# 返回range(0,stop)之间的一个整数
+	random.randrange(start, stop[, step])  # 返回range[start,stop)之间的一个整数，可加step，跟range(0,10,2)类似
+	
+	random.randint(a, b)			# 返回range[a,b]之间的一个整数，等价于然的range(a,b+1)
+	random.choice(seq)				#从非空序列seq中随机选取一个元素。如果seq为空则弹出 IndexError异常。
+	random.choices(population, weights=None, *, cum_weights=None, k=1) 
+									#3.6版本新增。从population集群中随机抽取K个元素（可重复）。
 
+		
 
+"------------------------------------------------------------------------------"
+
+random	           生成随机数
+
+	random.seed(a=None, version=2)  # 初始化伪随机数生成器。如果未提供a或者a=None，																 则使用系统时间为种子。如果a是一个数，则作为种子。
+	random.getstate()				# 返回一个当前生成器的内部状态的对象
+	random.setstate(state)			# 传入一个先前利用getstate方法获得的状态对象，使得生成器恢复到这个状态。
+	random.getrandbits(k)			# 返回range(0,2**k)之间的一个整数，相当于randrange(0,2**k)
+	
+
+	random.randrange(stop)			# 返回range(0,stop)之间的一个整数
+	random.randrange(start, stop[, step])  # 返回range[start,stop)之间的一个整数，可加step，跟range(0,10,2)类似
+	
+	random.randint(a, b)			# 返回range[a,b]之间的一个整数，等价于然的range(a,b+1)
+	random.choice(seq)				#从非空序列seq中随机选取一个元素。如果seq为空则弹出 IndexError异常。
+	random.choices(population, weights=None, *, cum_weights=None, k=1) 
+									#3.6版本新增。从population集群中随机抽取K个元素（可重复）。
+
+		
 
 "------------------------------------------------------------------------------"
 
@@ -1157,16 +1298,454 @@ random	           生成随机数
 
 re	             字符串正则匹配
 
+	1、表示字符 :
 
+		.             匹配任意一个字符（除\n）
+
+		[]            匹配[]中列举的字符
+
+		\w            匹配单词字符，即a-z,A-Z,0-9   
+		
+		\W            匹配非单词
+
+		\s            匹配空白，即空格、table键
+
+		\S            匹配非空白
+ 
+		\d            匹配数字，即0-9
+
+		\D            匹配非数字，即不是数字
+
+
+	2、数量
+
+		*             匹配前一个字符出现0次或无数次
+
+		+             匹配前一个字符至少出现一次
+
+		?             匹配前一个字符出现1次或0次
+
+		{m}           匹配前一个字符出现m次
+
+		{m,n}         匹配前一个字符出现从m到n次
+
+		{m,}          匹配前一个字符至少出现m次
+
+
+	3、边界：
+
+		^            匹配字符串开头
+
+		$            匹配字符串结尾
+
+		\b           匹配一个单词的边界
+
+		\B           匹配非单词的边界
+
+	4、匹配分组：
+
+		|            匹配左右任意一个表达式
+
+		(ab)         将括号中字符串作为一个分组
+
+		\num         引用分组num匹配到的字符串
+
+		(?p<name>)   分组起别名
+
+		(?P=name)    引用别名为name分组匹配到的字符串
+
+
+	5、python 交互
+
+		import  re
+
+		a、 ret=re.match(r'正则表达式'，'string')     从开头匹配
+			ret.group()                               提取匹配到的内容          
+		
+		b、	ret=re.search(r'正则表达式','string')    全局匹配，只匹配一个
+			ret.group()
+
+		c、 ret=re.findall(r'正则表达式'，'string')   查找所有，返回一个列表
+			pirnt(ret)
+
+		d、	ret=re.findter(r'正则表达式'，'string')      查找所有，返回一个迭代器
+			for i in ret:
+		
+		e、	re.sbu(r'正则表达式','替换内容'，'string')
+
+			例1：ret = re.sbu(r"\d+",'998','python = 997')
+				print(ret)
+					python = 998
+
+			例2：def add(temp):
+					strNum = temp.group()
+					num = int(strNum) + 1
+					return str(num)
+
+				ret = re.sub(r"\d+",add,"python = 997")
+				print(ret)
+					python = 998
+
+		f、	re.split(r"","string")
+			ret = re.split(r":| ","info:xiaoZhang 33 shandong")
+			pirnt(ret)
+
+				['info','xiaoZhang','33','shangdong']
+
+	
 
 "-----------------------------------------------------------------------------------------"
 
 socket	        标准的 BSD Sockets API
 
+from socket import *
+
+UDP:
+
+	1、客户端：
+
+		udp = socket(AF_INET,SOCKET_DGRAM)
+
+		udp.sendto(sendData,Addr)
+
+		udp.recvfrom(1024)
+
+		udp.close()
+
+	2、服务器：
+
+		udp = socket(AF_INEF,SOCKET_DGRAM)
+
+		udp.bind(Addr)
+
+		recvData = udp.recvfrom(1024)
+
+		udp.sendto(recvData[0],recvData[1])    recvData[1] 客户端的ip和端口
+
+		udp.close()
+
+		
+TCP:
+
+	1、客户端
+
+		tcp = socket(AF_INET,SOCKET_STREAM)
+		
+		tcp.connetc(Addr)
+
+		tcp.send(sendData)
+
+		tcp.recv(1024)
+
+		tcp.close()
+
+
+	2、服务器
+
+		tcp = socket(AF_INET,SOCKET_STREAM)
+
+		tcp.bind(Addr)
+
+		tcp.listen(10)
+
+			client,addr = tcp.accept()
+			recvData = clent.recv(1024)
+			clent.send(recvData)
+			clent.close()
+		tcp.close()
+
+
+SELECT:
+	
+例1：
+
+	tcp = socket(AF_INET,SOCKET_STREAM)
+	tcp.bind(Addr)
+	tcp.listen(10)
+
+	imputs = [tcp,sys.stdin]
+
+	running = True
+
+	while True:
+
+		调用select函数，阻塞等待
+		readable,writeable,exceptional = select(inputs,[],[]) 
+
+		数据抵达，循环
+		for sock in readable:
+			监听到有新的连接
+			if sock == tcp:
+				conn,addr = tcp.accept()
+				inputs.append(conn)
+
+			监听到有键盘输入
+			elif sock == sys.stdin:
+				cmd = sys.stdin.readline()
+				running = False
+				break
+
+			有数据抵达
+			else：
+				data = sock.recv(1024)
+				if data:
+					sock.send(data)
+				else:
+					imputs.remove(sock)
+					sock.close()
+		
+		if not running:
+			break
+
+	tcp.close()
+
+
+例2：
+
+	import Queue
+	form select import select
+	form socket import *
+
+	保存客户端发送过来的消息，将消息存放到队列中
+	
+	message_queue = {}
+	inputs = []
+	outputs = []
+
+	if __name__ == '__main__':
+
+		tcp = socket(AF_INET,SOCK_STREAM)
+		tcp.bind()
+		tcp.listen(10)
+		inputs.append(tcp)
+
+		while True:
+			readable,writeable,exceptional = select(inputs,outputs,[])
+			
+			for sock in readable:
+
+				if sock == tcp:
+
+					conn,addr = sock.accept()
+					inputs.append(conn)
+					message_queue[conn] = Queue.Queue()
+
+				else:
+
+					try:
+
+						recvData = sock.recv(1024)
+					
+						if recvData:
+							message_queue[sock].put(recvData)
+
+							if sock not in outputs:
+								outputs.append(sock)
+
+					except ConnectionResetError:
+						inputs.remove(sock)
+						del message_queue[sock]
+
+		for sock in outable:
+			try:
+				if not message_queue[sock].empty():
+					send_data = message_queue[sock].get()
+					sock.send(send_data)
+				else:
+					outputs.remove(sock)
+
+			except ConnectionResetError:
+
+				del message_queue[sock]
+				outputs.remove(sock)
+
+	
+I/O多路复用：SELECT
+
+	通过上面的，只是用到一个函数 select.select()
+	while True:
+		readable, writable, exceptional = select.select(inputs, outputs,inputs)
+						
+	对reable,writeable 列表循环,对应reable列表中的值有两种情况：
+		for sock in reable:
+
+			if sock == tcp:  
+				这是一个新来的链接,需要接受链接，放到inputs列表中
+
+			else:
+				这是一个已经存在的类别，需要接受数据
+				recvData = sock.recv(1024)
+				
+				if recvData:
+					如果数据不为空，则存放到这个链接对应的队列中
+					这个队列存放到outputs列表中
+				else:
+					如果这个接受到的数据为空，
+					则删除这个链接对应在列表中的文件描述符。
+
+		for sock in writeable:
+
+			if 链接对应的队列中数据：
+				存在，则得到数据，发送数据
+
+			else:
+				不存在数据，删除链接对应的输出列表中的文件描述符
+
+EPOLL:
+
+	import select
+	from socket import *
+
+	s = socket(AF_INET,SOCK_STREAM)
+	s.bind()
+	s.listen()
+
+	创建一个epoll对象
+	epoll = select.epoll()
+
+	注册事件到epoll中
+	epoll.register(s.fileno(),select.EPOLLIN|select.EPOLLET)
+
+	connections={}
+	addresses={}
+
+	while True:
+
+		epoll进行fd扫描
+		epoll_list = epoll.poll()
+
+		对事件进行判断
+		for fd,event in epoll_list:
+			
+			如果fd是sock创建套接字
+			if fd == s.fileno():
+				conn,addr = s.accept()
+
+				connections[conn.fileno()] =conn
+				address[conn.fileno()] = addr
+
+				向epoll中注册链接socket事件
+				epoll.register(conn.fileno(),select.EPOLLIN|select.EPOLLET)
+
+			elif events == select.EPOLLIN:
+				
+				recvData = connection[fd].recv(1024)
+
+				if len(recvData) > 0:
+					print(recvData)
+				else:
+					epoll.unregister(fd)
+					
+					connection[fd].close()
+
+
+
+I/O多路EPOLL:
+
+	import select
+	1、创建一个epoll对象：
+
+		epoll = select.epoll()
+	
+	2、注册事件到epoll中
+
+		epoll.register(s.fileno(),select.EPOLLIN|select.EPOLLET)
+
+	3、移除：
+		
+		epoll.unregister(fd)
+
+	4、epoll进行fd扫描
+
+		epoll_list = epoll.poll()
+
+	5、事件进行判断
+
+		for fd,event in epoll_list:
+
+		if fd = s.fileno():	是一个新来的链接
+
+		elif events == select.EPOLLIN:
+
+			取得数据
+			recvData = connection[fd].recv(1024)
+
+	6、说明：
+
+		EPOLLIN （可读）
+		EPOLLOUT （可写）
+		EPOLLET （ET模式）
+		
+		epoll对文件描述符的操作有两种模式：LT（level trigger）和ET（edge trigger）。
+		LT模式是默认模式，LT模式与ET模式的区别如下：
+
+		LT模式：当epoll检测到描述符事件发生并将此事件通知应用程序，应用程序可以不立即处理该事件。
+		下次调用epoll时，会再次响应应用程序并通知此事件。
+
+		ET模式：当epoll检测到描述符事件发生并将此事件通知应用程序，应用程序必须立即处理该事件。
+		如果不处理，下次调用epoll时，不会再次响应应用程序并通知此事件。
+
+协程gevent:
+
+	gevent的使用
+
+	def f(n):
+		for i in range(n):
+			print gevent.getcurrent(), i
+
+	g1 = gevent.spawn(f, 5)
+	g2 = gevent.spawn(f, 5)
+	g3 = gevent.spawn(f, 5)
+	g1.join()
+	g2.join()
+	g3.join()
+
+	
+
+	tcp中使用：
+
+	import sys
+	import time
+	import gevent
+
+	from gevent import socket,monkey
+	monkey.patch_all()
+
+	def handle_request(conn):
+		while True:
+		data = conn.recv(1024)
+		if not data:
+			conn.close()
+			break
+		print("recv:", data)
+		conn.send(data)
+
+
+	def server(port):
+		s = socket.socket()
+		s.bind(('', port))
+		s.listen(5)
+		while True:
+			cli, addr = s.accept()
+			gevent.spawn(handle_request, cli)
+
+	if __name__ == '__main__':
+	server(7788)
+
+
 
 "-----------------------------------------------------------------------------------------"
 
-shutil	         文件和目录管理
+shutil        主要作用与拷贝文件用的
+
+	1、shutil.copyfileobj(fsrc,fdest)	将文件内容拷贝到另一个文件
+
+		shutil.copyfileobj(open('old.xml','r'),open('new.xml','w'))
+
+	2、
+
+
+
 
 "----------------------------------------------------------------------------------------"
 
