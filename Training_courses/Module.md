@@ -1221,47 +1221,6 @@ hashlib	            加密算法
 			b3b867248bb4cace835b59562c39fd55
 
 
-
-"------------------------------------------------------------------------------"
-
-random	           生成随机数
-
-	random.seed(a=None, version=2)  # 初始化伪随机数生成器。如果未提供a或者a=None，																 则使用系统时间为种子。如果a是一个数，则作为种子。
-	random.getstate()				# 返回一个当前生成器的内部状态的对象
-	random.setstate(state)			# 传入一个先前利用getstate方法获得的状态对象，使得生成器恢复到这个状态。
-	random.getrandbits(k)			# 返回range(0,2**k)之间的一个整数，相当于randrange(0,2**k)
-	
-
-	random.randrange(stop)			# 返回range(0,stop)之间的一个整数
-	random.randrange(start, stop[, step])  # 返回range[start,stop)之间的一个整数，可加step，跟range(0,10,2)类似
-	
-	random.randint(a, b)			# 返回range[a,b]之间的一个整数，等价于然的range(a,b+1)
-	random.choice(seq)				#从非空序列seq中随机选取一个元素。如果seq为空则弹出 IndexError异常。
-	random.choices(population, weights=None, *, cum_weights=None, k=1) 
-									#3.6版本新增。从population集群中随机抽取K个元素（可重复）。
-
-		
-
-"------------------------------------------------------------------------------"
-
-random	           生成随机数
-
-	random.seed(a=None, version=2)  # 初始化伪随机数生成器。如果未提供a或者a=None，																 则使用系统时间为种子。如果a是一个数，则作为种子。
-	random.getstate()				# 返回一个当前生成器的内部状态的对象
-	random.setstate(state)			# 传入一个先前利用getstate方法获得的状态对象，使得生成器恢复到这个状态。
-	random.getrandbits(k)			# 返回range(0,2**k)之间的一个整数，相当于randrange(0,2**k)
-	
-
-	random.randrange(stop)			# 返回range(0,stop)之间的一个整数
-	random.randrange(start, stop[, step])  # 返回range[start,stop)之间的一个整数，可加step，跟range(0,10,2)类似
-	
-	random.randint(a, b)			# 返回range[a,b]之间的一个整数，等价于然的range(a,b+1)
-	random.choice(seq)				#从非空序列seq中随机选取一个元素。如果seq为空则弹出 IndexError异常。
-	random.choices(population, weights=None, *, cum_weights=None, k=1) 
-									#3.6版本新增。从population集群中随机抽取K个元素（可重复）。
-
-		
-
 "------------------------------------------------------------------------------"
 
 random	           生成随机数
