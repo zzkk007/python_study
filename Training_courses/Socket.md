@@ -1055,11 +1055,14 @@ select版-TCP服务器:
 	server.listen(10)
 
 	inputs = [server]
+	
 	outputs = []
+	
 	message_queues = {}
+	
 	timeout = 20
 
-	while inputs:
+	while true:
 		
 		readable,writeable,exceptional = select.select(inputs,outputs,inputs,timeout)
 
