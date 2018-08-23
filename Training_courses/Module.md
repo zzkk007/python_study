@@ -1738,7 +1738,7 @@ shutil        主要作用与拷贝文件用的
 	9、shutil.move('folder1','folder3')  递归的去移动文件，它类似mv命令，其实就是重命名。
 
 
-	10、shuitl.make_archive(base_name,format,...) 创建压缩包并返回文件路径，例如zip,tar
+	10、shutil.make_archive(base_name,format,...) 创建压缩包并返回文件路径，例如zip,tar
 
 		base_name:压缩包的文件名，也可以是压缩包的路径，只是文件时，则保存至当前目录,否则保存到指定目录。
 
