@@ -1644,6 +1644,9 @@ I/O多路EPOLL:
 		ET模式：当epoll检测到描述符事件发生并将此事件通知应用程序，应用程序必须立即处理该事件。
 		如果不处理，下次调用epoll时，不会再次响应应用程序并通知此事件。
 
+
+gevent	            基于协程的Python网络库
+
 协程gevent:
 
 	gevent的使用
@@ -1701,19 +1704,208 @@ shutil        主要作用与拷贝文件用的
 
 		shutil.copyfileobj(open('old.xml','r'),open('new.xml','w'))
 
-	2、
+	2、shutil.copyfile(src, dst)　　（copyfile只拷贝文件内容）
+		
+		shutil.copyfile('f1.log','f2.log')
+
+	3、shutil.copy(src,dst)   拷贝文件和权限
+
+		shutil.copy('f1.log','f2.log')
+
+	4、shutil.copy2(src,dst)  拷贝文件和状态信息
+
+		shutil.copy2('fl.log','f2.log')
+
+	5、shutil.copymode(src,dst) 拷贝权限，内容，组，用户均不变 （前提是dst文件存在，不然报错）
+		
+		shutil.copymode('f1.log','f2.log')
+
+	6、shutil.copystat(src,dst) 
+		仅拷贝状态信息，即文件属性，包括：mode bit,atime,mtime,flags
+
+		shutil.copystat('f1.log','f2.log')
+
+	7、shutil.ignore_patterns( *patterns) （忽视那个文件，有选择性的拷贝）
+	   shutil.copytree(src,dst,symlinks=False,ignore=None)
+		递归的去拷贝文件夹
+
+		shutil.copytree('folder1','folder2',ignore=shutil.ignore_patterns('*.payc','tmp*'))
+
+	8、shutil.rmtree(path,ignore_errors[,onerror])  递归的去删除文件
+
+		shutil.rmtree('folder1')
+
+	9、shutil.move('folder1','folder3')  递归的去移动文件，它类似mv命令，其实就是重命名。
 
 
+	10、shuitl.make_archive(base_name,format,...) 创建压缩包并返回文件路径，例如zip,tar
+
+		base_name:压缩包的文件名，也可以是压缩包的路径，只是文件时，则保存至当前目录,否则保存到指定目录。
+
+		format :压缩包种类，"zip","tar","bztar","gztar"
+
+		root_dir:要压缩文件夹路径(默认当前目录)
+
+		owner:用户，默认当前用户
+
+		group:组，默认当前组
+
+		logger:用户记录日志，通常是logging.Logger对象
+
+		#将 /Users/wupeiqi/Downloads/test 下的文件打包放置当前程序目录
+		ret = shutil.make_archive("www","gztar",root_dir='/Users/wupeiqi/Downloads/test')
+		
+		#将 /Users/wupeiqi/Downloads/test 下的文件打包放置 /Users/wupeiqi/目录.
+		ret = shutil.make_archive("/Users/wupeiqi/www",'gztar',root_dir='/Users/wupeiqi/Downloads/test')
+		
 
 
 "----------------------------------------------------------------------------------------"
 
 glob	       基于文件通配符搜索
 
+	glob模块是用来查找文件目录和文件，常用的两个方法由glob.glob()和glob.iglob()
+	可以用find功能进行类比，glob支持*?[]这三种通配符。
+
+	1、glob.glob:
+
+		import glob
+		filelist = glob.glob(r'./*.py') 
+	
+			for file in filelist:
+			返回的数据类型是list:
+				./module-04.py
+				./module-03.py
+				./module-01.py
+				./module-02.py
+
+		filelist = glob.glob(r'*.py')
+			for file in filelist:
+				module-04.py
+				module-03.py
+				module-01.py
+				module-02.py
+
+	2、glob.iglob: 与glob类似，只是这里返回值为迭代器，对于大量文件是更省内存
+
+		import glob
+
+		f = glob.iglob(r'../*.py')
+		
+		for py in f:
+			print(py)
+
+"---------------------------------------------------------------------"
+
+数据库：
+
+redis:	                
+
+python 库：redis
+
+	import redis
+	
+	1、普通链接：
+		try:
+			r = redis.StrictRedis(host=ip,port)
+		except Exception:
+			print()
+		
+		r.set()
+		r.get()
+
+	2、连接池：
+	
+		
+		pool = redis.ConnectionPool(host=ip,port)
+
+		r = redis.StrictRedis(connection_pool=pool)
+
+		r.set()
+
+		r.get()
 
 
+mysql:	    
 
-"--------------------------------------------------------------------------------------------"
+python MySQLdb
+
+	import MySQLdb 
+
+	1、connection对象：
+		
+		conn = MySQLdb.connect(host,port,db,user,password,charset)
+
+		方法：
+		conn.cursor()
+		conn.commit()
+		conn.rollback()
+		conn.close()
+
+	2、Cursor对象：
+
+		cursor = conn.cursor()
+
+			cursor.close()
+			cursor.execute()
+			cursor.fetchone()
+			cursor.fetchall()
+			cursor.next()    执行查询语句时，获取当前行的下一行
+			cursor.scroll(value,[,move])  将行指针移动到某个位置
+				mode 表示移动的方式
+				mode的默认值为reltive，表示基于当前行移动到value,value为正则向下移动，value为负则向上移动。
+				mode的值为absolute，表示基于第一条数据的位置，第一条数据的位置为0
+				
+mongodb:
+
+
+import pymongo
+from pymongo import MongoClient
+
+	1、链接Mongodb库
+
+		client = pymongo.MongoClient('localhost',27017)
+
+
+	2、得到数据库
+
+		db = client.数据库名
+
+	3、得到集合
+
+		collection = db.集合名
+
+	4、添加数据
+
+		s1 = {
+			'name':'gj'
+			"age":18}
+
+		s1_id = collection.insert_one(s1).inserted_id
+
+	5、查找一个文档
+
+		s2 = collection.find_one()
+
+	6、查找多个文档
+
+		第一种方式：
+			for cur in collection.find()
+				print(cur)
+
+		第二种方式：
+
+			cur = collection.find()
+			cur.next()
+			cur.next()
+
+	7、获取文档数
+
+		print(collection.count())
+			
+
+
+"-------------------------------------------------------------------------------------------"
 
 
 常用扩展库:
@@ -1728,9 +1920,11 @@ scrapy	                 爬虫
 
 beautifulsoup4	   HTML/XML的解析器
 
-celery	          分布式任务调度模块
+django/tornado/flask	web框架
 
-redis	                 缓存
+xmltodict	         xml 转 dict
+
+celery	          分布式任务调度模块
 
 Pillow(PIL)	          图像处理
 
@@ -1742,27 +1936,16 @@ xlrd				仅读excle功能
 
 elasticsearch	    全文搜索引擎
 
-pymysql	            数据库连接库
-
-mongoengine/pymongo	mongodbpython接口
-
 matplotlib	             画图
 
 numpy/scipy            科学计算
 
-django/tornado/flask	web框架
-
-xmltodict	         xml 转 dict
-
 SimpleHTTPServer	简单地HTTP Server,不使用Web框架
-
-gevent	            基于协程的Python网络库
 
 fabric	               系统管理
 
 pandas                数据处理库
 
 scikit-learn	      机器学习库
-
 
 
