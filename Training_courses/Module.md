@@ -6,6 +6,123 @@
 
 常用标准库：
 
+"--------------------------------------------------------------------------"
+
+Number:
+
+decimal: 提供十进制浮点运算
+
+	常用方法：
+
+		可以传递给Decimal整型或者字符串参数，但是不能是浮点数据，
+		因为浮点数据本身就是不准确。要从浮点数据转换为Decimal类型。
+
+	from decimal import *
+
+	1、Decimal
+
+		print(Decimal('0.1') + Decimal('0.1') + Decimal('0.1') - Decimal('0.3'))
+			
+			0.0
+
+	2、要从浮点数据转换为Decimal类型
+
+		Decimal.from_float(12.222)
+	
+			Decimal('12.2219999999999995310417943983338773250579833984375')
+
+	3、通过设置有效数字，限定结果样式：
+
+		getcontext().prec = 6
+		Decimal(1)/Decimal(7)
+	
+			Decimal('0.142857')
+	
+	4、四舍五入，保留几位小数
+
+		Decimal('50.6789').quantize(Decimal('0.00'))
+			Decimal('50.68')
+
+
+	5、Decimal 结果转化为string
+
+		str(Decimal('3.40').quantize(Decimal('0.0')))
+			'3.4'
+
+分数：fractions:
+
+	1、Fraction类
+		
+		from fractions  import Fraction
+		x = Fraction(1,3)
+		y = Fraction(4,6)
+		
+		printf(x + y)
+			Fraction(1,1)
+		
+		print(x - y)
+			Fraction(-1,3)
+
+集合：set():
+
+	set是基本数据类型中的集合类型，有可变集合set()和不可变集合frozenset两种
+
+	1、创建集合，要创建一个集合对象，向内置的set函数传递一个序列或其他的可迭代的对象：
+
+		x = set('abcde')
+		y = set('bdxyz')
+
+		print(x)
+			set(['a', 'c', 'b', 'e', 'd'])
+
+	2、集合添加和删除
+
+		集合的添加方法常用方法，分别是add和update
+
+		add方法：要把传入的元素作为一个整体添加到集合中
+		
+		x.add('python')
+			set(['a', 'c', 'b', 'e', 'd', 'python'])
+
+		update方法：把要传入的元素拆开，作为一个个体传入到集合中：
+
+		x.update('xyz')
+			set(['a', 'c', 'b', 'e', 'd', 'python', 'y', 'x', 'z'])
+
+		删除方法：remove()
+
+		x.remove('python')
+			set(['a', 'c', 'b', 'e', 'd', 'y', 'x', 'z'])
+
+
+	3、集合通过表达式操作符支持一般的数学集合运算。
+	   注意，不能在一般序列上应用这些表达式，必须通过序列创建集合后才能使用。
+
+	   python 符号          含义
+
+		  -                差集      x - y		set(['a', 'c', 'e'])
+
+		  &                交集      x & y      set(['y', 'x', 'b', 'd', 'z'])
+			
+		  |                并集      x | y      set(['a', 'c', 'b', 'e', 'd', 'y', 'x', 'z'])
+
+	  in,not in            成员关系 'a' in x    True
+
+		==,!=           等于，不等于  x!=y      True
+
+		>,<              大于，小于   x>y       True
+
+
+"------------------------------------------------------------------------"
+	
+
+
+
+	
+
+
+"-------------------------------------------------------------------------"
+
 builtins:    内建函数 默认加载
 
 	abs(x)                       返回x的绝对值
@@ -1695,6 +1812,152 @@ gevent	            基于协程的Python网络库
 	server(7788)
 
 
+	
+异步socket处理器：asyncore:
+
+	该模块提供了异步socket服务客户端和服务器的基本架构.
+	
+	只有两种方式让程序在单个处理器上同时做超过一件事情，多线程是最简单，最普遍的方式。
+	但还有另一种非常不同的技术，可以让你具有多线程几乎所有的优点，实际上并没有使用多线程。
+	如果您的程序主要受I/O限制，那么它真的很实用。如果您的程序受处理器限制，
+	那么使用多线程可能就是您真正需要的。但是，网络服务器很少受处理器限制。
+
+	如果您的操作系统支持I/O库的select()系统调用（一般都支持），那么你可以使用它
+	同时处理多个通信信道做其他的工作的同时让I/O在后台执行，这比多线程更容易理解。
+
+	该asyncore模块为您解决了许多难题，使得构建复杂的高性能网络服务器和客户端的任务变得轻而易举。
+	对于“会话”应用程序和协议，配套asynchat 模块非常有用。
+	asyncore和asynchat两个模块的基本思路是创建一个或多个网络通道，即asyncore.dispatcher
+	和asynchat.async_chat的实例。然后添加到全局映射，如果你没有创建自己的映射，可以直接使用loop()函数。
+	loop()激活所有通道服务，执行直到最后一个通道关闭。
+
+	asyncore.loop([timeout[, use_poll[, map[, count]]]])
+	
+		进入轮询循环直到所有打开的通道已被关闭或计数通过。所有的参数都是可选的。
+		
+		count参数：默认为None,只有当所有通道都关闭时循环才终止。
+		
+		timeout参数：设置为select()或poll()调用超时时间，以秒为单位，默认30秒
+
+		use_poll参数：如果为true,则表示poll()优先于select(),默认为false。
+
+		map参数:监听的channel的字典，channcle关闭时会从map中删除，不知道map会使用全局map。
+
+
+	类asyncore.dispatcher:
+
+		dispatcher：是一个底层socket的轻便包装类，类中有几个方法处理异步循环调用的事件处理非常有用，
+		另外，它可以被视为普通的非阻塞套接字对象。
+		
+		在某些时间或在某些连接状态下触发低级事件会告诉异步循环已发生某些更高级别的事件。
+		例如，如果我们要求套接字连接到另一个主机，我们就知道当套接字第一次变为可写时已经建立了连接
+		（此时你知道你可以写信给它，期望成功）。隐含的更高级别事件是：
+
+			事件					描述
+			handle_connect()	第一个读或写事件暗示
+			handle_close()		由没有数据可用的读取事件隐含
+			handle_accept()		隐藏在侦听套接字上的读取事件
+	
+
+		在异步处理，每个映射通道的readable()和writable()方法用于确定通道的
+		socket是否应该被添加到select()或poll()通道的频道列表中以读写事件。
+		因此通道事件比基本socket 事件要多。在子类中重写的方法如下：
+
+		
+			handle_read()：当异步循环检测到通道的read()将成功时调用。
+			handle_write()：当异步循环检测到通道的write()将成功时调用。需要缓冲以提高性能
+			handle_connect()：当活动socket实际创建连接时调用。可能发送“welcome” banner，
+							  或与远程端点启动协议协商。				
+			handle_close()：当关闭socket时调用。
+			handle_error()：当异常引发又没有其他处理时调用。默认版本print压缩的traceback。
+			handle_accept()：监听通道(被动开启) ，当本端通过connect()可以和
+							 远端建立连接时在监听通道(被动开启)上调用。
+			readable():每次异步循环时调用，以确定通道的socket是否应该被添加到产生读事件列表。
+						默认的方法只返回True，表示在默认情况下，所有通道将拥有读取事件。
+			writable()：每次异步循环时调用，以确定通道的socket是否应该被添加到产生写事件列表。
+						默认的方法只返回True，表示在默认情况下，所有通道将拥有写事件。
+
+	类asyncore.dispatcher_with_send:
+		
+		一个dispatcher子类，它添加了简单的缓冲输出功能，对简单客户端很有用。
+		用于更复杂的使用 asynchat.async_chat。
+
+	类asyncore.file_dispatcher:
+		
+		封装了文件描述符或文件对象及映射参数(可选)供poll()和loop()函数使用的文件分发器。
+		它提供了文件对象或其他具备fileno()方法的对象，调用fileno()并传递到file_wrapper构造函数。可用于UNIX。
+
+	class asyncore.file_wrapper：
+		
+		接收整数文件描述符并调用os.dup()复制句柄，这样原句柄可以关闭，
+		而文件包装器不受影响。该类封装了大量方法以模拟socket给file_dispatcher类使用。可用于UNIX。
+		
+
+	客户端实例：
+
+		这是一个非常基本的HTTP客户端，它使用dispatcher该类来实现其套接字处理：
+
+		import asyncore, socket
+		class HTTPClient(asyncore.dispatcher):
+			
+			def __init__(self, host, path):
+				asyncore.dispatcher.__init__(self)
+				self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+				self.connect( (host, 80) )
+				self.buffer = 'GET %s HTTP/1.0\r\n\r\n' % path
+
+			def handle_connect(self):
+				pass
+
+			def handle_close(self):
+				self.close()
+
+			def handle_read(self):
+				print self.recv(8192)
+
+			def writable(self):
+				return (len(self.buffer) > 0)
+
+			def handle_write(self):
+				sent = self.send(self.buffer)
+				self.buffer = self.buffer[sent:]
+
+		client = HTTPClient('www.python.org', '/')
+		asyncore.loop()
+			
+
+	echo server:
+
+		import asyncore,socket
+		import socket
+
+		
+		class EchoHandler(asyncore.dispatcher_with_send):
+			def handle_read(self):
+				data = self.recv(8192)
+				if data:
+					self.send(data)
+
+		class EchoServer(asyncore.dispatcher):
+
+			def __init__(self,host,port):
+				asyncore.dispatcher.__init__(self)
+				self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+				self.set_reuse_addr()
+				self.bind((host, port))
+				self.listen(5)
+
+				def handler_accept(self):
+					pair = self.accept()
+					if pair is not None:
+						sock, addr = pair
+						print 'Incoming connection from %s' % repr(addr)
+						handler = EchoHandler(sock)
+
+		server = EchoServer('localhost',8080)
+		asyncore.loop()
+
+
 
 "-----------------------------------------------------------------------------------------"
 
@@ -1903,8 +2166,135 @@ from pymongo import MongoClient
 
 		print(collection.count())
 			
+"------------------------------------------------------------------------------------------"
+
+traceback : 用于提取，格式化和打印Python程序的堆栈跟踪。
+			它在打印堆栈跟踪时完全模仿了Python解释器的行为。当您想要在程序控制下打印堆栈跟踪时，
+			这很有用，例如在解释器周围的“包装器”中。
+
+	简单的异常处理可以帮助我们解决很多问题，但是随着逐渐深入，很多情况下，打印异常
+	所提供的信息非常有限。
+
+	例1：
+
+		def func1():
+			raise Exception("--func1 exception--")
+
+		def main():
+
+			try:
+				func1()
+			except Exception as e:
+				print e
+		if __name__=='__main__':
+			main()
+
+		结果如下：
+			--func1 exception--
+	
+		打印的有用信息很少，如果打印更详细的信息
+
+	第一种方式：sys.exc_info:
+		
+		import sys
+		def func1():
+			raise Exception("func1 exception")
+				
+		def main():
+			try:
+				func1()
+			except Exception as e:					   
+				exc_type,exc_value,exc_traceback_obj = sys.exc_info()
+	
+				print exc_type
+			    print exc_value
+				print exc_traceback_obj
+							
+		if __name__ == '__main__':
+			main()
+
+		结果如下：
+			<type 'exceptions.Exception'>
+			func1 exception
+			<traceback object at 0x7fd2dadc4170>
+
+	sys.exc_info()获取了当前处理的exception的相关信息，并返回一个元组，
+	元组的第一个数据是异常的类型(示例是NameError类型)，第二个返回值是异常的value值，
+	第三个就是我们要的traceback object.
+
+	
+	第二种方式：traceback object:
+
+		Python的traceback module提供一整套接口用于提取，格式化和打印Python程序的stack traces信息，
+		下面我们通过例子来详细了解下这些接口：
+
+		1、traceback.print_tb(tb[, limit[, file]])
+			
+			tb:这个就是traceback object,通过sys.exc_info获取得到
+
+			limit:这个是限制stack trace层级的，如果不设或为None,打印所有层stack trace
+
+			file: 这个是设置打印的输出流的，可以为文件，也可以是stdout之类的file-like object。
+				  如果不设或为None，则输出到sys.stderr。
+
+			例子：
+			import sys
+			import traceback
+			def func1():
+				raise Exception("func1 exception")   
+			def main():
+				try:
+					func1()
+				except Exception as e:
+					exc_type,exc_value,exc_traceback_obj = sys.exc_info)
+					traceback.print_tb(exc_traceback_obj)
+					traceback.print_exception(exc_type,exc_value,exc_traceback_obj,limit=2,file=sys.stdout)
+	
+			if __name__ == '__main__':
+				main()
+	
+			结果：
+				  File "traceback01.py", line 12, in main
+				      func1()
+				  File "traceback01.py", line 8, in func1
+						 raise Exception("func1 exception")
 
 
+		2、traceback.print_exception(etype,value,tb[,limit [file]])
+			
+			跟print_tb相比，多个两个参数etype和value,分别是exception type 和exception value
+			加上tb(traceback object)，正好是sys.exc_info()返回的值
+
+			另外，与print_tb相比，打印信息多了开头的"Traceback (most...)"信息以及最后一行的异常类型和value信息
+			还有一个不同是当异常为SyntaxError时，会有"^"来指示语法错误的位置
+		
+		3、print_exc([limit[,file]])
+
+			print_exc是简化版的print_exception, 
+			由于exception type, value和traceback object都可以通过sys.exc_info()获取，
+			因此print_exc()就自动执行exc_info()来帮助获取这三个参数了，
+			也因此这个函数是我们的程序中最常用的，因为它足够简单
+
+			import sys
+			import traceback
+			def func1():
+				raise NameError("--func1 exception--")
+			def func2():
+				func1()
+							
+			def main():
+				try:
+					func2()
+				except Exception as e:
+					traceback.print_exc(limit=1, file=sys.stdout)
+													   
+			结果：
+
+				Traceback (most recent call last):
+					File "traceback01.py", line 12, in main
+						func1()
+					Exception: func1 exception
+	
 "-------------------------------------------------------------------------------------------"
 
 
