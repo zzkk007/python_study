@@ -253,6 +253,15 @@ python3中保留33个关键字
 
 	while、with、yield
 
+"------------------------------------------------------------------------"
+
+
+
+
+
+
+
+
 
 "-------------------------------------------------------------------------"
 
@@ -270,7 +279,6 @@ builtins:    内建函数 默认加载
 	max()                        返回最大值。
 	min()                        返回最小值。
 	dir([object])                无参数时，返回当前局部作用域中的属性；有参数时，返回参数对象的有效属性
-	enumerate(sequence，start=0) 返回可迭代对象sequence的（count，value）元组序列，其中count从start开始递增。
 	filter(function，iterable)   对可迭代对象iterable中的每个元素调用function函数，返回结果序列。
 	map(function，iterable，...) 应用function到每一个元素上，返回结果列表。
 	frozenset([iterable])        返回一个不可变的集合对象。
@@ -283,8 +291,80 @@ builtins:    内建函数 默认加载
 	open(name[, mode[, buffering]]) 打开一个文件，返回文件对象。
 	pow(x, y[, z])               如果z存在，返回x^y % z，否则返回x^y。
 	print()                      输出
-	range(stop)                  返回从0到stop-1的列表。
 	reload(module)               重新导入模块module。
+	range(stop)                  返回从0到stop-1的列表。
+
+	zip()						 返回并行元素的元组的列表
+		
+		1、zip会取得一个或多个序列为参数，然后返回元组的列表，这些序列中的并排的元素配成对。
+			L1 = [1,2,3,4]
+			L2 = [5,6,7,8]
+
+		要合并这些列表中的元素，可以使用zip来创建一个元组对的列表
+		和rang一样，zip在python3.0中也是一个可迭代对象,list调用中以便一次性显示所有结果。
+		
+			list(zip(L1,L2))
+				[(1, 5), (2, 6), (3, 7), (4, 8)]
+
+		2、当参数不同时，zip会以最短的序列的长度为准来截取所得到的元组。
+		
+			S1 = 'abc'
+			S2 = 'xyz123'
+			list(zip(S1,S2))
+				[('a', 'x'), ('b', 'y'), ('c', 'z')]
+
+		3、zip()构造字典
+
+			keys  = ['spam','eggs','toast']
+			vals = [1,3,5]
+			D2 = {}
+			for (k,v) in zip(keys,vals):
+				D2[k] = v
+
+		4、不过在python2.2后续版本中，可以跳过for循环，直接把zip过的键/值列表传给内置的dict构造函数。
+
+			D3 = dict(zip(keys,vals))
+				{'toast': 5, 'eggs': 3, 'spam': 1}
+			
+
+	map() 根据提供的函数对指定序列做映射。
+
+		语法：
+			map(function, iterable, ...)
+
+			function -- 函数，有两个参数
+			iterable -- 一个或多个序列
+
+		第一个参数 function 以参数序列中的每一个元素调用 function 函数，
+		返回包含每次 function 函数返回值的新列表。
+
+		返回值
+			Python 2.x 返回列表。
+			Python 3.x 返回迭代器。
+
+		list(map(None,s1,s2))
+			[('a', 'x'), ('b', 'y'), ('c', 'z'), (None, '1'), (None, '2'), (None, '3')]
+
+	enumerate(sequence，start=0) 返回可迭代对象sequence的（count，value）元组序列，其中count从start开始递增。
+	
+		enumerate(sequence, [start=0])
+		
+		参数：
+			sequence -- 一个序列、迭代器或其他支持迭代对象。
+		    start -- 下标起始位置。
+
+			S = 'spam'
+			for (offset,item) in enumerate(S):
+				print(item,'appears at offset',offset)
+								
+				('s', 'appears at offset', 0)
+				('p', 'appears at offset', 1)
+				('a', 'appears at offset', 2)
+				('m', 'appears at offset', 3)
+
+			enumerate函数返回一个生成器对象。
+			
+		
 
 "-------------------------------------------------------------------"
 
