@@ -141,12 +141,43 @@ decimal: 提供十进制浮点运算
 	
 		注意：readline如果调用返回一个空字符串。这是python文件方法告诉我们已经达到文件底部。
 			文件的空行是含有换行符字符串（'\n'）,而不是空字符串。
+		
 
 	3、写入
 
 		output.write(aStr)            写入字节字符串到文件
 
 		output.writelines(aList)      把列表内的所有字符串写入文件
+		
+		注意：我们必须在写入的时候把对象转换成字符串，
+		写入方法不会自动地替我们做任何像字符串格式转换的工作。
+
+			x,y,z = 43,44,45
+			s = 'spam'
+			D = {'a':1,'b':2}
+			L = [1,2,3]
+								
+			F = open('/home/zhangkun/myfile.txt','w')
+			F.write(s+'\n')
+			F.write('%s,%s,%s\n'%(x,y,z))
+			F.write(str(L) + '$' +str(D)+'\n')
+			F.close()
+
+			chars = open('/home/zhangkun/myfile.txt','r').read()
+				"spam\n43,44,45\n[1, 2, 3]${'a': 1, 'b': 2}\n"
+			我们不得不使用转换工具，把文本文件中的字符串转换成真正的python对象。
+
+				line = F.readline()
+					"[1, 2, 3]${'a': 1, 'b': 2}\n"
+				parts = line.split('$')
+					['[1, 2, 3]', "{'a': 1, 'b': 2}\n"]
+				eval[parts[0]]
+					[1, 2, 3]
+				eval(parts[1])
+					{'a': 1, 'b': 2}
+				objects = [eval(p) for p in parts]
+						objects
+							[[1, 2, 3], {'a': 1, 'b': 2}]
 
 	4、关闭
 
@@ -159,6 +190,25 @@ decimal: 提供十进制浮点运算
 	6、位移
 
 		anyfile.seek(N)              修改文件位置偏移到N处，以便下一步操作
+
+	
+	7、文件山下文管理器：
+
+		文件的上下文管理器比文件自身多了一个异常处理功能，
+		它允许我们把文件代码包装到一个逻辑层，以确保退出后可自动关闭文件，而不是依赖垃圾收集。
+
+			with open(r'C:\misc\data.txt') as myfile:
+				for line in myfile:
+					...use line here...
+								
+									
+			myfile = open(r'C:\misc\data.txt')
+				try:
+					for line in myfile:
+						...use line here...
+				finally:
+					myfile.close()
+
 
 
 
@@ -316,6 +366,8 @@ sys	            Python解释器交互
 	sys.getfilesystemencoding()	返回将Unicode文件名转换成系统文件名的编码的名字
 	sys.setdefaultencoding(name)	用来设置当前默认的字符编码，如果name和任何一个可用的编码都不匹配，
 									抛出 LookupError，这个函数只会被site模块的sitecustomize
+	sys.getrefcount(1)   引用1的个数
+
 
 "------------------------------------------------------------------------------"
 
@@ -624,11 +676,26 @@ json(JavaScript Object Notation) 一种轻量级的数据交换格式，易于�
 		json模块和pickle模块都有  dumps、dump、loads、load四种方法，而且用法一样。
 
 		不用的是json模块序列化出来的是通用格式，其它编程语言都认识，就是普通的字符串，
-
 		而picle模块序列化出来的只有python可以认识，其他编程语言不认识的，表现为乱码
-
 		不过picle可以序列化函数，但是其他文件想用该函数，在该文件中需要有该文件的定义
 		（定义和参数必须相同，内容可以不同）
+
+		pickle模块能够让我们直接在文件中存储几乎任何python对象的高级工具，
+		也并不要求我们把字符串转换来转换去。
+		它就像是超级通用的数据格式化和解析工具。例如，想在文件中存储字典
+		
+		存:
+			D = {'a':1,'b':2}
+			F = open('/home/zhangkun/myfile.pkl','wb')
+			import pickle
+			pickle.dump(D,F)
+			F.close()
+
+		取：
+			F = open('/home/zhangkun/myfile.pkl','rb')
+			E = pickle.load(F)
+			{'a': 1, 'b': 2}
+			
 
 "---------------------------------------------------------------------------------"
 
@@ -1101,6 +1168,7 @@ copy	               拷贝
 		[[1], [2], [3]]
 
 "-------------------------------------------------------------------------------"
+
 time	               时间
 
 	1、time.tiem()				时间戳
