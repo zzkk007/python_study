@@ -209,7 +209,49 @@ decimal: 提供十进制浮点运算
 				finally:
 					myfile.close()
 
+	8、打印流重定向：
 
+		print 和sys.stdout的关系如下：
+		print(x,y) 等价于 sys.stdout.write(str(x)+''+str(y)+'\n')
+
+		可以让print语句将文字传送到其他地方：
+			
+			import sys
+			tmep = sys.out
+			sys.out = open('log.txt','a')
+			print(x,y,z)  打印到文件中
+			sys.stdout.close()
+			sys.stdout=temp
+
+		python3中file关键字允许单个print调用将其发送给一个文件write方法。
+
+			log = open('log.txt','a')
+			print(x,y,z,file=log)
+			log.close()
+
+
+		
+"-------------------------------------------------------------------------"
+
+python3中保留33个关键字
+
+	assert、as、and、break
+
+	class、continue、def、del
+
+	esif、else、except、
+	
+	False、finally、from,for
+
+	import、in、is、if、
+	
+	None、nonlocal、not
+
+	global、lambda、or、pass、
+	
+	raise、return、try、True
+
+	while、with、yield
 
 
 "-------------------------------------------------------------------------"
@@ -694,7 +736,7 @@ json(JavaScript Object Notation) 一种轻量级的数据交换格式，易于�
 		取：
 			F = open('/home/zhangkun/myfile.pkl','rb')
 			E = pickle.load(F)
-			{'a': 1, 'b': 2}
+				{'a': 1, 'b': 2}
 			
 
 "---------------------------------------------------------------------------------"
