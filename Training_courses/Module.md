@@ -235,23 +235,27 @@ decimal: 提供十进制浮点运算
 
 python3中保留33个关键字
 
-	assert、as、and、break
 
-	class、continue、def、del
+	import   from    as
 
-	esif、else、except、
+	try     except   finally  raise
+
+	for     in       while    with   assert  
 	
-	False、finally、from,for
+	break   continue   return
 
-	import、in、is、if、
+	class  global    nonlcoal
+
+	def     lambda    yield
+
+	if      else     elif
+
+	and     or     not   is
+
+	None    pass    del
 	
-	None、nonlocal、not
+	True     Flase
 
-	global、lambda、or、pass、
-	
-	raise、return、try、True
-
-	while、with、yield
 
 "------------------------------------------------------------------------"
 
@@ -2526,7 +2530,109 @@ traceback : 用于提取，格式化和打印Python程序的堆栈跟踪。
 						func1()
 					Exception: func1 exception
 	
-"-------------------------------------------------------------------------------------------"
+"--------------------------------------------------------------------------------"
+
+itertools : python的内建模块，用于高效循环创建迭代器函数
+
+无限的迭代器(Infinite iterators:)
+
+		函数         参数            实例
+
+	1、count()    start,[step]    start,start+step
+		
+		count(10)
+			10 11 12 ...
+		
+	2、cycle()    p				p0,p1,..plast,p0,p1..	
+	
+		cycle('ABCD') 
+			A B C D A B C D ...
+
+	3、repeat()  elem [,n]      elem,elem..up to n times 
+	
+		repeat(10,3)
+			10 10 10
+
+迭代器终止于最短的输入序列：
+
+	Iterator		Arguments       Results                Example
+
+	1、accumulate()	p[,func]      p0,p0+p1,p0+p1+p2,..  
+		
+		accumulate([1,2,3,4]) 
+			1 3 6 10
+
+	2、chain()         p,q,...       p0,p1..plast,q0,q1,.  
+	
+		chain('ABC','DEF') 
+			A B C D E F
+
+	3、compress()  data,selectors (d[0] is s[0],(d[1] if s[1])..) 
+		
+		compress('ABCD',[1,0,1,1])
+			A C D
+
+	4、islice()    seq,[start] stop[,step]    elem from seq[start:stop:step] 
+
+			islice('ABCDEFG',2,None)
+				C D E F G
+
+	5、filterfalse() pred,seq    elements of seq  where pred(elem) is false
+
+		filterfalse(lambda x: x%2,range(10))
+			0 2 4 6 8
+
+
+	6、groupby()   iterable[, key]   sub-iterators grouped by 
+								  value of key(v)
+		for key, group in itertools.groupby('AAABBBCCAAA'):
+			print(key, list(group))
+				A ['A', 'A', 'A']
+				B ['B', 'B', 'B']
+				C ['C', 'C']
+				A ['A', 'A', 'A']
+			
+
+3、组合迭代器：
+
+	
+	1、product()		p, q, … [repeat=1]		笛卡尔积，相当于一个嵌套的for循环
+
+		product('ABCD', repeat=2)		
+			AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD
+	
+	2、permutations()		p[, r]  长度元组，所有可能的顺序，没有重复的元素
+		
+		permutations('ABCD', 2)		
+			AB AC AD BA BC BD CA CB CD DA DB DC
+
+	3、combinations()    p, r       长度为r的元组，按顺序排列，没有重复的元素
+		
+		combinations('ABCD', 2)		
+			AB AC AD BC BD CD
+	
+
+"-----------------------------------------------------------------------------"
+
+dis库：是python默认的CPython自带的一个库，可用来分析字节码
+	
+1、首先导入库
+	import dis
+
+2、dis函数
+
+	def add(a, b = 0):
+		return (a+b)
+
+	dis.dis(add)
+
+		2		0 LOAD_FAST                0 (a)
+				2 LOAD_FAST                1 (b)
+	            4 BINARY_ADD
+				6 RETURN_VALUE
+
+
+"----------------------------------------------------------------------------"
 
 
 常用扩展库:
