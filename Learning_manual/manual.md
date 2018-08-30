@@ -2636,6 +2636,7 @@ next():
 
 	
 python3中列表iter(L)生成的是list_iterator，这个类中不存在next方法，只有__next__()
+
 python2中类别iter(L)生产的是listiterator，这个类中不存__next__()方法，只有next方法。
 
 	从技术上讲，for循环调用内部等价的I.__next__,而不是next(I)
