@@ -283,7 +283,7 @@ builtins:    内建函数 默认加载
 	max()                        返回最大值。
 	min()                        返回最小值。
 	dir([object])                无参数时，返回当前局部作用域中的属性；有参数时，返回参数对象的有效属性
-	filter(function，iterable)   对可迭代对象iterable中的每个元素调用function函数，返回结果序列。
+	
 	map(function，iterable，...) 应用function到每一个元素上，返回结果列表。
 	frozenset([iterable])        返回一个不可变的集合对象。
 	help([object])               返回帮助信息。
@@ -296,7 +296,38 @@ builtins:    内建函数 默认加载
 	pow(x, y[, z])               如果z存在，返回x^y % z，否则返回x^y。
 	print()                      输出
 	reload(module)               重新导入模块module。
+
+
+	range类似，map、zip、以及filter内置函数，在python3中也转变成迭代器以节约内存空间，
+	而不再内存中一次性生产结果类表。和range不同，他们都有自己的迭代器。
+
 	range(stop)                  返回从0到stop-1的列表。
+	
+		在python3中，range返回一个迭代器，该迭代器根据需要产生范围中的数字，
+		而不是一个内存中构建一个结果列表。	
+		python3中的range对象支持迭代、索引以及len函数，不支持任何其他序列操作（可使用list(...)）
+		python3:
+		R = range(10)
+		R
+			range(0, 10)
+		I = iter(R)
+		next(I)
+			0
+		next(I)
+			1
+		...
+		
+		list(range(10))
+			[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+
+
+		python2中:
+		R = range(10)
+		R
+			[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+		
+
 
 	zip()						 返回并行元素的元组的列表
 		
@@ -348,6 +379,16 @@ builtins:    内建函数 默认加载
 
 		list(map(None,s1,s2))
 			[('a', 'x'), ('b', 'y'), ('c', 'z'), (None, '1'), (None, '2'), (None, '3')]
+
+
+	filter(function，iterable)   对可迭代对象iterable中的每个元素调用function函数，返回结果序列。
+	filter内置函数，对于传入的函数返回True的可迭代对象中的每一项（非空对象）
+	
+	filter(bool,['spam','','ni'])
+	list(filter(bool,['spam','','ni']))
+		['spam','ni']
+	
+
 
 	enumerate(sequence，start=0) 返回可迭代对象sequence的（count，value）元组序列，其中count从start开始递增。
 	
