@@ -492,7 +492,14 @@ os	              操作系统接口
 	18、os.path.dirname(path):返回文件路径
 			os.path.dirname(‘c:\Python\a.txt’) 
 				‘c:\Python’
-	
+	19、文件时间
+	os.path.getmtime(name) ＃获取文件的修改时间 
+
+	os.stat(path).st_mtime＃获取文件的修改时间
+
+	os.stat(path).st_ctime #获取文件修改时间
+
+	os.path.getctime(name)#获取文件的创建时间
 
 
 "-----------------------------------------------------------------"
