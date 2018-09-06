@@ -869,7 +869,61 @@ json(JavaScript Object Notation) 一种轻量级的数据交换格式，易于�
 			F = open('/home/zhangkun/myfile.pkl','rb')
 			E = pickle.load(F)
 				{'a': 1, 'b': 2}
+	
+	8、shelve
+
+		pickle：任意python对象和字节串直接的序列化
+		dbm:实现一个通过键访问的文件系统，存储字符串
+		shelve:使用pickle，dbm按照键把python对象存储到文件中。
+		pickle模块是一种非常通用的对象格式化和解格式化工具。
+		shelve模块提供了一个额外的层结构，允许按照键来存储pickle处理处理后的对象。
+	
+		实际上，一个shelve提供了一个简单的数据库来按照键存储和获取本地的python对象，
+		并由此使它们跨程序运行而保持持久化。它不支持SQL这样的查询语句，
+		并缺乏在企业数据库中可用的某些高级功能(真正事务处理)
+		但是，一旦使用键获取了存储在shelve中的本地python对象，
+		就可以使用python语言的所有功能处理他。
+
+
+		在shelve数据库中存储对象：
+		
+		一旦有了实例，将它们存储到shelve中简直是小菜一碟，直接导入shelve模块，
+		用外一个文件打开一个新的shelve,
+		把对象赋给shelve中的键，当我们操作完毕后关闭shelve，因为已经做过修改：
+
+		from person import Person,Manager
+		bob = Person('Bob Smith')
+		sue = Person('Sue Jones',job = 'dev',pay = 100000)
+		tom = Manager('Tom Jones',5000)
+		
+		import shelve
+		db = shelve.open('persondb')
+		for object in (bob,sue,tom):
+			db[object.name] = object
+		db.close()
+
+		在shelve中，键可以是任何字符串，唯一的规则是必须唯一。文件的后缀是".db"
+
+		这里交互的模式有效的成为一个数据库客户端：
+		import shelve
+		db = shelve.open('persondb')
+		
+		len(db)
+			3
+		list(db.keys())
+			['Tom Jones','Sue Jones',"Bob Smith"]
+		
+		bob = db['Bob Smith']
+		print(bob)
+			[Person:job= None,name=Bob Smith,pay=0]
+		
+		for key in db:
+			print(key,'=>',db[key])
 			
+		Tom Jones => [Manager:job=mgr,name=Tom Jones,pay=50000]
+		Sue Jones => [Person: job=dev,name=Sue,pay=100000]
+		Bob Smith => [Person: job=None,name=Bob Smith,apy=0]
+
 
 "---------------------------------------------------------------------------------"
 
