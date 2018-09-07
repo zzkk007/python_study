@@ -6720,6 +6720,931 @@ OOP和委托："包装"对象：
 
 		函数装饰器通常是用来给现存的函数增加函数每次被调用时都会运行的一层逻辑。
 
+1、类和实例的关系:
+
+	python oop的本质是:在已连接的命名空间内寻找属性而已。
+
+	类对象和实例对象是两个不同的命名空间，
+	类对象是由class()执行语句创建类对象，并赋值绑定到类名。
+	实例对象是由调用类名是创建。
+
+	类对象和实例对象是类树通过继承搜索相连的命名空间，继承
+	是在属性点号运算符时发送的，而且只查找相连对象内的命名空间。
+	搜索方式是通过字典类型来实现的。
+
+2、运算符重载:
+
+	a、基础知识：
+	
+		运算符重载让类拦截常规的python运算
+
+		类可重载所有的python表达式运算符
+
+		类也可重载打印、函数调用、属性点号等内置运算
+
+		重载使类实例的行为像内置类型
+
+		重载是通过提供特殊名称的类方法来实现的。
+
+	b、例子，__sub__()方法
+
+		class Number:
+			def __init__(self,start):
+				self.data = start
+
+			def __sub__(self,other):
+				return Number(self.data - other)
+
+		x = Number(5)
+
+		y = x - 2  // x - 2 执行的是__sub__(self,other), y = Number(5-2)
+
+		y.data
+			3
+
+	c、常见的运算符重载方法：
+
+	方法             重载                 调用
+
+	__new__          创建                在__init__之前创建对象
+
+	__init__         构造函数            实例对象建立：x = Class(args)
+
+	__del__          析构函数            x 对象回收
+
+	__add__          运算符 +            如果没有__iadd__, x+y, x+=y
+
+	__sub__          运算符 -            x - y ,x -= y
+
+	__or__           运算符 |            如果没有__ior__, X|Y, X|=y
+
+
+
+	__repr__,__str__ 打印，转换          print(x),repr(x),str(x)
+
+	__call__         函数调用            x( *args,**kargs)
+
+
+	
+	__getattr__      点号运算            x.undefined
+
+	__setattr__      属性赋值运算        x.any = value
+
+	__delattr__      属性删除            del  x.any
+
+	__getattribute__ 属性获取            x.any
+	
+	__get__,__set__,__delete__  属性描述 x.attr,x.arrt= value,del x.attr
+
+
+
+	__getitem__      索引运算           x[key],x[i:j],没有__iter__时的for循环和其他迭代器
+
+	__setitem__      索引赋值运算       x[key] = value,x[i:j] = sequence
+
+	__delitem__      索引和分片删除     del x[key],del x[i:j]
+
+
+
+	__len__          长度               len(x),如果没有__bool__
+
+	__bool__         布尔测试           bool(x) 真值测试
+
+
+	__lt__           小于               x < y   less than
+
+	__gt__           大于               x > y   greater than
+
+	__le__           小于等于           x <= y  less equal
+
+	__ge__           大于等于           x >= y  greater equal
+
+	__eq__           等于               x == y  equal
+
+	__ne__           不等于             x != y  not equal
+
+
+	__iter__,__next__ 迭代环境          I = iter(x),next(x)
+
+	__contains__     成员关系测试       item in x 
+
+	__index__        整数值             hex(x),bin(x),oct(x)
+
+	__enter__,__exit__ 环境管理         with obj as var
+
+3、模块和类:
+
+	模块是一个文件
+	类是一个语句
+
+	模块：
+	
+		是数据/逻辑包
+		通过编写python文件或C扩展来创建
+		通过导入来使用
+
+	类：
+	
+		实现新的对象
+		由class语句创建
+		通过调用使用
+		总是在一个模块中
+
+	类支持：运算符重载、多实例生成、继承。
+
+	python常用的OOP设计模式：继承、组合、委托和工厂。
+
+4、继承：
+
+	继承是基于python中属性查找的(在X.name表达式中)
+	继承："是一个" 关系(is-a)。
+
+	多态：
+
+	在X.method方法中，method的意义取决于X的类型(类)
+	因为python没有类型声明，属性总是在运行期解析，实现相同接口的对象是可互相交换的，
+	所有客户端不需要知道实现它们调用方法是对象种类。
+
+	封装：
+
+	方法和运算符实现行为，数据隐藏默认是一种惯例。
+	封装指的是在pyhon中打包，也就是把实现的细节隐藏在对象接口之后，
+	封装可让对象接口的实现出现变动时，
+	不影响对象的用户。
+5、组合:
+
+	OOP和组合："有一个" 关系(has-a)。
+	组合就是指内嵌对象集合体。组合类一般都提供自己的接口，并通过内嵌的对象来实现接口。
+
+	from employees import PizzaRobot,Server
+
+	class Customer:
+
+		def __init__(self,name):
+			self.name = name
+		def order(self,server):
+			print(self.name,"Orders from",server)
+		def pay(self,server):
+			print(self.name,"pays for item to",server)
+
+	class Over:
+		def break(self):
+			print("oven bakes")
+
+	class PizzaShop:
+		def __init__(self):
+			self.server = Seerver('Pat')
+			self.chef = PizzaRobot('Bob')
+			sefl.oven = Oven()
+
+		def order(self,name):
+			customer = Customer(name)
+			customer.order(self.server)
+			self.chef.work()
+			self.oven.bake()
+			customber.pay(self.server)
+
+	if __name__ == "__main__":
+		scene = PizzaShop()
+		scene.order('Homer')
+		print('...')
+		scene.order('Shaggy')
+
+	PizzaShop类是容器和控制器，其构造函数会创建员工类实例并将其嵌入。
+
+6、委托:
+
+	面向对象程序员时常谈到所谓的委托，通常就会指控制器对象内嵌其他对象，
+	而把运算请求传给那些对象。控制器负责管理工作，例如，记录存取等。
+	在python中，委托通常以__getattr__(点号运算)钩子方法实现。
+
+	class wrapper:
+
+		def __init__(self,object):
+			self.wrappend = object
+		def __getattr__(self,attrname):
+			print('Trace:',attrname)
+			return getattr(self.wrapped,attrname) //执行点号运行
+
+	你可以使用这个模块包装类的做法，管理任何带有属性的对象的存取：列表，字典，甚至是类和实例。
+	在这里，wrapper类只是在每个属性读取时打印跟踪消息，并把属性请求委托给嵌入的wrapped对象。
+
+	from trace import wrapper
+
+	x = wrapper([1,2,3])
+
+	x.append(4)
+		Trace:wrappend
+
+	x.wrappend
+		[1,2,3,4]
+
+	x = wrapper({"a":1,"b":2})
+	x.keys()
+		Trace: keys
+		dict_keys(['a', 'b'])
+7、工厂:
+
+	类是对象，很容易传递，保存在数据结构中，也可以把类传给任意种类对象的函数，
+	这类函数在OOP设计领域汇总偶尔称为工厂。
+
+	def factory(aClass, *args):
+		return aClass( *args)
+
+	class Spam:
+		def doit(self,message):
+			print(message)
+
+	class Person:
+		def __init__(self,name,job):
+			self.name = name
+				self.job = job
+
+	object1 = factory(Spam)
+	object2 = factory(Person,"Guido","guru")
+
+	我们定义了一个对象生成器函数，称为factory。它传入类对象。
+
+8、抽象超类:
+
+	抽象类是会调用方法的类，但没有继承或定义该方法，而是期待改方法由子类填补。
+
+	class Super:
+		def method(self):
+			print('in Super.mothod')
+		def delegate(self):
+			self.action()
+
+	class Provider(Super):
+		def action(self):
+			print('in Provider.action')
+
+
+	if __name__ == '__main__':
+	x = Provider()
+	x.delegate()
+
+	当通过Provider实例调用delegate方法时，有两个独立的搜索会发生：
+
+	1、在最初x.delegate的调用中，Python会搜索Provider实例和它上层的对象，
+	直到在Super中找到delegate的方法。实例x会像往常一样传递给这个方法的self参数。
+
+	2、在Super.delegate方法中，self.action会对self以及它上层的对象启动新的独立继承搜索。
+	因为self指的是Provider实例，在Provider子类中就会找到action方法。
+
+	从delegate方法角度来看，超类有时也称作抽象超类--也就是类的部分默认是其子类所提供的。
+	如果预期的方法子类没有定义，python会引发未定义变量名异常。
+
+9、静态方法:
+
+	需要通过修饰器@staticmethod来进行修饰，静态方法不需要多定义参数
+
+	class People(object):
+		country = 'china'
+
+		#静态方法
+		@staticmethod
+		def getCountry():
+			return People.country
+
+	print People.getCountry()
+
+10、类方法:
+
+	是类对象所拥有的方法，需要用修饰器@classmethod来标识其为类方法，
+	对于类方法，第一个参数必须是类对象，一般以cls作为第一个参数
+	（当然可以用其他名称的变量作为其第一个参数，但是大部分人都习惯以'cls'
+	作为第一个参数的名字，就最好用'cls'了），能够通过实例对象和类对象去访问。
+
+
+	class People(object):
+		country = 'china'
+
+		#类方法，用classmethod来进行修饰
+		@classmethod
+		def getCountry(cls):
+			return cls.country
+
+	p = People()
+	print p.getCountry()    #可以用过实例对象引用
+	print People.getCountry()    #可以通过类对象引用
+
+
+	类方法还有一个用途就是可以对类属性进行修改：
+
+	class People(object):
+		country = 'china'
+
+		#类方法，用classmethod来进行修饰
+		@classmethod
+		def getCountry(cls):
+			return cls.country
+
+		@classmethod
+		def setCountry(cls,country):
+			cls.country = country
+
+
+	p = People()
+	print p.getCountry()    #可以用过实例对象引用
+	print People.getCountry()    #可以通过类对象引用
+
+	p.setCountry('japan')   
+
+	print p.getCountry()   
+	print People.getCountry()
+
+	从类方法和实例方法以及静态方法的定义形式就可以看出来，
+	类方法的第一个参数是类对象cls，那么通过cls引用的必定是类对象的属性和方法；
+	而实例方法的第一个参数是实例对象self，那么通过self引用的可能是类属性、
+	也有可能是实例属性（这个需要具体分析），
+	不过在存在相同名称的类属性和实例属性的情况下，实例属性优先级更高。
+	静态方法中不需要额外定义参数，因此在静态方法中引用类属性的话，必须通过类对象来引用.
+
+11、管理属性:
+
+	先来谈一下类属性和实例属性
+
+	类属性就是类对象所拥有的属性，它被所有类对象的实例对象所共有，
+	在内存中只存在一个副本，这个和C++中类的静态成员变量有点类似。
+	对于公有的类属性，在类外可以通过类对象和实例对象访问.
+
+	类属性:
+
+		class People(object):
+			name = 'Tom'  #公有的类属性
+			__age = 12     #私有的类属性
+
+		p = People()
+
+		print(p.name)           #正确
+		print(People.name)      #正确
+		print(p.__age)            #错误，不能在类外通过实例对象访问私有的类属性
+		print(People.__age)        #错误，不能在类外通过类对象访问私有的类属性''
+
+
+	实例属性(对象属性):
+
+		class People(object):
+			address = '山东' #类属性
+
+			def __init__(self):
+				self.name = 'xiaowang' #实例属性
+				self.age = 20 #实例属性
+
+		p = People()
+		p.age =12 #实例属性
+		print(p.address) #正确
+		print(p.name)    #正确
+		print(p.age)     #正确
+
+		print(People.address) #正确
+		print(People.name)    #错误
+		print(People.age)     #错误
+
+
+	如果需要在类外修改类属性，必须通过类对象去引用然后进行修改。
+	如果通过实例对象去引用，会产生一个同名的实例属性，这种方式修改的是实例属性，
+	不会影响到类属性，并且之后如果通过实例对象去引用该名称的属性，
+	实例属性会强制屏蔽掉类属性，即引用的是实例属性，除非删除了该实例属性。
+
+12、装饰器:
+
+	1、装饰器用法：
+
+	代码要遵循开放封闭原则，虽然在这个原则是用的面向对象开发，但是也适用于函数式编程，
+	简单来说，它规定已经实现的功能代码不允许被修改，但可以被扩展，即：
+	封闭：已实现的功能代码块
+	开放：对扩展开发
+
+	
+	def w1(func):
+		def inner():
+			# 验证1
+			# 验证2
+			# 验证3
+			func()
+		return inner
+	@w1
+	def f1():
+		print('f1')
+
+
+	python解释器就会从上到下解释代码，步骤如下：
+
+	a、	def w1(func): ==>将w1函数加载到内存
+	b、	@w1
+	
+	没错， 从表面上看解释器仅仅会解释这两句代码，因为函数在 没有被调用之前其内部代码不会被执行。
+
+	从表面上看解释器着实会执行这两句，但是 @w1 这一句代码里却有大文章，@函数名 是python的一种语法糖。
+
+	@w1内部会执行一下操作：
+		
+		执行w1函数 ，并将 @w1下面的函数作为w1函数的参数，
+		即：@w1 等价于 w1(f1) 所以，内部就会去执行：
+		
+		def inner(): 
+			#验证 1
+			#验证 2
+			#验证 3
+			f1()     # func是参数，此时 func 等于 f1 
+		return inner
+		返回的 inner，inner代表的是函数，非执行函数 ,其实就是将原来的f1函数塞进另外一个函数中。
+	
+	w1的返回值：
+
+		将执行完的w1函数返回值赋值给@w1下面的函数名f1，即将w1的返回值再重新赋值给f1，即：
+
+		新f1 = def inner():
+					#验证 1
+			        #验证 2
+			        #验证 3
+			        原来f1()
+				return inner
+	
+		所以，以后业务部门想要执行 f1 函数时，
+		就会执行 新f1 函数，在新f1 函数内部先执行验证，
+		再执行原来的f1函数，然后将原来f1 函数的返回值返回给了业务调用者。
+		
+	2、装饰器的作用：
+
+	a、引入日志
+	b、函数执行时间统计
+	c、执行函数前预备处理
+	d、执行函数后清理功能
+	e、权限校验等场景
+	f、缓存
+	
+	3、例1:无参数的函数
+
+		from time import ctime, sleep
+
+		def timefun(func):
+			def wrappedfunc():
+				print("%s called at %s"%(func.__name__, ctime()))
+				func()
+				return wrappedfunc
+
+		@timefunc
+		def foo():
+			print("I am foo")
+
+
+		foo()
+		sleep(2)
+		foo()
+
+		上面代码理解装饰器执行行为可理解成:
+
+			foo = timefun(foo)
+			#foo先作为参数赋值给func后,foo接收指向timefun返回的wrappedfunc
+			foo()
+			#调用foo(),即等价调用wrappedfunc()
+			#内部函数wrappedfunc被引用，所以外部函数的func变量(自由变量)并没有释放
+			#func里保存的是原foo函数对象
+
+	4、被装饰的函数有参数
+
+		from time import ctime, sleep
+
+		def timefun(func):
+			def wrappedfunc(a, b):
+				print("%s called at %s"%(func.__name__, ctime()))
+				print(a, b)
+				func(a, b)
+			return wrappedfunc
+
+		@timefun
+		def foo(a, b):
+		print(a+b)
+
+
+		foo(3,5)
+		sleep(2)
+		foo(2,4)
+
+	5、类装饰器（扩展，非重点）
+
+		装饰器函数其实是这样一个接口约束，它必须接受一个callable对象作为参数，然后返回一个callable对象。
+
+		在Python中一般callable对象都是函数，但也有例外。只要某个对象重写了 __call__() 方法，
+		那么这个对象就是callable的。
+
+			class Test():
+				def __call__(self):
+					print('call me!')
+
+			t = Test()
+			t()  # call me
+
+		类装饰器demo:
+
+		class Test(object):
+			def __init__(self, func):
+				print("---初始化---")
+				print("func name is %s"%func.__name__)
+				self.__func = func
+			def __call__(self):
+				print("---装饰器中的功能---")
+				self.__func()
+
+		说明：
+		1. 当用Test来装作装饰器对test函数进行装饰的时候，首先会创建Test的实例对象
+		   并且会把test这个函数名当做参数传递到__init__方法中
+		   即在__init__方法中的func变量指向了test函数体
+
+		2. test函数相当于指向了用Test创建出来的实例对象
+
+		3. 当在使用test()进行调用时，就相当于让这个对象()，因此会调用这个对象的__call__方法
+
+		4. 为了能够在__call__方法中调用原来test指向的函数体，所以在__init__方法中
+		   就需要一个实例属性来保存这个函数体的引用所以才有了self.__func = func这句代码，
+		   从而在调用__call__方法中能够调用到test之前的函数体
+
+		@Test
+		def test():
+			print("----test---")
+
+		test()
+		showpy()#如果把这句话注释，重新运行程序，依然会看到"--初始化--"
+
+		运行结果如下：
+
+			---初始化---
+			func name is test
+			---装饰器中的功能---
+			----test---
+13、元类：
+
+	1. 类也是对象
+
+	在大多数编程语言中，类就是一组用来描述如何生成一个对象的代码段。
+	在Python中这一点仍然成立：但是，Python中的类还远不止如此。
+	类同样也是一种对象。是的，没错，就是对象。
+	只要你使用关键字class，Python解释器在执行的时候就会创建一个对象。
+
+	class ObjectCreator(object):
+		pass
+
+	将在内存中创建一个对象，名字就是ObjectCreator。
+	这个对象（类对象ObjectCreator）拥有创建对象（实例对象）的能力。
+	但是，它的本质仍然是一个对象，于是乎你可以对它做如下的操作：
+
+		你可以将它赋值给一个变量
+		你可以拷贝它
+		你可以为它增加属性
+		你可以将它作为函数参数进行传递
+	
+	2. 到底什么是元类
+
+	元类就是用来创建类的“东西”。
+	元类就是用来创建这些类（对象）的，元类就是类的类，你可以这样理解为：
+
+	MyClass = MetaClass() #使用元类创建出一个对象，这个对象称为“类”
+	MyObject = MyClass() #使用“类”来创建出实例对象
+
+	函数type实际上是一个元类。type就是Python在背后用来创建所有类的元类。
+
+	3. 使用type创建类
+
+	type(类名, 由父类名称组成的元组（针对继承的情况，可以为空），包含属性的字典（名称和值）)
+
+	Test2 = type("Test2",(),{}) #定了一个Test2类
+	
+	4. 使用type创建带有属性的类
+
+	Foo = type('Foo', (), {'bar':True})
+
+5、__metaclass__属性:
+
+	你可以在定义一个类的时候为其添加__metaclass__属性:
+		class Foo(object):
+			__metaclass__ = something…
+			...省略...
+
+	如果你这么做了，Python就会用元类来创建类Foo。小心点，这里面有些技巧。
+	你首先写下class Foo(object)，但是类Foo还没有在内存中创建。
+	Python会在类的定义中寻找__metaclass__属性，如果找到了，Python就会用它来创建类Foo，
+	如果没有找到，就会用内建的type来创建这个类。把下面这段话反复读几次。当你写如下代码时 :
+
+	class Foo(Bar):
+		pass
+
+	Python做了如下的操作：
+
+	Foo中有__metaclass__这个属性吗？如果是，Python会通过__metaclass__创建一个名字为Foo的类(对象)
+	如果Python没有找到__metaclass__，它会继续在Bar（父类）中寻找__metaclass__属性，并尝试做和前面同样的操作。
+	如果Python在任何父类中都找不到__metaclass__，它就会在模块层次中去寻找__metaclass__，并尝试做同样的操作。
+	如果还是找不到__metaclass__,Python就会用内置的type来创建这个类对象。
+	现在的问题就是，你可以在__metaclass__中放置些什么代码呢？
+	答案就是：可以创建一个类的东西。那么什么可以用来创建一个类呢？
+	type，或者任何使用到type或者子类化type的东东都可以。
+
+6、 自定义元类：
+
+	元类的主要目的就是为了当创建类时能够自动地改变类。
+	通常，你会为API做这样的事情，你希望可以创建符合当前上下文的类。
+
+	假想一个很傻的例子，你决定在你的模块里所有的类的属性都应该是大写形式。
+	有好几种方法可以办到，但其中一种就是通过在模块级别设定__metaclass__。
+	采用这种方法，这个模块中的所有类都会通过这个元类来创建，
+	我们只需要告诉元类把所有的属性都改成大写形式就万事大吉了。
+
+	幸运的是，__metaclass__实际上可以被任意调用，它并不需要是一个正式的类。
+	所以，我们这里就先以一个简单的函数作为例子开始。
+
+
+	class UpperAttrMetaClass(type):
+		# __new__ 是在__init__之前被调用的特殊方法
+		# __new__是用来创建对象并返回的方法
+		# 而__init__只是用来将传入的参数初始化给对象
+		# 你很少用到__new__，除非你希望能够控制对象的创建
+		# 这里，创建的对象是类，我们希望能够自定义它，所以我们这里改写__new__
+		# 如果你希望的话，你也可以在__init__中做些事情
+		# 还有一些高级的用法会涉及到改写__call__特殊方法，但是我们这里不用
+		
+		def __new__(cls, future_class_name, future_class_parents, future_class_attr):
+			#遍历属性字典，把不是__开头的属性名字变为大写
+			newAttr = {}
+			for name,value in future_class_attr.items():
+				if not name.startswith("__"):
+					newAttr[name.upper()] = value
+
+			# 方法1：通过'type'来做类对象的创建
+			# return type(future_class_name, future_class_parents, newAttr)
+
+			# 方法2：复用type.__new__方法
+			# 这就是基本的OOP编程，没什么魔法
+			# return type.__new__(cls, future_class_name, future_class_parents, newAttr)
+
+			# 方法3：使用super方法
+			return super(UpperAttrMetaClass, cls).__new__(cls, future_class_name, future_class_parents, newAttr)
+
+		#python2的用法
+		class Foo(object):
+			__metaclass__ = UpperAttrMetaClass
+			bar = 'bip'
+
+		# python3的用法
+		# class Foo(object, metaclass = UpperAttrMetaClass):
+		#     bar = 'bip'
+
+	print(hasattr(Foo, 'bar'))
+	# 输出: False
+	print(hasattr(Foo, 'BAR'))
+	# 输出:True
+
+	f = Foo()
+	print(f.BAR)
+	# 输出:'bip'
+
+14、闭包：
+
+	在函数内部再定义一个函数，并且这个函数用到了外边函数的变量，
+	那么将这个函数以及用到的一些变量称之为闭包
+
+	定义一个函数
+	def test(number):
+		def test_in(number_in):
+			print("in test_in 函数, number_in is %d"%number_in)
+			return number+number_in
+			#其实这里返回的就是闭包的结果
+		return test_in
+
+
+	#给test函数赋值，这个20就是给参数number
+	ret = test(20)
+
+	#注意这里的100其实给参数number_in
+	print(ret(100))
+
+	#注意这里的200其实给参数number_in
+	print(ret(200))
+
+
+	内部函数对外部函数作用域里变量的引用（非全局变量），则称内部函数为闭包。
+	def counter(start=0):
+		count=[start]
+		def incr():
+			count[0] += 1
+			return count[0]
+		return incr
+
+
+	nonlocal访问外部函数的局部变量(python3)
+
+	def counter(start=0):
+		def incr():
+			nonlocal start
+			start += 1
+			return start
+		return incr
+
+	闭包思考：
+
+	1.闭包似优化了变量，原来需要类对象完成的工作，闭包也可以完成
+	2.由于闭包引用了外部函数的局部变量，则外部函数的局部变量没有及时释放，消耗内存
+
+15、私有化:
+
+	xx: 公有变量
+	_x: 单前置下划线,私有化属性或方法，from somemodule import *禁止导入,类对象和子类可以访问
+	__xx：双前置下划线,避免与子类中的属性命名冲突，无法在外部直接访问(名字重整所以访问不到)
+	__xx__:双前后下划线,用户名字空间的魔法对象或属性。例如:__init__ , __ 不要自己发明这样的名字
+	xx_:单后置下划线,用于避免与Python关键词的冲突
+
+	父类中属性名为__名字的，子类不继承，子类不能访问
+	如果在子类中向__名字赋值，那么会在子类中定义的一个与父类相同名字的属性
+	_名的变量、函数、类在使用from xxx import *时都不会被导入
+
+16、slots:
+
+	python是动态语言,动态编程语言 是 高级程序设计语言 的一个类别，在计算机科学领域已被广泛应用。
+	它是一类 在运行时可以改变其结构的语言 ：例如新的函数、对象、甚至代码可以被引进，
+	已有的函数可以被删除或是其他结构上的变化。动态语言目前非常具有活力。
+
+	1. 运行的过程中给对象绑定(添加)属性
+
+		>>> class Person(object):
+				def __init__(self, name = None, age = None):
+					self.name = name
+					self.age = age
+
+		>>> P = Person("小明", "24")
+
+		在这里，我们定义了1个类Person，在这个类里，定义了两个初始属性name和age，
+		但是人还有性别啊！如果这个类不是你写的是不是你会尝试访问性别这个属性呢？
+
+		>>> P.sex = "male"
+		>>> P.sex
+			'male'
+
+		这时候就发现问题了，我们定义的类里面没有sex这个属性啊！怎么回事呢？ 
+		这就是动态语言的魅力和坑！ 这里 实际上就是 动态给实例绑定属性！
+
+
+	2. 运行的过程中给类绑定(添加)方法
+
+		既然给类添加方法，是使用类名.方法名 = xxxx，
+		那么给对象添加一个方法也是类似的对象.方法名 = xxxx
+
+		import types
+
+		#定义了一个类
+		class Person(object):
+			num = 0
+			def __init__(self, name = None, age = None):
+				self.name = name
+				self.age = age
+			def eat(self):
+				print("eat food")
+
+		#定义一个实例方法
+		def run(self, speed):
+			print("%s在移动, 速度是 %d km/h"%(self.name, speed))
+
+		#定义一个类方法
+		@classmethod
+		def testClass(cls):
+			cls.num = 100
+
+		#定义一个静态方法
+		@staticmethod
+		def testStatic():
+			print("---static method----")
+
+		#创建一个实例对象
+		P = Person("老王", 24)
+		#调用在class中的方法
+		P.eat()
+
+		#给这个对象添加实例方法
+		P.run = types.MethodType(run, P)
+		#调用实例方法
+		P.run(180)
+
+		#给Person类绑定类方法
+		Person.testClass = testClass
+
+		#调用类方法
+		print(Person.num)
+		Person.testClass()
+		print(Person.num)
+
+		#给Person类绑定静态方法
+		Person.testStatic = testStatic
+		#调用静态方法
+		Person.testStatic()
+
+	3. 运行的过程中删除属性、方法
+
+		a、del 对象.属性名
+		b、delattr(对象, "属性名")
+		通过以上例子可以得出一个结论：相对于动态语言，静态语言具有严谨性！
+		所以，玩动态语言的时候，小心动态的坑！
+
+		那么怎么避免这种情况呢？ 请使用__slots__，
+
+	4、__slots__：
+
+	动态语言：可以在运行的过程中，修改代码
+	静态语言：编译时已经确定好代码，运行过程中不能修改
+
+	如果我们想要限制实例的属性怎么办？比如，只允许对Person实例添加name和age属性。
+	为了达到限制的目的，Python允许在定义class的时候，
+	定义一个特殊的__slots__变量，来限制该class实例能添加的属性：
+
+	
+	>>> class Person(object):
+		    __slots__ = ("name", "age")		
+	>>> P = Person()
+	>>> P.name = "老王"
+	>>> P.age = 20
+	>>> P.score = 100
+	Traceback (most recent call last):
+	  File "<pyshell#3>", line 1, in <module>
+	  AttributeError: Person instance has no attribute 'score'
+	
+	
+	注意:
+
+	使用__slots__要注意，__slots__定义的属性仅对当前类实例起作用，
+	对继承的子类是不起作用的
+	
+	class Test(Person):
+		pass
+	t = Test()
+	t.score = 100
+
+17、属性property：
+
+	1. 私有属性添加getter和setter方法
+
+		class Money(object):
+			def __init__(self):
+				self.__money = 0
+
+			def getMoney(self):
+				return self.__money
+
+			def setMoney(self, value):
+				if isinstance(value, int):
+					self.__money = value
+				else:
+					print("error:不是整型数字")
+
+	2.使用property升级getter和setter方法
+
+		class Money(object):
+			def __init__(self):
+				self.__money = 0
+
+			def getMoney(self):
+				return self.__money
+
+			def setMoney(self, value):
+				if isinstance(value, int):
+					self.__money = value
+				else:
+					print("error:不是整型数字")
+
+			money = property(getMoney, setMoney)
+
+		运行结果:
+
+			from get_set import Money
+			a = Money()
+			a.money = 100
+			a.getMoney()
+				100
+
+	3.使用property取代getter和setter方法
+
+		@property成为属性函数，可以对属性赋值时做必要的检查，并保证代码的清晰短小，
+		主要有2个作用:
+
+			将方法转换为只读
+			重新实现一个属性的设置和读取方法,可做边界判定
+
+		class Money(object):
+			def __init__(self):
+				self.__money = 0
+
+			@property
+			def money(self):
+				return self.__money
+
+			 @money.setter
+			def money(self, value):
+				if isinstance(value, int):
+					self.__money = value
+				else:
+					print("error:不是整型数字")
+
+
+"------------------------------------------------------------------------------------"
+
 	
 	
 
