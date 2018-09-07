@@ -259,12 +259,55 @@ python3中保留33个关键字
 
 "------------------------------------------------------------------------"
 
+Python类型模块：types
 
+	types模块中定义了Python中所有的类型，
+	包括NoneType,  TypeType,  IntType,  FloatType,  BooleanType,  BufferType,  
+	BuiltinFunctionType,  BuiltinMethodType,   ClassType,  CodeType,  ComplexType,  
+	DictProxyType,  DictType,  DictionaryType等。
 
+	Python内建函数type(object)，用于返回当前object对象的类型。例如：
 
+	  >>> type(1)
+			<type 'int'>
+	  >>> type("1")
+			<type 'str'>	
+	  >>> type(True)
+	　		<type 'bool'>
+	　>>> type(2.3)
+	　　	<type 'float'>
+	　>>> type(1+3j)
+	　　	<type 'complex'>
+	　>>> type(type(2))
+	　　	<type 'type'>
+	　>>> type(type)
+	　　	<type 'type'>
 
+	实现方法很简单，把对应的类型赋值给变量：
 
+		import types
 
+		#定义了一个类
+		class Person(object):
+			num = 0
+			def __init__(self, name = None, age = None):
+				self.name = name
+				self.age = age
+			def eat(self):
+				print("eat food")
+		
+		#定义一个实例方法
+		def run(self, speed):
+			print("%s在移动, 速度是 %d km/h"%(self.name, speed))
+
+		#创建一个实例对象
+		P = Person("老王", 24)
+
+		#给这个对象添加实例方法
+		P.run = types.MethodType(run, P)
+		
+		#调用实例方法
+		P.run(180)
 
 
 "-------------------------------------------------------------------------"
@@ -548,53 +591,99 @@ sys	            Python解释器交互
 functools	       常用的工具
 
 
-	functools,用于高阶函数:指那些作用于函数或者返回其它函数的函数，
-	通常只有是可以被当做函数调用的对象就是这个模块的目标。
+	1、partial函数(偏函数)
 
-	模块使用：
-
-	
-	1、partial: 
-
-		functools.partial(func,*args,**keywords),装饰器函数，返回一个新的partial对象。
-		调用partial对象和调用被修饰的函数func相同，只不过调用partial对象时传入的参数
-		通常要少于调用func时传入的参数个数。当一个函数func可以接收很多参数，
-		而某一次使用只需要更改其中的一部分参数，其他的参数都保持不变时，
-		partial对象就可以将这些不变的对象冻结起来，这样调用partial对象时传入未冻结的参数，
-		partial对象调用func时连同已经被冻结的参数一同传给func函数，从而可以简化调用过程。
+		把一个函数的某些参数设置默认值，返回一个新的函数，调用这个新函数会更简单。
 
 		import functools
 
-		def add(a,b):
-			    return a + b
+		def showarg( *args, **kw):
+			print(args)
+			print(kw)
 
-		add3 = functools.partial(add,3)
-		add5 = functools.partial(add,5)
+		p1=functools.partial(showarg, 1,2,3)
+		p1()
+		p1(4,5,6)
+		p1(a='python', b='itcast')
 
-		print add3(4)
-			7		
+		运行结果：
 
-		print add5(10)
-			15
+			>>> p1()
+				(1, 2, 3)
+				{}
+			>>> p1(4,5,6)
+				(1, 2, 3, 4, 5, 6)
+				{}
 
-	
-	2、partialmethod
-	
-	3、recursive_repr
-	
-	4、reduce
-		和内置函数reduce一样。
-	
-	5、singledispatch
-	
-	6、total_ordering
-		这是一个装饰器类，这个类定义了一个或者多个比较排序方法，
-		这个类装饰器将会补充其余的比较方法，减少了自己定义所有比较方法时的工作量；
+			>>> p1(a='python', b='itcast')
+				(1, 2, 3)
+				{'a': 'python', 'b': 'itcast'}
+
+		p2=functools.partial(showarg, a=3,b='linux')
+		p2()
+			()
+			{'a': 3, 'b': 'linux'}
+		p2(1,2)
+			(1, 2)
+			{'a': 3, 'b': 'linux'}
+		p2(a='python', b='itcast')
+			()
+			{'a': 'python', 'b': 'itcast'}
+
+	2、wraps函数
+
+		使用装饰器时，有一些细节需要被注意。
+		例如，被装饰后的函数其实已经是另外一个函数了（函数名等函数属性会发生改变）。
+
+		添加后由于函数名和函数的doc发生了改变，对测试结果有一些影响，例如:
+
+		def note(func):
+			"note function"
+			def wrapper():
+				"wrapper function"
+				print('note something')
+				return func()
+			return wrapper
+														 
+		@note
+		def test():
+			"test function"
+			print('I am test')
+																		 
+		test()
+		print(test.__doc__)
 		
-	7、update_wrapper
-		
-	8、wraps
+		运行结果：
 
+			note something
+			I am test
+			wrapper function
+		
+		所以，Python的functools包中提供了一个叫wraps的装饰器来消除这样的副作用。例如：
+
+		import functools
+		def note(func):
+			"note function"
+			@functools.wraps(func)	
+			def wrapper():
+				"wrapper function"
+				print('note something')
+				return func()
+			return wrapper
+													  
+			@note
+			def test():
+				"test function"
+			print('I am test')
+																	  
+		test()
+		print(test.__doc__)
+	
+	运行结果:
+
+		note something
+		I am test
+		test function
 
 
 "--------------------------------------------------------------------------------"
@@ -729,7 +818,7 @@ json	        编码和解码 JSON 对象
 
 python JSON:
 
-json(JavaScript Object Notation) 一种轻量级的数据交换格式，易于人阅读和编写。
+	json(JavaScript Object Notation) 一种轻量级的数据交换格式，易于人阅读和编写。
 	
 	impot json
 
