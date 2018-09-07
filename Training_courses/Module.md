@@ -2712,7 +2712,110 @@ itertools : python的内建模块，用于高效循环创建迭代器函数
 		
 		combinations('ABCD', 2)		
 			AB AC AD BC BD CD
+
+"----------------------------------------------------------------------------"	
+
+运算符重载：
+
+	1、基础知识：
+		
+		运算符重载让类拦截常规的python运算
+
+		类可重载所有的python表达式运算符
+
+		类也可重载打印、函数调用、属性点号等内置运算
+
+		重载使类实例的行为像内置类型
+
+		重载是通过提供特殊名称的类方法来实现的。
+
+	2、例子，__sub__()方法
+
+		class Number:
+			def __init__(self,start):
+				self.data = start
+
+			def __sub__(self,other):
+				return Number(self.data - other)
+
+		x = Number(5)
+		
+		y = x - 2  // x - 2 执行的是__sub__(self,other), y = Number(5-2)
+
+		y.data
+			3
+
+	3、常见的运算符重载方法：
+
+		方法             重载                 调用
+
+		__new__          创建                在__init__之前创建对象
+
+		__init__         构造函数            实例对象建立：x = Class(args)
+
+		__del__          析构函数            x 对象回收
+
+		__add__          运算符 +            如果没有__iadd__, x+y, x+=y
+
+		__sub__          运算符 -            x - y ,x -= y
+
+		__or__           运算符 |            如果没有__ior__, X|Y, X|=y
+
+
+
+		__repr__,__str__ 打印，转换          print(x),repr(x),str(x)
+
+		__call__         函数调用            x( *args,**kargs)
+
+
+		
+		__getattr__      点号运算            x.undefined
+
+		__setattr__      属性赋值运算        x.any = value
+
+		__delattr__      属性删除            del  x.any
+
+		__getattribute__ 属性获取            x.any
+ 		
+		__get__,__set__,__delete__  属性描述 x.attr,x.arrt= value,del x.attr
+
 	
+
+		__getitem__      索引运算           x[key],x[i:j],没有__iter__时的for循环和其他迭代器
+
+		__setitem__      索引赋值运算       x[key] = value,x[i:j] = sequence
+
+		__delitem__      索引和分片删除     del x[key],del x[i:j]
+
+
+
+		__len__          长度               len(x),如果没有__bool__
+
+		__bool__         布尔测试           bool(x) 真值测试
+
+
+		__lt__           小于               x < y   less than
+ 
+		__gt__           大于               x > y   greater than
+
+		__le__           小于等于           x <= y  less equal
+
+		__ge__           大于等于           x >= y  greater equal
+
+		__eq__           等于               x == y  equal
+
+		__ne__           不等于             x != y  not equal
+
+
+		__iter__,__next__ 迭代环境          I = iter(x),next(x)
+
+		__contains__     成员关系测试       item in x 
+
+		__index__        整数值             hex(x),bin(x),oct(x)
+
+		__enter__,__exit__ 环境管理         with obj as var
+
+		
 
 "-----------------------------------------------------------------------------"
 
