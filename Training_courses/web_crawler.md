@@ -623,21 +623,225 @@ Python2 中的 urllib、URLlib2和 Python3中的urllib.request and urllib.error�
 			你可以使用返回的HTTP错误示例。这意味着它不但具有code和reason属性，
 			而且同时具有read，geturl，和info等方法，如下代码和运行结果。
 			
-				
+				import urllib2
+				req = urllib2.Request('http://www.python.org/fish.html')
+				try:
+				    response=urllib2.urlopen(req)
+				except urllib2.HTTPError,e:
+					print e.code
+					print e.reason
+					print e.geturl()
+					print e.read()
 
 
+			如果我们想同时处理HTTPError和URLError，因为HTTPError是URLError的子类，
+			所以应该把捕获HTTPError放在URLError前面，如不然URLError也会捕获一个HTTPError错误，
+			代码参考如下：
 
+				import urllib2
+				req = urllib2.Request('http://www.python.org/fish.html')
+				try:
+				    response=urllib2.urlopen(req)
+				except urllib2.HTTPError,e:
+					print 'The server couldn\'t fulfill the request.
+					print 'Error code: ',e.code
+					print 'Error reason: ',e.reason   
+				except urllib2.URLError,e:
+				    print 'We failed to reach a server.'
+					print 'Reason: ', e.reason
+				else:
+					response.read()
 
+			这样捕获两个异常看着不爽，而且HTTPError还是URLError的子类，我们可以把代码改进如下：
 
-
-
-
-
-
+				import urllib2
+				req = urllib2.Request('http://www.python.org/fish.html')
+				try:
+				    response=urllib2.urlopen(req)
+				except urllib2.URLError as e:
+					if hasattr(e, 'reason'):
+						#HTTPError and URLError all have reason attribute.
+						print 'We failed to reach a server.'
+					    print 'Reason: ', e.reason
+					elif hasattr(e, 'code'):
+						#Only HTTPError has code attribute.
+						print 'The server couldn\'t fulfill the request.
+						print 'Error code: ', e.code
+				else:
+						# everything is fine
+						response.read()
 
 	3、Python3x中的urllib包、http包以及其他比较好使的第三方包
 
-		
+		Python3 中使用urllib库,urllib是基于http的高层库，
+			它有以下三个主要功能：
+
+			(1) request 处理客户端的请求
+
+			(2) response 处理服务端的响应
+
+			(3) parse会解析url
+
+		在Pytho2.x中使用urllib2对应Python3中:urllib.request、urllib.error。
+		在Pytho2.x中使用urllib 对应python3中:urllib.request、urllib.error、urllib.parse。
+		在Pytho2.x中使用urlparse对应的，在Python3使用import urllib.parse。
+		在Pytho2.x中使用urlopen对应的，在Python3.x中会使用import urllib.request.urlopen。
+		在Pytho2.x中使用urlencode对应的，在Python3.x中会使用import urllib.parse.urlencode。
+		在Pytho2.x中使用urllib.quote对应的，在Python3.x中会使用import urllib.request.quote。
+		在Pytho2.x中使用cookielib.CookieJar对应的，在Python3.x中会使用http.CookieJar。
+		在Pytho2.x中使用Request对应的，在Python3.x中会使用urllib.request.Request。
+
+
+		下面是使用Python3中urllib来获取资源的一些示例：
+
+			1. 最简单
+				
+				import urllib.request
+				response = urllib.request.urlopen('http://python.org/')
+				html = response.read()
+
+			2. 使用Request
+				
+				import urllib.request
+				req = urllib.request.Request('http://python.org/')
+				response = urllib.request.urlopen(req)
+				the_page = response.read()
+
+			3. 发送数据
+
+				import urllib.parse
+				import urllib.request
+
+				url = ""
+				
+				values = {
+					'act' : 'login',
+					'login[email]':'',
+					'login[passeord]':''
+				}
+
+				data = urllib.parse.urlencode(values)
+				req = urllib.request.Request(url,data)
+				req.add_header('Referer','http://www.python.org/')
+				response = urllib.request.urlopen(req)
+				the_page = response.read()
+				print(the_page.decode('utf-8'))
+
+
+			4. 发送数据和header
+
+				import urllib.parse
+				import urllib.request
+
+				url1 = = ''
+				user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
+				values = {
+
+					'act' : 'login',
+					'login[email]' : '',
+					'login[password]' : ''
+					}
+				headers = {'User-Agent' : user_agent }
+				data = urllib.parse.urlencode(values)
+				req = urllib.request.Request(url, data, headers)
+				response = urllib.request.urlopen(req)
+				the_page = response.read()
+				print(the_page.decode('utf-8'))
+				
+			5. http 错误
+
+				import urllib.request
+				req = urllib.request.Request('')
+				try:
+					urllib.request.urlopen(req)
+				except urllib.error.HTTPError as e:
+					print(e.code)
+					print(e.read).decode('utf8')
+
+			6.异常处理1
+
+				from urllib.request import Request, urlopen
+				from urllib.error import URLError, HTTPError
+				req = Request("http://www..net /")
+				try:
+					response = urlopen(req)
+				except HTTPError as e:
+					print('The server couldnt fulfill the request.')
+					print('Error code:', e.code)
+				except URLError as e:
+					print('We failed to reach a server.')
+					print('Reason: ', e.reason)
+				else:
+					print("good!")
+					print(response.read().decode("utf8"))
+			
+			7.异常处理2
+
+				from urllib.request import Request, urlopen
+				from urllib.error import  URLError
+				req = Request("http://www.Python.org/")
+				try:
+					response = urlopen(req)
+				except URLError as e:
+					if hasattr(e, 'reason'):
+						print('We failed to reach a server.')
+						print('Reason: ', e.reason)
+					elif hasattr(e, 'code'):
+						print('The server couldnt fulfill the request.')
+						print('Error code: ', e.code)
+				else:
+				print("good!")
+				print(response.read().decode("utf8"))
+
+			8.使用代理
+
+				import urllib.request
+				proxy_support = urllib.request.ProxyHandler({'sock5': 'localhost:1080'})
+				opener = urllib.request.build_opener(proxy_support)  
+				urllib.request.install_opener(opener)  
+				a = urllib.request.urlopen("").read().decode("utf8")
+
+	4、除了使用官方标准库的urllib，我们可以使用更好用的第三方模块，如requests
+
+		Requests 完全满足如今网络的需求，其功能有以下：
+
+			国际化域名和 URLs
+			Keep-Alive & 连接池
+			持久的 Cookie 会话
+			类浏览器式的 SSL 加密认证
+			基本/摘要式的身份认证
+			优雅的键/值 Cookies
+			自动解压
+			Unicode 编码的响应体
+			多段文件上传
+			连接超时
+			支持 .netrc
+			适用于 Python 2.7—3.6
+			线程安全
+	
+	
+			
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
