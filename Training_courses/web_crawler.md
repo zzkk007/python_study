@@ -372,7 +372,9 @@ Python2 中的 urllib、URLlib2和 Python3中的urllib.request and urllib.error�
 	urllib2 在 python3.x 中被改为urllib.request 和 urllib.error
 
 	1、在python2中的，urllib和URLlib2都是接受URL请求的相关模块，两个模块主要区别如下：
-
+		
+		
+		
 		1. urllib2 可以接受一个Request对象，并以此来设置URL的headers。
 			例如：
 			
@@ -394,11 +396,27 @@ Python2 中的 urllib、URLlib2和 Python3中的urllib.request and urllib.error�
 			urllib2.install_opener(opener)
 				
 		2. urllib仅可以接受URL。这意味着，你不可以伪装你的User Agent字符串等。
+			
 			但是urllib提供urlencode方法用来GET查询字符串的产生，而urllib2没有。
 			这是就是为何urllib常和urllib2一起使用的原因，如下：
-	
 			postdata = urllib.urlencode(postdata)
-			
+
+			编码工作使用urllib的urlencode()函数，帮我们将key:value这样的键值对
+			转换成"key=value"这样的字符串，解码工作可以使用urllib的unquote()函数。
+			（注意，不是urllib2.urlencode() 
+				
+				
+				import urllib
+				word = {"wd" : "传智播客"}
+				#通过urllib.urlencode()方法，将字典键值对按URL编码转换，从而能被web服务器接受。
+				urllib.urlencode(word)  
+					"wd=%E4%BC%A0%E6%99%BA%E6%92%AD%E5%AE%A2"
+				#通过urllib.unquote()方法，把 URL编码字符串，转换回原先字符串。
+				print urllib.unquote("wd=%E4%BC%A0%E6%99%BA%E6%92%AD%E5%AE%A2")
+					wd=传智播客
+
+			一般HTTP请求提交数据，需要编码成 URL编码格式，然后做为url的一部分，
+			或者作为参数传到Request对象中。
 
 
 	2、URLlib2概述：
@@ -491,10 +509,15 @@ Python2 中的 urllib、URLlib2和 Python3中的urllib.request and urllib.error�
 
 					import urllib2
 					req = urllib2.Request('http://www.example.com/')
+					
+					通过调用Request·add_header() 添加/修改一个特定的header
+
+					request.add_headers('Connection',"keep-alive")
 					req.add_headers = [('User-agent','Mozilla/5.0')]
 					r = urllib2.urlopen(req)
+					print r.code     #可以查看响应状态码
+	
 
-					
 					OpenerDirector为每一个Request自动加上一个User-Agent header，
 					所以第二种方法如下（urllib2.build_opener会返回一个OpenerDirector对象	
 					
@@ -514,7 +537,27 @@ Python2 中的 urllib、URLlib2和 Python3中的urllib.request and urllib.error�
 						一个无法验证的请求是，其用户的URL没有足够的权限来被接受。
 		
 
-		3. urllib2.install_opener(opener)和urllib2.build_opener([handler, ...])
+		3. Handler处理器和自定义Opener:
+
+			opener是urllib2.OpenerDirector 的实例，我们之前一直使用的urlopen
+			是一种特殊的opener(也就是模块帮我们构建好的)
+
+			但是基本的urlopen()方法不支持代理、cookie等其他的HTTP/HTTPS高级功能。
+			所以要支持这些功能：
+
+				a. 使用相关的 Handler处理器来创建特定功能的处理器对象
+
+				b. urllib2.build_opener()方法使用这些处理器对象，
+					创建自定义的opener对象。
+				c. 使用自定义的opener对象，调用open()方法发送请求
+
+			如果程序里所有的请求都使用自定义的opener，可以使用urllib2.install_opener() 
+			将自定义的 opener 对象 定义为 全局opener，表示如果之后凡是调用urlopen，
+			都将使用这个opener（根据自己的需求来选择）
+
+
+
+			urllib2.install_opener(opener)和urllib2.build_opener([handler, ...])
 
 			install_opener和build_opener这两个方法通常都是在一起用,
 			也有时候build_opener单独使用来得到OpenerDirector对象。
@@ -525,48 +568,52 @@ Python2 中的 urllib、URLlib2和 Python3中的urllib.request and urllib.error�
 
 			build_opener实例化也会得到OpenerDirector对象，
 			其中参数handlers可以被BaseHandler或他的子类实例化。
+			
 			子类中可以通过以下实例化：ProxyHandler (如果检测代理设置用), 
 			UnknownHandler, HTTPHandler, HTTPDefaultErrorHandler, 
 			HTTPRedirectHandler, FTPHandler, FileHandler, HTTPErrorProcessor。
 
+			简单的自定义opener():
+
 				import urllib2
-				req = urllib2.Request('http://www.python.org/')
-				opener=urllib2.build_opener()
-				urllib2.install_opener(opener)
-				f = opener.open(req)
+
+				#构建一个HTTPHandler处理器对象，支持处理HTTP请求
+				http_handler = urllib2.HTTPHandler()
+				#构建一个HTTPHandler 处理器对象，支持处理HTTPS请求
+				# http_handler = urllib2.HTTPSHandler()
+
+				#调用urllib2.build_opener()方法，创建支持处理HTTP请求的Opener对象
+				opener = urllib2.build_opener(http_handler)
+
+				# 构建 Request请求
+				request = urllib2.Request("http://www.baidu.com/")
+
+				# 调用自定义opener对象的open()方法，发送request请求
+				response = opener.open(request)
+
+				# 获取服务器响应内容
+				print response.read()
 				
-			如上使用 urllib2.install_opener()设置 urllib2 的全局 opener。
-			这样后面的使用会很方便，但不能做更细粒度的控制，比如想在程序中使用两个不同的 Proxy 设置等。
-			比较好的做法是不使用 install_opener 去更改全局的设置，
-			而只是直接调用 opener的open 方法代替全局的 urlopen 方法。
 
-			
-			说到这Opener和Handler之间的操作听起来有点晕。整理下思路就清楚了。当获取一个URL时，
-			可以使用一个opener（一个urllib2.OpenerDirector实例对象，可以由build_opener实例化生成）。
-			正常情况下程序一直通过urlopen使用默认的opener（也就是说当你使用urlopen方法时，
-			是在隐式的使用默认的opener对象），但也可以创建自定义的openers
-			（通过操作器handlers创建的opener实例）。所有的重活和麻烦都交给这些handlers来做。
-			每一个handler知道如何以一种特定的协议（http，ftp等等）打开url，
-			或者如何处理打开url发生的HTTP重定向，或者包含的HTTP cookie。
+			这种方式发送请求得到的结果，和使用urllib2.urlopen()发送HTTP/HTTPS请求得到的结果是一样的。
 
-			创建openers时如果想要安装特别的handlers来实现获取url
-			（如获取一个处理cookie的opener，或者一个不处理重定向的opener）的话，
-			先实例一个OpenerDirector对象，然后多次调用.add_handler(some_handler_instance)来创建一个opener。
-			或者，你可以用build_opener，这是一个很方便的创建opener对象的函数，
-			它只有一个函数调用。build_opener默认会加入许多handlers，
-			它提供了一个快速的方法添加更多东西和使默认的handler失效。
+			如果在 HTTPHandler()增加 debuglevel=1参数，还会将 Debug Log 打开，这样程序在执行的时候，
+			会把收包和发包的报头在屏幕上自动打印出来，方便调试，有时可以省去抓包的工作。
 
-			install_opener如上所述也能用于创建一个opener对象，但是这个对象是（全局）默认的opener。
-			这意味着调用urlopen将会用到你刚创建的opener。也就是说上面的代码可以等同于下面这段。
-			这段代码最终还是使用的默认opener。一般情况下我们用build_opener为的是生成自定义opener，
-			没有必要调用install_opener，除非是为了方便。
+				# 仅需要修改的代码部分：
 
-				import urllib2
-				req = urllib2.Request('http://www.python.org/')
-				opener=urllib2.build_opener()
-				urllib2.install_opener(opener)
-				f = urllib2.urlopen(req)
-		
+				# 构建一个HTTPHandler 处理器对象，支持处理HTTP请求，同时开启Debug Log，debuglevel 值默认 0
+				http_handler = urllib2.HTTPHandler(debuglevel=1)
+
+				# 构建一个HTTPHSandler 处理器对象，支持处理HTTPS请求，同时开启Debug Log，debuglevel 值默认 0
+				https_handler = urllib2.HTTPSHandler(debuglevel=1)
+
+
+		4. ProxyHandler处理器（代理设置）
+
+
+
+
 		4.异常处理
 
 			当我们调用urllib2.urlopen的时候不会总是这么顺利，就像浏览器打开url时有时也会报错，
@@ -670,6 +717,147 @@ Python2 中的 urllib、URLlib2和 Python3中的urllib.request and urllib.error�
 				else:
 						# everything is fine
 						response.read()
+		
+	
+		5.获取AJAX加载的内容:
+		
+			AJAX 即"Asynchronous JavaScript and XML" 异步的JavaScript与XML技术，
+			指的是一套综合了多项技术的浏览器端网页开发技术。Ajax的概念由杰西·詹姆士·贾瑞特所提出。
+
+			传统的Web应用允许用户端填写表单（form），当提交表单时就向网页服务器发送一个请求。
+			服务器接收并处理传来的表单，然后送回一个新的网页，但这个做法浪费了许多带宽，
+			因为在前后两个页面中的大部分HTML码往往是相同的。由于每次应用的沟通都需要向服务器发送请求，
+			应用的回应时间依赖于服务器的回应时间。这导致了用户界面的回应比本机应用慢得多。
+
+			与此不同，AJAX应用可以仅向服务器发送并取回必须的数据，
+			并在客户端采用JavaScript处理来自服务器的回应。
+			因为在服务器和浏览器之间交换的数据大量减少，服务器回应更快了。
+			同时，很多的处理工作可以在发出请求的客户端机器上完成，因此Web服务器的负荷也减少了。
+
+			类似于DHTML或LAMP，AJAX不是指一种单一的技术，而是有机地利用了一系列相关的技术。
+			虽然其名称包含XML，但实际上数据格式可以由JSON代替，进一步减少数据量，形成所谓的AJAJ。
+			而客户端与服务器也并不需要异步。
+
+
+			有些网页内容使用AJAX加载，只要记得，AJAX一般返回的是JSON,
+			直接对AJAX地址进行post或get，就返回JSON数据了。
+
+			"作为一名爬虫工程师，你最需要关注的，是数据的来源"
+
+				import urllib
+				import urllib2
+
+				# demo1
+
+				url = "https://movie.douban.com/j/chart/top_list?type=11&interval_id=100%3A90&action"
+		
+				headers={"User-Agent": "Mozilla...."}
+					
+				# 变动的是这两个参数，从start开始往后显示limit个
+				formdata = {
+						    'start':'0',
+							'limit':'10'}
+				
+				data = urllib.urlencode(formdata)
+	
+				request = urllib2.Request(url, data = data, headers = headers)
+				response = urllib2.urlopen(request)
+				print response.read()
+	
+	
+				# demo2
+	
+				url = "https://movie.douban.com/j/chart/top_list?"
+				headers={"User-Agent": "Mozilla...."}
+		
+				# 处理所有参数
+				formdata = {
+					'type':'11',
+				    'interval_id':'100:90',
+					'action':'',
+					'start':'0',
+					'limit':'10'}
+				data = urllib.urlencode(formdata)
+				request = urllib2.Request(url, data = data, headers = headers)
+				response = urllib2.urlopen(request)
+				print response.read()
+
+		6.	为什么有时候POST也能在URL内看到数据？
+
+			GET方式是直接以链接形式访问，链接中包含了所有的参数，
+			服务器端用Request.QueryString获取变量的值。如果包含了密码的话是一种不安全的选择，
+			不过你可以直观地看到自己提交了什么内容。
+
+			POST则不会在网址上显示所有的参数，服务器端用Request.Form获取提交的数据，
+			在Form提交的时候。但是HTML代码里如果不指定 method 属性，
+			则默认为GET请求，Form中提交的数据将会附加在url之后，以?分开与url分开。
+
+			表单数据可以作为 URL 字段（method="get"）或者 HTTP POST （method="post"）的方式来发送。
+			比如在下面的HTML代码中，表单数据将因为 （method="get"） 而附加到 URL 上：
+
+				<form action="form_action.asp" method="get">
+					<p>First name: <input type="text" name="fname" /></p>
+					<p>Last name: <input type="text" name="lname" /></p>
+					<input type="submit" value="Submit" />
+				</form>
+
+
+		7. 处理HTTPS请求 SSL证书验证:
+
+			现在随处可见 https 开头的网站，urllib2可以为 HTTPS 请求验证SSL证书，
+			就像web浏览器一样，如果网站的SSL证书是经过CA认证的，
+			则能够正常访问，如：https://www.baidu.com/等...
+
+			如果SSL证书验证不通过，或者操作系统不信任服务器的安全证书，
+			比如浏览器在访问12306网站如：https://www.12306.cn/mormhweb/的时候，
+			会警告用户证书不受信任。（据说 12306 网站证书是自己做的，没有通过CA认证）
+
+			urllib2在访问的时候则会报出SSLError：
+
+				import urllib2
+				url = "https://www.12306.cn/mormhweb/"
+				headers = {
+					"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) 
+						AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36"}	
+				request = urllib2.Request(url, headers = headers)
+				response = urllib2.urlopen(request)
+				print response.read()
+
+			运行结果：
+
+			urllib2.URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed 
+
+			如果以后遇到这种网站，我们需要单独处理SSL证书，让程序忽略SSL证书验证错误，
+			即可正常访问。
+
+				import urllib
+				import urllib2
+				# 1. 导入Python SSL处理模块
+				import ssl
+
+				# 2. 表示忽略未经核实的SSL证书认证
+				context = ssl._create_unverified_context()
+
+				url = "https://www.12306.cn/mormhweb/"
+	
+				headers = {
+					"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 
+					(KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36"}
+				request = urllib2.Request(url, headers = headers)
+	
+				# 3. 在urlopen()方法里 指明添加 context 参数
+				response = urllib2.urlopen(request, context = context)
+				print response.read()
+
+			关于CA证书：
+		
+				CA(Certificate Authority)是数字证书认证中心的简称，是指发放、管理、
+				废除数字证书的受信任的第三方机构，如北京数字认证股份有限公司、
+				上海市数字证书认证中心有限公司等.
+
+				CA的作用是检查证书持有者身份的合法性，并签发证书，以防证书被伪造或篡改，
+				以及对证书和密钥进行管理。
+
 
 	3、Python3x中的urllib包、http包以及其他比较好使的第三方包
 
