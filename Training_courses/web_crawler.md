@@ -1494,28 +1494,176 @@ Python2 中的 urllib、URLlib2和 Python3中的urllib.request and urllib.error�
 					如果 JSON 解码失败， r.json() 就会抛出一个异常。
 					例如，响应内容是 401 (Unauthorized)，尝试访问r.json()将会抛出 
 					ValueError: No JSON object could be decoded 异常。
+					
+					需要注意的是，成功调用 r.json() 并**不**意味着响应的成功。
+					有的服务器会在失败的响应中包含一个 JSON 对象（比如 HTTP 500 的错误细节）。
+					这种 JSON 会被解码返回。要检查请求是否成功，
+					请使用 r.raise_for_status() 或者检查 r.status_code 是否和你的期望相同。
+
+			原始响应内容:
+
+				在罕见的情况下，你可能想获取来自服务器的原始套接字响应，那么你可以访问 r.raw。
+				如果你确实想这么干，那请你确保在初始请求中设置了 stream=True。
+				具体你可以这么做：
+
+				>>> r = requests.get('https://api.github.com/events', stream=True)
+				>>> r.raw
+				<requests.packages.urllib3.response.HTTPResponse object at 0x101194810>
+				>>> r.raw.read(10)
+					'\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\x03'
+			
+			响应状态码:
+
+				我们可以检测响应状态码：
+				>>> r = requests.get('http://httpbin.org/get')
+				>>> r.status_code
+					200
+				为方便引用，Requests还附带了一个内置的状态码查询对象：
+				>>> r.status_code == requests.codes.ok
+				True
+
+				如果发送了一个错误请求(一个 4XX 客户端错误，或者 5XX 服务器错误响应)，
+				我们可以通过 Response.raise_for_status() 
+				来抛出异常：
+				
+				d_r = requests.get('http://httpbin.org/status/404')
+				>>> bad_r.status_code
+					404
+				
+				>>> bad_r.raise_for_status()
+				Traceback (most recent call last):
+					  File "requests/models.py", line 832, in raise_for_status
+					      raise http_error
+					  requests.exceptions.HTTPError: 404 Client Error
+
+			响应头:
+
+				我们可以查看以一个 Python 字典形式展示的服务器响应头：
+
+				>>> r.headers
+				{
+
+					'content-encoding': 'gzip',
+					'transfer-encoding': 'chunked',
+					'connection': 'close',
+					'server': 'nginx/1.0.4',
+					'x-runtime': '148ms',
+					'etag': '"e1ca502697e5c9317743dc078f67693f"',
+					'content-type': 'application/json'
+				}
+
+				但是这个字典比较特殊：它是仅为 HTTP 头部而生的。
+				根据 RFC 2616， HTTP 头部是大小写不敏感的。
+
+				因此，我们可以使用任意大写形式来访问这些响应头字段：
+
+				>>> r.headers['Content-Type']
+				'application/json'
+				
+				>>> r.headers.get('content-type')
+				'application/json'
+						
+		
+		(5) 定制请求头:
+
+			如果你想为请求添加HTTP头部，只要简单地传递一个dict给 headers参数就可以了。	
+
+			在前一个示例中我们没有指定 content-type:
+
+			>>> url = 'https://api.github.com/some/endpoint'
+			>>> headers = {'user-agent': 'my-app/0.0.1'}
+			>>> r = requests.get(url, headers=headers)
+
+			注意: 定制 header 的优先级低于某些特定的信息源，例如：
+
+				如果在 .netrc 中设置了用户认证信息，使用 headers= 设置的授权就不会生效。
+				而如果设置了 auth= 参数，``.netrc`` 的设置就无效了。
+				如果被重定向到别的主机，授权 header 就会被删除。
+				代理授权 header 会被 URL 中提供的代理身份覆盖掉。
+				在我们能判断内容长度的情况下，header 的 Content-Length 会被改写。
+		
+			更进一步讲，Requests 不会基于定制 header 的具体情况改变自己的行为。
+			只不过在最后的请求中，所有的 header 信息都会被传递进去。
+
+			注意: 所有的 header 值必须是 string、bytestring 或者 unicode。
+			尽管传递 unicode header 也是允许的，但不建议这样做。
+
+		
+		(6)更加复杂的 POST 请求:
+
+			通常，你想要发送一些编码为表单形式的数据——非常像一个 HTML 表单。
+			要实现这个，只需简单地传递一个字典给 data 参数。
+			你的数据字典在发出请求时会自动编码为表单形式：
+
+			>>> payload = {'key1': 'value1', 'key2': 'value2'}
+			
+			>>> r = requests.post("http://httpbin.org/post", data=payload)
+			>>> print(r.text)
 
 
 
+			import requests
+			formdata = {
+
+					"type":"AUTO",
+					"i":"i love python",
+					"doctype":"json",
+					"xmlVersion":"1.8",
+					"keyfrom":"fanyi.web",
+					"ue":"UTF-8",
+					"action":"FY_BY_ENTER",
+					"typoResult":"true"
+				}
+
+			url = "http://fanyi.youdao.com/translate?smartresult=dict&smartresult=rule
+					&smartresult=ugc&sessionFrom=null"
+
+			headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) 
+				AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"}
+
+			response = requests.post(url, data = formdata, headers = headers)
+
+			print response.text
+
+			很多时候你想要发送的数据并非编码为表单形式的。
+			如果你传递一个 string 而不是一个 dict，那么数据会被直接发布出去。
+
+			>>> import json
+			>>> url = 'https://api.github.com/some/endpoint'
+			>>> payload = {'some': 'data'}
+			>>> r = requests.post(url, data=json.dumps(payload))
+			
+			此处除了可以自行对 dict 进行编码，你还可以使用 json 参数直接传递，
+			然后它就会被自动编码。这是 2.4.2 版的新加功能：
+
+			>>> url = 'https://api.github.com/some/endpoint'
+			>>> payload = {'some': 'data'}
+			>>> r = requests.post(url, json=payload)
+
+		
+		(7) POST一个多部分编码(Multipart-Encoded)的文件
+
+			Requests 使得上传多部分编码文件变得很简单：
+
+			>>> url = 'http://httpbin.org/post'
+			>>> files = {'file': open('report.xls', 'rb')}
+			>>> r = requests.post(url, files=files)
+			>>> r.text
+
+			你可以显式地设置文件名，文件类型和请求头:
+
+			>>> url = 'http://httpbin.org/post'
+			>>> files = {
+				'file': ('report.xls', open('report.xls', 'rb'), 'application/vnd.ms-excel', {
+						'Expires': '0'})}
+			
+			>>> r = requests.post(url, files=files)
+			>>> r.text
+
+		(8) Cookie
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+		
 
 
 
