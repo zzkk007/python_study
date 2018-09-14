@@ -381,19 +381,6 @@ Python2 中的 urllib、URLlib2和 Python3中的urllib.request and urllib.error�
 			req = urllib2.Request(url=url,data=postdata,headers=headers)
 			result = urllib2.urlopen(req)
 		
-			我们知道，HTTP是无连接的状态协议，但是客户端和服务器端需要保持一些相互信息，
-			比如cookie，有了cookie，服务器才能知道刚才是这个用户登录了网站，
-			才会给予客户端访问一些页面的权限。所以我们需要保存cookie，之后附带cookie再来访问网站，
-			才能够达到效果。这里就需要Python的cookielib和urllib2等的配合，将cookielib绑定到urllib2在一起，
-			就能够在请求网页的时候附带cookie。在构造req请求之前可以获取一个保存cookies的对象，
-			并把该对象和http处理器、http的handler资源以及urllib2的对象绑定在一起：
-		
-			cj = cookielib.LWPCookieJar()
-			cookie_support = urllib2.HTTPCookieProcessor(cj)
-			# 创建一个opener，将保存了cookie的http处理器，还有设置一个handler用于处理http的URL的打开
-			opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
-			# 将包含了cookie、http处理器、http的handler的资源和urllib2对象板顶在一起
-			urllib2.install_opener(opener)
 				
 		2. urllib仅可以接受URL。这意味着，你不可以伪装你的User Agent字符串等。
 			
@@ -568,10 +555,22 @@ Python2 中的 urllib、URLlib2和 Python3中的urllib.request and urllib.error�
 
 			build_opener实例化也会得到OpenerDirector对象，
 			其中参数handlers可以被BaseHandler或他的子类实例化。
+		
+
+			子类中可以通过以下实例化：
 			
-			子类中可以通过以下实例化：ProxyHandler (如果检测代理设置用), 
-			UnknownHandler, HTTPHandler, HTTPDefaultErrorHandler, 
-			HTTPRedirectHandler, FTPHandler, FileHandler, HTTPErrorProcessor。
+				HTTPHandler			  : HTTP
+				HTTPSHandler		  : HTTPS
+				HTTPBasicAuthHandler  : Web客户端授权验证
+				ProxyHandler          : 代理设置
+				ProxyBasciAuthHandler : 验证代理设置
+				HTTPCookieProcessor   : 主要作用是处理这些cookie对象，并构建handler对象.
+				UnknownHandler
+				HTTPDefaultErrorHandler
+				HTTPRedirectHandler
+				FTPHandler
+				FileHandler
+				HTTPErrorProcessor
 
 			简单的自定义opener():
 
@@ -1660,68 +1659,147 @@ Python2 中的 urllib、URLlib2和 Python3中的urllib.request and urllib.error�
 			>>> r = requests.post(url, files=files)
 			>>> r.text
 
-		(8) Cookie
+		(8) 代理（proxies参数）:
 
+			如果需要使用代理，你可以通过为任意请求方法提供proxies参数来配置单个请求:
+
+			import requests
+
+			根据协议类型，选择不同的代理
+			proxies = {
+				"http":"http://10.10.1.10:3128"
+				"https": "http://10.10.1.10:1080",
+			}
+			response = requests.get("http://www.baidu.com",proxies = proxies)
+			
+			也可以通过本地环境变量HTTP_PROXy 和HTTPS_PROXY 来代理配置
+
+				>>> export HTTP_PROXY="http://12.34.56.79:9527"
+				>>> export HTTPS_PROXY="https://12.34.56.79:9527"
+
+				>>> import requests
+				>>> requests.get("http://www.baidu.com")
+
+		(9) 私密代理验证（特定格式） 和 Web客户端验证（auth 参数）:
+			
+			私密代理:
+				若你的代理需要使用HTTP Basic Auth，可以使用 http://user:password@host/语法：
+	
+				import requests
+				proxies = {
+
+					    "http": "http://user:pass@10.10.1.10:3128/",
+				}
+
+				response = requests.get("http://www.baidu.com", proxies = proxy)	
+				print response.text
+
+			web客户端验证:
+
+				如果是Web客户端验证，需要添加 auth = (账户名, 密码)
+
+				import requests
+
+				auth=('test', '123456')
+				
+				response = requests.get('http://192.168.199.107', auth = auth)
+				
+				print response.text
+
+
+		(10) Cookie:
+
+			如果某个响应中包含一些 cookie，你可以快速访问它们：
+			>>>response = requests.get("http://www.baidu.com/")
+			>>>cookiejar= response.cookies #返回RequestsCookieJar对象:
+				<RequestsCookieJar[Cookie(version=0, name='BDORZ', value='27315', 
+				port=None, port_specified=False, domain='.baidu.com', domain_specified=True, 
+				domain_initial_dot=True, path='/', path_specified=True, secure=False, 
+				expires=1536989870, discard=False, comment=None, comment_url=None,
+				rest={}, rfc2109=False)]>
+			
+			将RequestsCookieJar转为字典：
+
+			>>>cookiedict = requests.utils.dict_from_cookiejar(cookiejar)
+			>>> print cookiedict
+				{'BDORZ': '27315'}
+
+			Cookie 的返回对象为 RequestsCookieJar，它的行为和字典类似，
+			但接口更为完整，适合跨域名跨路径使用。你还可以把 Cookie Jar 传到 Requests 中：
+
+			>>> jar = requests.cookies.RequestsCookieJar()
+			>>> jar.set('tasty_cookie', 'yum', domain='httpbin.org', path='/cookies')
+			>>> jar.set('gross_cookie', 'blech', domain='httpbin.org', path='/elsewhere')
+			>>> url = 'http://httpbin.org/cookies'
+			>>> r = requests.get(url, cookies=jar)
+			>>> r.text
+				'{
+					"cookies": {
+					"tasty_cookie": "yum"}
+				}'
 
 		
 
+		(11)Sission:
 
+			在requests里，session 对象是一个非常常用的对象，这个对象代表一次用户会话
+			从客户端浏览器连接服务器开始，到客户端浏览器与服务器断开。
 
+			会话能让我们在夸请求时候保持某些参数，比如同一个Session实例发出的所有
+			请求之间保持cookie
 
+			例子 实现人人网登录：
 
+			import requests
 
+			1.创建session对象，可以保存Cookie值
+			ssion = requests.session()
 
+			2.处理headers
+			headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) 
+				AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36}
 
+			3.需要登录的用户名和密码
+			data = {"email":"mr_mao_hacker@163.com", "password":"alarmchime"}
 
+			4.发送附带用户名和密码的请求，并获取登录后的Cookie值，保存在ssion里
+			ssion.post("http://www.renren.com/PLogin.do", data = data)
 
+			5. ssion包含用户登录后的Cookie值，可以直接访问那些登录后才可以访问的页面
+			response = ssion.get("http://www.renren.com/410043129/profile")
 
+			6. 打印响应内容
+			print response.text
 
+			
+		(12)处理HTTPS请求 SSL证书验证
 
+			Requests也可以为HTTPS请求验证SSL证书：
+			要想检查某个主机的SSL证书，你可以使用 verify 参数（也可以不写）
 
+				import requests
+				response = requests.get("https://www.baidu.com/", verify=True)
+			
+				# 也可以省略不写
+				# response = requests.get("https://www.baidu.com/")
+				print r.text
 
+			如果SSL证书验证不通过，或者不信任服务器的安全证书，则会报出SSLError，
+			据说 12306 证书是自己做的：
+			
+				import requests
+				response = requests.get("https://www.12306.cn/mormhweb/")
+				print response.text
 
+				果然：
 
+					SSLError: ("bad handshake: Error([('SSL routines', 'ssl3_get_server_certificate',
+							'certificate verify failed')],)",)
+			如果我们想跳过 12306 的证书验证，把 verify 设置为 False 就可以正常请求了。
+				r = requests.get("https://www.12306.cn/mormhweb/", verify = False)
+		
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+"---------------------------------------------------------------------------------------------------"
 
 
 
