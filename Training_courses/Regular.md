@@ -110,6 +110,10 @@
 
 	 \B           匹配非单词边界
 
+	 \A           仅匹配字符串开头
+
+	 \Z           仅匹配字符串末尾
+
 
 
 匹配分组：
@@ -148,6 +152,25 @@ re模块的高级用法：
 
 
 	4、split 根据匹配进行切割字符串，并返回一个列表
+
+	
+	5、compile 编译正则表达式，生产一个pattern对象，
+		接下来，我们就可以利用 pattern 的一系列方法对文本进行匹配查找了。
+
+		Pattern 对象的一些常用方法主要有：
+			match 方法：从起始位置开始查找，一次匹配
+			search 方法：从任何位置开始查找，一次匹配
+			findall 方法：全部匹配，返回列表
+			finditer 方法：全部匹配，返回迭代器
+			split 方法：分割字符串，返回列表
+			sub 方法：替换
+		
+		>>> import re
+		>>> pattern = re.compile(r'\d+')  # 用于匹配至少一个数字
+
+		>>> m = pattern.match('one12twothree34four')  # 查找头部，没有匹配
+		>>> print m
+		None
 
 
 
