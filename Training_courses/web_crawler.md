@@ -2623,7 +2623,7 @@ XPath:
 		result = etree.tostring(html, pretty_print=True)		
 		print(result)
 
-	3. XPath实例测试：
+7、
 		
 		
 
