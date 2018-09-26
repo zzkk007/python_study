@@ -2623,9 +2623,74 @@ XPath:
 		result = etree.tostring(html, pretty_print=True)		
 		print(result)
 
-7、
+"-----------------------------------------------------------------------"	
 		
+CSS 选择器：BeautifulSoup4:
+
+	Beautiful Soup 是一个从HTML或XML文件中提取的数据的Python库。
+	它能够通过你喜欢的转换器实现惯用的文档导航,查找,修改文档的方式.
+
+1、安装Beautiful Soup：
+
+	如果你用是新版的Debian或ubuntu,那么可以通过系统的软件包管理来安装:	
+		apt-get install Python-bs4
+	
+	Beautiful Soup 4 是通过PyPi发布的，所以如果你无法使用系统包管理安装，
+	那么也可以通过esay_install 或pip来安装，包的名字是beautifulsoup4
+		esay_install beautifulsoup4
+		pip install beautifulsoup4
+
+	如果你没有安装easy_install 或pip，那你可以通过下载源码，然后通过setup.py
+	来安装：
+		Python setup.py install
+
+2、安装解析器：
+
+	Beautiful Soup 支持Python 标准库中的HTML解析器，还支持一下第三方的解析器
+	其中一个是lxml，根据操作系统不同，可以选择下列方式安装lxml：
+		$ apt-get install Python-lxml
+		$ easy_install lxml
+		$ pip install lxml
+
+	另一个可供选择的解析器是纯Python实现的 html5lib , html5lib的解析方式与浏览器相同,
+	可以选择下列方法来安装html5lib:
+		$ apt-get install Python-html5lib
+		$ easy_install html5lib
+		$ pip install html5lib
+
+	下表列出的解析器，以及它们的优缺点：
+
+	解析器              使用方法                            优势                        
+
+	Python标准库     BeautifulSoup(markup,"html.parse")   内置标准库，速度快，容错能力强 
+
+	lxml HTML解析器  BeautifulSoup(markup,"lxml")          速度快、文档容错能力强
+
+	lxml XML解析器	 BeautifulSoup(markup,["lxml-xml"])    速度快，唯一支持xml的解析器
+					 BeautifulSoup(markup, "xml")
+
+	html5lib         BeautifulSoup(markup,"html5lib")      以浏览器的方式解析文档
+
+
+	推荐使用lxml作为解析器,因为效率更高. 
+
+
+3、如何使用:
+
+	将一段文档传入BeautifulSoup 的构造方法，就能得到一个文档的对象，可以传入一段字符或这个文件句柄。
+
+	from bs4 import BeautifulSoup
+	soup = BeautifulSoup(open("index.html"))
+	soup = BeautifulSoup("<html>data</html>")
+
+	首先,文档被转换成Unicode,并且HTML的实例都被转换成Unicode编码。
+	BeautifulSoup("Sacr&eacute; bleu!")
+	<html><head></head><body>Sacré bleu!</body></html>
+
+
 		
+
+	
 
 
 
