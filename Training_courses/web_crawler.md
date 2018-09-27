@@ -3241,16 +3241,52 @@ DHTML：
 "--------------------------------------------------------------------------------"
 
 
-		
+Selenium:
+
+	Selenium 是一个Web的自动化测试工具，最初是为网站自动化测试而开发的，
+	类型像我们玩游戏用的按键精灵(按键精灵是一款模拟鼠标键盘动作的软件。
+	通过制作脚本，可以让按键精灵代替双手，自动执行一系列鼠标键盘动作。
+	按键精灵简单易用，不需要任何编程知识就可以作出功能强大的脚本。)
+	可以按指定的命令自动操作，不同是Selenium 可以直接运行在浏览器上，
+	它支持所有主流的浏览器（包括PhantomJS这些无界面的浏览器）。
+
+	Selenium 可以根据我们的指令，让浏览器自动加载页面，获取需要的数据。
+	甚至页面截屏，或者判断网站上某些动作是否发生。
+
+	Selenium 自己不带浏览器，不支持浏览器的功能，它需要与第三方浏览器结合在一起才能使用。
+	但是我们有时候需要让它内嵌在代码中运行，
+	所以我们可以用一个叫 PhantomJS 的工具代替真实的浏览器。
+
+	pip用命令安装：pip install selenium
 
 
+PhantomJS:
 
+	PhantomJS 是一个基于Webkit的"无界面"(headless)浏览器，
+	它会把网站加载到内存并执行页面上的 JavaScript，因为不会展示图形界面，
+	所以运行起来比完整的浏览器要高效。
 
+	如果我们把 Selenium 和 PhantomJS 结合在一起，就可以运行一个非常强大的网络爬虫了，
+	这个爬虫可以处理 JavaScrip、Cookie、headers，以及任何我们真实用户需要做的事情。
 
+	注意：PhantomJS 只能从它的官方网站http://phantomjs.org/download.html) 下载。 
+	因为 PhantomJS 是一个功能完善(虽然无界面)的浏览器而非一个 Python 库，
+	所以它不需要像 Python 的其他库一样安装，但我们可以通过Selenium调用PhantomJS来直接使用。
 
+	PhantomJS 官方参考文档：http://phantomjs.org/documentation
+	
+	Webkit:
 
+		Webkit 是一个开源的浏览器引擎，与之相对应的引擎有Gecko(Mozilla Firefox 等使用)
+		Trident(也称MSHTML, IE使用)
+		同时WebKit 也是苹果Mac OS X系统引擎框架版本的名称，
+		主要用于Safari，Dashboard，Mail 和其他一些Mac OS X 程序。
 
+快速入门:
 
+	Selenium 库里有个叫 WebDriver 的API。WebDriver 有点像可以加载网站的浏览器，
+	但是它也可以像BeautifulSoup 或者其他Selector对象一样用来查找页面元素，与
+	页面元素进行交互(发送文本，点击等)以及执行其他动作来运行网络爬虫。
 
 
 
