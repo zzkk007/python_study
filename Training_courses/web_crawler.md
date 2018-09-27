@@ -3063,22 +3063,106 @@ JsonPath:
 	JsonPath 与 XPath 语法对比：
 	Json结构清晰，可读性高，复杂度低，非常容易匹配，下表对应的XPath的用法：
 
+		XPath       JSONPath       描述
+
+		/             $            根节点
+
+		.             @            现行节点
+
+		/            . or []       取子节点
+
+		..           n/a           取父节点，Jsonpath未支持
+
+		//           ..            就是不管位置，选择所有符合条件的条件
+
+		*            *             匹配所有的元素节点
+
+		@            n/a           属性，Json不支持，因为Json是key-value结构，不需要
+
+		[]           []            迭代器标示
+
+		|            [,]           支持迭代器中做多选
+
+		[]           ?()           支持过滤操作
+
+		n/a          ()            支持表达式计算
+
+		()           n/a           分组，JsonPath不支持
 
 
+	示例：我们以拉勾网城市JSON文件 http://www.lagou.com/lbs/getAllCitySearchLabels.json为例，
+	获取所有城市：
 
+		import urllib2
+		import jsonpath
+		import json
+		import chrdet
 
+		url = 'http://www.lagou.com/lbs/getAllCitySearchLabels.json'
+		request = urllib2.Request(url)
+		response = urllib2.urlopen(request)
+		html = response.read()
 
+		# 把json格式字符串转换成python对象
+		jsonbj = json.loads(html)
 
+		# 从根节点开始，匹配name节点
+		citylist = jsonpath.jsonpath(jsonbj,'$..name')
+		
+		print citylist
 
+		fp = open('city.json','w')
 
+		content = json.dumps(citylist,ensure_ascii=False)
+		print content
 
+		fp.write(content.encode('utf-8'))
+		fp.close()
 
+	注意事项：
 
+		json.loads() 是把Json格式字符串解码转换成Python对象，
+		如果在Json.loads的时候出错，要注意被解码的Json字符的编码。
 
+		如果传入的字符串编码不是UTF-8的话，需要指定字符串编码的参数encoding 
 
+			dataDict = json.loads(jsonStrGBK);
 
+			dataJsonStr是JSON字符串，假设其编码本身是非UTF-8的话而是GBK，
+			那么上述代码会导致错误，应修改为：
+			dataDict = json.loads(jsonStrGBK, encoding="GBK");
 
+		如果 dataJsonStr通过encoding指定了合适的编码，但是其中又包含了其他编码的字符，
+		则需要先去将dataJsonStr转换为Unicode，然后再指定编码格式调用json.loads()
+			dataJsonStrUni = dataJsonStr.decode("GB2312"); 
+			dataDict = json.loads(dataJsonStrUni, encoding="GB2312");
 
+字符串编码转换：
+
+	这是中国程序员最苦逼的地方，什么乱码之类的几乎都是由汉字引起的。
+	其实编码问题很好搞定，只要记住一点：
+
+	任何平台的任何编码 都能和 Unicode 互相转换
+	UTF-8 与 GBK 互相转换，那就先把UTF-8转换成Unicode，再从Unicode转换成GBK，反之同理。
+
+	这是一个 UTF-8 编码的字符串
+		utf8Str = "你好地球"
+				
+	1. 将UTF-8编码的字符串 转换成 Unicode 编码
+		unicodeStr = utf8Str.decode("UTF-8")
+				
+	2. 再将 Unicode 编码格式字符串 转换成 GBK 编码
+		gbkData = unicodeStr.encode("GBK")
+				
+	1. 再将 GBK 编码格式字符串 转化成 Unicode
+		unicodeStr = gbkData.decode("gbk")
+				
+	2. 再将 Unicode 编码格式字符串转换成 UTF-8
+		utf8Str = unicodeStr.encode("UTF-8")
+
+	decode的作用是将其他编码的字符串转换成 Unicode 编码
+	encode的作用是将 Unicode 编码转换成其他编码的字符串
+	一句话：UTF-8是对Unicode字符集进行编码的一种编码方式
 
 
 
@@ -3087,6 +3171,96 @@ JsonPath:
 		第三章  动态HTML处理和机器图像
 
 "-------------------------------------------------------------------"
+		
+爬虫(Spider)，反爬虫(Anti-Spider)，反反爬虫(Anti-Anti-Spider) 之间恢宏壮阔的斗争...
+
+	通常情况下，在爬虫与反爬虫的对弈中，爬虫一定会胜利。
+	换言之，只要人类能够正常访问的网页，爬虫在具备同等资源的情况下就一定可以抓取到。
+
+	关于爬虫部分一些建议：
+
+		1、尽量减少请求次数，能抓列表页就不抓详情页，减轻服务器压力，程序员都是混口饭吃不容易。
+
+		2、不要只看 Web 网站，还有手机 App 和 H5，这样的反爬虫措施一般比较少。
+
+		3、实际应用时候，一般防守方做到根据 IP 限制频次就结束了，除非很核心的数据，
+			不会再进行更多的验证，毕竟成本的问题会考虑到。
+
+		4、如果真的对性能要求很高，可以考虑多线程(一些成熟的框架如 Scrapy都已支持)，甚至分布式...
+
+JavaScript:
+
+	JavaScript 是网络上最常用也是支持者最多的客户端脚本语言。
+	它可以收集用户的跟踪数据，不需要重载页面直接提交表单，
+	在页面嵌入多媒体文件，甚至运行网络游戏。
+
+	我们可以在网页源代码的<scripy>标签里看到，比如：
+		<script type="text/javascript" src="https://statics.huxiu.com/w/mini/static_2015/js/sea.js?
+		v=201601150944"></script>
+
+jQuery：
+
+	jQuery是一个十分常见的库,70%最流行的网站(约 200 万)和约30%的其他网站(约2亿)都在使用。
+	一个网站使用jQuery的特征,就是源代码里包含了jQuery入口,比如:
+	
+	<script type="text/javascript" src="https://statics.huxiu.com/w/mini
+	/static_2015/js/jquery-1.11.1.min.js?v=201512181512"></script>
+
+	如果你在一个网站上看到了 jQuery，那么采集这个网站数据的时候要格外小心。
+	jQuery可 以动态地创建 HTML 内容,只有在 JavaScript 代码执行之后才会显示。
+	如果你用传统的方 法采集页面内容,就只能获得 JavaScript 代码执行之前页面上的内容。
+
+Ajax：
+
+	我们与网站服务器通信的唯一方式，就是发出 HTTP 请求获取新页面。
+	如果提交表单之后，或从服务器获取信息之后，网站的页面不需要重新刷新，
+	那么你访问的网站就在用Ajax 技术。
+
+	Ajax 其实并不是一门语言,而是用来完成网络任务(可以认为它与网络数据采集差不多)的一系列技术。
+	Ajax 全称是 Asynchronous JavaScript and XML(异步 JavaScript 和 XML)，
+	网站不需要使用单独的页面请求就可以和网络服务器进行交互 (收发信息)。
+
+DHTML：
+
+	Ajax 一样，动态 HTML(Dynamic HTML, DHTML)也是一系列用于解决网络问题的 技术集合。
+	DHTML是用客户端语言改变页面的HTML元素(HTML、CSS，或者二者皆 被改变)。
+	比如页面上的按钮只有当用户移动鼠标之后才出现,背景色可能每次点击都会改变，
+	或者用一个 Ajax 请求触发页面加载一段新内容，网页是否属于DHTML，
+	关键要看有没有用 JavaScript 控制 HTML 和 CSS 元素。
+
+
+	那么，如何搞定？
+
+		那些使用了Ajax或DHTML技术改变/加载内容的页面，可能有一些采集手段。
+		但是用 Python 解决这个问题只有两种途径:
+
+		1、直接从 JavaScript 代码里采集内容（费时费力）
+		2、用 Python的第三方库运行 JavaScript，直接采集你在浏览器里看到的页面（这个可以有）。
+
+
+"--------------------------------------------------------------------------------"
+
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 "-------------------------------------------------------------------"
