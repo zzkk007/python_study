@@ -3032,9 +3032,53 @@ CSS选择器:
 		for title in soup.select('title'):
 			 print title.get_text()
 
-
-
 "-------------------------------------------------------------------"
+
+数据提取之JSON与JsonPATH
+
+	JSON(JavaScript Object Notation)是一种轻量级的数据交换格式，
+	它使得人们很容易进行阅读和编写。同时方便机器解析和生产。
+	适用于进行数据交互的场景，比如网站前台与后台之间的数据交互。
+
+	JSON 和 XML的比较可谓是不相上下。
+
+JSON：
+
+	json 简单的说就是javascript中的对象和数组，所以这两种结构
+	就是对象和数组两种结构，通过这两种结构可以表示各种复杂的结构。
+
+	import json：
+
+	json 模块提供四个功能：dumps、dump、loads、load
+	用于字符串和python数据类型间进行转换。
+
+
+JsonPath:
+
+	JsonPath 是一种信息抽取类库，是从JSON 文档中抽取指定信息的工具，
+	提供了多种语言实现版本，包括：Javascript,Python,PHP和java。
+
+	JsonPath对于JSON来说，相当于XPATH对于XML。
+
+	JsonPath 与 XPath 语法对比：
+	Json结构清晰，可读性高，复杂度低，非常容易匹配，下表对应的XPath的用法：
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
