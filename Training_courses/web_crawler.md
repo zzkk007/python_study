@@ -3287,18 +3287,738 @@ PhantomJS:
 	Selenium 库里有个叫 WebDriver 的API。WebDriver 有点像可以加载网站的浏览器，
 	但是它也可以像BeautifulSoup 或者其他Selector对象一样用来查找页面元素，与
 	页面元素进行交互(发送文本，点击等)以及执行其他动作来运行网络爬虫。
+	
+		# IPython2 测试代码
+
+		# 导入 webdriver
+		from selenium import webdriver
+
+		# 要想调用键盘按键操作需要引入keys包
+		from selenium.webdriver.common.keys import Keys
+
+		# 调用环境变量指定的PhantomJS浏览器创建浏览器对象
+		driver = webdriver.PhantomJS()
+
+		# 如果没有在环境变量指定PhantomJS位置
+		# driver = webdriver.PhantomJS(executable_path="./phantomjs"))
+	
+		# get方法会一直等到页面被完全加载，然后才会继续程序，通常测试会在这里选择 time.sleep(2)
+		driver.get("http://www.baidu.com/")
+	
+		# 获取页面名为 wrapper的id标签的文本内容
+		data = driver.find_element_by_id("wrapper").text
+	
+		# 打印数据内容
+		print data
+	
+		# 打印页面标题 "百度一下，你就知道"
+		print driver.title
+	
+		# 生成当前页面快照并保存
+		driver.save_screenshot("baidu.png")
+	
+		# id="kw"是百度搜索输入框，输入字符串"长城"
+		driver.find_element_by_id("kw").send_keys(u"长城")
+	
+		# id="su"是百度搜索按钮，click() 是模拟点击
+		driver.find_element_by_id("su").click()
+	
+		# 获取新的页面快照
+		driver.save_screenshot("长城.png")
+	
+		# 打印网页渲染后的源代码
+		print driver.page_source
+	
+		# 获取当前页面Cookie
+		print driver.get_cookies()
+	
+		# ctrl+a 全选输入框内容
+		driver.find_element_by_id("kw").send_keys(Keys.CONTROL,'a')
+	
+		# ctrl+x 剪切输入框内容
+		driver.find_element_by_id("kw").send_keys(Keys.CONTROL,'x')
+	
+		# 输入框重新输入内容
+		driver.find_element_by_id("kw").send_keys("itcast")
+	
+		# 模拟Enter回车键
+		driver.find_element_by_id("su").send_keys(Keys.RETURN)
+	
+		# 清除输入框内容
+		driver.find_element_by_id("kw").clear()
+	
+		# 生成新的页面快照
+		driver.save_screenshot("itcast.png")
+	
+		# 获取当前url
+		print driver.current_url
+	
+		# 关闭当前页面，如果只有一个页面，会关闭浏览器
+		# driver.close()
+	
+		# 关闭浏览器
+		driver.quit()
+	
+
+页面操作：
+
+	Selenium 的WebDriver提供了各种各样的方法来寻找元素，假设下面有一个表单输入框：
+
+	<input type ="text" name = "user-name" id = "passwd-id"/>
+
+	那么：
+
+		# 获取id标签值
+		element = driver.find_element_by_id("passwd-id")
+		# 获取name标签值
+		element = driver.find_element_by_name("user-name")
+		# 获取标签名值
+		element = driver.find_elements_by_tag_name("input")
+		# 也可以通过XPath来匹配
+		element = driver.find_element_by_xpath("//input[@id='passwd-id']")
+
+	
+定位UI元素 (WebElements)：
+
+	关于元素的选取，有如下的API 单个元素选取
+
+	find_element_by_id
+	find_elements_by_name
+	find_elements_by_xpath
+	find_elements_by_link_text
+	find_elements_by_partial_link_text
+	find_elements_by_tag_name
+	find_elements_by_class_name
+	find_elements_by_css_selector
+
+	
+	1.By ID:
+
+		<div id = "coolestWidgetEvah">...</div>
+		
+		实现：
+
+		element = driver.find_element_by_id("coolestWidgetEvah")
+		------------------------ or -------------------------
+		from selenium.webdriver.common.by import By
+		element = driver.find_element(by=By.ID, value="coolestWidgetEvah")
+
+	2.By Class Name:
+
+		<div class="cheese"><span>Cheddar</span></div>
+		<div class="cheese"><span>Gouda</span></div>
+
+		实现：
+
+		cheeses = driver.find_elements_by_class_name("cheese")
+		------------------------ or -------------------------
+		from selenium.webdriver.common.by import By
+		cheeses = driver.find_elements(By.CLASS_NAME, "cheese")
+
+	3.By Tag Name：
+
+		<iframe src="..."></iframe>
+
+		实现：
+
+		frame = driver.find_element_by_tag_name("iframe")
+		------------------------ or -------------------------
+		from selenium.webdriver.common.by import By
+		frame = driver.find_element(By.TAG_NAME, "iframe")
+
+	4.By Name:
+
+		<input name="cheese" type="text"/>
+
+		实现：
+
+		cheese = driver.find_element_by_name("cheese")
+		------------------------ or -------------------------
+		from selenium.webdriver.common.by import By
+		cheese = driver.find_element(By.NAME, "cheese")
+
+	5. By Link Text
+
+		<a href="http://www.google.com/search?q=cheese">cheese</a>
+
+		实现：
+
+		cheese = driver.find_element_by_link_text("cheese")
+		------------------------ or -------------------------
+		from selenium.webdriver.common.by import By
+		cheese = driver.find_element(By.LINK_TEXT, "cheese")
+
+	6.By Partial Link Text：
+
+		<a href="http://www.google.com/search?q=cheese">search for cheese</a>
+
+		实现：
+
+		cheese = driver.find_element_by_partial_link_text("cheese")
+		------------------------ or -------------------------
+		from selenium.webdriver.common.by import By
+		cheese = driver.find_element(By.PARTIAL_LINK_TEXT, "cheese")
+
+	7.By CSS：
+
+		<div id="food"><span class="dairy">milk</span><span class="dairy aged">cheese</span></div>
+
+		实现：
+
+		cheese = driver.find_element_by_css_selector("#food span.dairy.aged")
+		------------------------ or -------------------------
+		from selenium.webdriver.common.by import By
+		cheese = driver.find_element(By.CSS_SELECTOR, "#food span.dairy.aged")
 
 
+	8.By XPath:
+
+		<input type="text" name="example" />
+		<INPUT type="text" name="other" />
+
+		实现：
+
+		inputs = driver.find_elements_by_xpath("//input")
+		------------------------ or -------------------------
+		from selenium.webdriver.common.by import By
+		inputs = driver.find_elements(By.XPATH, "//input")
 
 
+鼠标动作链：
+
+	有些时候，我们需要再页面上模拟一些鼠标操作，比如双击、右击、拖拽甚至按住不动等，
+	我们可以通过导入 ActionChains 类来做到：
+
+	#导入 ActionChains 类
+	from selenium.webdriver import ActionChains
+
+	# 鼠标移动到 ac 位置
+	ac = driver.find_element_by_xpath('element')
+	ActionChains(driver).move_to_element(ac).perform()
+	
+	
+	# 在 ac 位置单击
+	ac = driver.find_element_by_xpath("elementA")
+	ActionChains(driver).move_to_element(ac).click(ac).perform()
+	
+	# 在 ac 位置双击
+	ac = driver.find_element_by_xpath("elementB")
+	ActionChains(driver).move_to_element(ac).double_click(ac).perform()
+	
+	# 在 ac 位置右击
+	ac = driver.find_element_by_xpath("elementC")
+	ActionChains(driver).move_to_element(ac).context_click(ac).perform()
+	
+	# 在 ac 位置左键单击hold住
+	ac = driver.find_element_by_xpath('elementF')
+	ActionChains(driver).move_to_element(ac).click_and_hold(ac).perform()
+	
+	# 将 ac1 拖拽到 ac2 位置
+	ac1 = driver.find_element_by_xpath('elementD')
+	ac2 = driver.find_element_by_xpath('elementE')
+	ActionChains(driver).drag_and_drop(ac1, ac2).perform()
+	
+
+填充表单：
+
+	我们已经知道了怎样向文本框中输入文字，但是有时候我们会碰到<select> </select>标签的下拉框。
+	直接点击下拉框中的选项不一定可行。
+
+	<select id="status" class="form-control valid" onchange="" name="status">
+	<option value=""></option>
+	<option value="0">未审核</option>
+	<option value="1">初审通过</option>
+	<option value="2">复审通过</option>
+	<option value="3">审核不通过</option>
+	</select>
+
+	
+	Selenium专门提供了Select类来处理下拉框。 其实 WebDriver 中提供了一个叫 Select 的方法，
+	可以帮助我们完成这些事情：
+
+	
+	导入Select 类
+	from selenium.webdriver.support.ui import Select
+
+	找到name的选项卡
+	select = Select(driver.find_element_by_name('status'))
+
+	select.select_by_index(1)
+	select.select_by_value("0")
+	select.select_by_visible_text(u"未审核")
+
+	以上是三种选择下拉框的方式，它可以根据索引来选择，可以根据值来选择，
+	可以根据文字来选择。注意：
+
+		index 索引从 0 开始
+		value是option标签的一个属性值，并不是显示在下拉框中的值
+		visible_text是在option标签文本的值，是显示在下拉框的值
+
+	全部取消选择怎么办呢？很简单:
+
+		select.deselect_all()
+
+弹窗处理:
+
+	当你触发了某个事件之后，页面出现了弹窗提示，处理这个提示或者获取提示信息方法如下：
+
+	alert = driver.switch_to_alert()
+
+页面切换：
+
+	一个浏览器肯定会有很多窗口，所以我们肯定要有方法来实现窗口的切换。切换窗口的方法如下：
+	
+	driver.switch_to.window("this is window name")
+
+	也可以使用 window_handles 方法来获取每个窗口的操作对象。例如：
+
+	for handle in driver.window_handles:
+		driver.switch_to_window(handle)
+
+页面前进和后退：
+
+	操作页面的前进和后退功能：
+
+	driver.forward()     #前进
+	driver.back()        # 后退
+
+Cookies：
+
+	获取页面每个Cookies值，用法如下：
+
+	for cookie in driver.get_cookies():
+		print "%s -> %s" % (cookie['name'], cookie['value'])
+
+	删除Cookies，用法如下：
+
+		# By name
+		driver.delete_cookie("CookieName")
+		
+		# all
+		driver.delete_all_cookies()"")
+
+页面等待：
+
+	注意：这是非常重要的一部分！！
+
+	现在的网页越来越多采用了Ajax技术，这样程序便不能确定何时某个元素完全加载出来了。
+	如果实现页面等待时间过长导致某个dom元素还没出来，但是你的代码直接使用了这个WebElement,
+	那么就会抛出NullPointer的异常。
+
+	为了避免这种元素定位困难而且会提高产生 ElementNotVisibleException 的概率。
+	所以 Selenium 提供了两种等待方式，一种是隐式等待，一种是显式等待。
+
+	隐式等待是等待特定的时间，显式等待是指定某一条件直到这个条件成立时继续执行。
+
+	显示等待：
+
+		显示等待指定某个条件，然后设置最长等待时间，如果这个时间还没有找到元素，
+		那么就会抛出异常了。
+
+		from selenium import webdriver
+		from selenium.webdriver.common.by import By
+		#WebDriverWait库，负责循环等待
+		from selenium.webdriver.support.ui import WebDriverWait
+		#expected_conditions 类，负责条件出发
+		from selenium.webdriver.support import expected_conditions as EC
+
+		driver = webdriver.Chrome()
+		driver.get("http://www.xxxxx.com/loading")
+		try:
+		    # 页面一直循环，直到 id="myDynamicElement" 出现
+			element = WebDriverWait(driver, 10).until(
+				EC.presence_of_element_located((By.ID, "myDynamicElement")))
+		finally:
+			driver.quit()
+
+		如果不写参数，程序默认会 0.5s 调用一次来查看元素是否已经生成，
+		如果本来元素就是存在的，那么会立即返回。
+
+		下面是一些内置的等待条件，你可以直接调用这些条件，而不用自己写某些等待条件了。
+
+			title_is
+			title_contains
+			presence_of_element_located
+			visibility_of_element_located
+			visibility_of
+			presence_of_all_elements_located
+			text_to_be_present_in_element
+			text_to_be_present_in_element_value
+			frame_to_be_available_and_switch_to_it
+			invisibility_of_element_located
+			element_to_be_clickable – it is Displayed and Enabled.
+			staleness_of
+			element_to_be_selected
+			element_located_to_be_selected
+			element_selection_state_to_be
+			element_located_selection_state_to_be
+			alert_is_present
+	
+	隐式等待:
+
+		隐式等待比较简单，就是简单地设置一个等待时间，单位为秒。
+
+		from selenium import webdriver
+
+		driver = webdriver.Chrome()
+		driver.implicitly_wait(10) # seconds
+		driver.get("http://www.xxxxx.com/loading")
+		myDynamicElement = driver.find_element_by_id("myDynamicElement")
+		
+		当然如果不设置，默认等待时间为0。
 
 
+案例一：网站模拟登陆：
 
 
+	# douban.py
+	from selenium import webdriver
+	from selenium.webdriver.common.keys import Keys
+	import time
+
+	driver = webdriver.PhantomJS()
+	driver.get("http://www.douban.com")
+
+	# 输入账号密码
+	driver.find_element_by_name("form_email").send_keys("xxxxx@xxxx.com")
+	driver.find_element_by_name("form_password").send_keys("xxxxxxxx")
+
+	# 模拟点击登录
+	driver.find_element_by_xpath("//input[@class='bn-submit']").click()
+
+	# 等待3秒
+	time.sleep(3)
+
+	# 生成登陆后快照
+	driver.save_screenshot("douban.png")
+
+	with open("douban.html", "w") as file:
+		file.write(driver.page_source)
+	
+	driver.quit()
 
 
+案例二：动态页面模拟点击:
+
+	#!/usr/bin/env python
+	# -*- coding:utf-8 -*-
+
+	# python的测试模块
+	import unittest
+	from selenium import webdriver
+	from bs4 import BeautifulSoup
+
+	class douyuSelenium(unittest.TestCase):
+		# 初始化方法
+	    def setUp(self):
+		self.driver = webdriver.PhantomJS()
+
+		#具体的测试用例方法，一定要以test开头
+		def testDouyu(self):
+			self.driver.get('http://www.douyu.com/directory/all')
+			while True:
+				# 指定xml解析
+				soup = BeautifulSoup(driver.page_source, 'xml')
+				# 返回当前页面所有房间标题列表 和 观众人数列表
+				titles = soup.find_all('h3', {'class': 'ellipsis'})
+				nums = soup.find_all('span', {'class': 'dy-num fr'})
+																				  
+				#使用zip()函数来可以把列表合并，并创建一个元组对的列表[(1,2), (3,4)]
+				for title, num in zip(nums, titles):
+				print u"观众人数:" + num.get_text().strip(), u"\t房间标题: " + title.get_text().strip()
+
+				# page_source.find()未找到内容则返回-1
+				if driver.page_source.find('shark-pager-disable-next') != -1:
+					break
+
+				# 模拟下一页点击
+				self.driver.find_element_by_class_name('shark-pager-next').click()
+	
+		 #退出时的清理方法
+
+		def tearDown(self):
+			print '加载完成...'
+			self.driver.quit()
+		
+	if __name__ == "__main__":
+		unittest.main()
+
+案例三：执行 JavaScript 语句:
+
+	1.隐藏百度图片
+
+	from selenium import webdriver
+
+	driver = webdriver.PhantomJS()
+	driver.get("https://www.baidu.com/")
+	
+	# 给搜索输入框标红的javascript脚本
+	js = "var q=document.getElementById(\"kw\");q.style.border=\"2px solid red\";"
+	
+	# 调用给搜索输入框标红js脚本
+	driver.execute_script(js)
+	
+	#查看页面快照
+	driver.save_screenshot("redbaidu.png")
+	
+	#js隐藏元素，将获取的图片元素隐藏
+	img = driver.find_element_by_xpath("//*[@id='lg']/img")
+	driver.execute_script('$(arguments[0]).fadeOut()',img)
+	
+	# 向下滚动到页面底部
+	driver.execute_script("$('.scroll_top').click(function(){$('html,body').animate({scrollTop: '0px'}, 800);});")
+	
+	#查看页面快照
+	driver.save_screenshot("nullbaidu.png")
+	
+	driver.quit()
+
+	2.模拟滚动条滚动到底部
+
+	from selenium import webdriver
+	import time
+
+	driver = webdriver.PhantomJS()
+	driver.get("https://movie.douban.com/typerank?type_name=剧情&type=11&interval_id=100:90&action=")
+	
+	# 向下滚动10000像素
+	js = "document.body.scrollTop=10000"
+	#js="var q=document.documentElement.scrollTop=10000"
+	time.sleep(3)
+	
+	#查看页面快照
+	driver.save_screenshot("douban.png")
+	
+	# 执行JS语句
+	driver.execute_script(js)
+	time.sleep(10)
+	
+	#查看页面快照
+	driver.save_screenshot("newdouban.png")
+	
+	driver.quit()
 
 
+机器视觉:
+
+	从 Google 的无人驾驶汽车到可以识别假钞的自动售卖机，机器视觉一直都是
+	一个应用广泛且具有深远的影响和雄伟的愿景的领域。
+
+	我们将重点介绍机器视觉的一个分支：文字识别，介绍如何用一些
+	Python库来识别和使用在线图片中的文字。
+
+	我们可以很轻松的阅读图片里的文字，但是机器阅读这些图片就会非常困难，
+	利用这种人类用户可以正常读取但是大多数机器人都没法读取的图片，
+	验证码 (CAPTCHA)就出现了。验证码读取的难易程度也大不相同，有些验证码比其他的更加难读。
+
+	将图像翻译成文字一般被称为光学文字识别(Optical Character Recognition, OCR)。
+	可以实现OCR的底层库并不多,目前很多库都是使用共同的几个底层 OCR 库,或者是在上面 进行定制。
+
+OCR库概述:
+
+	在读取和处理图像、图像相关的机器学习以及创建图像等任务中
+	python一直都是非常出色的语言，虽然有很多库可以进行图像处理。
+	但在这里我们重点介绍：Tessercat
+
+	Tesseract:
+
+		Tesseract 是一个OCR库，目前是由Google赞助。Tesseract是目前公认最优秀
+		最精确的开源OCR系统，除了极高的精确度，Tesseract也具有很高的灵活性。
+		它可以通过训练识别出任何字体，也可以识别出任何Unicode字符。
+
+	安装Tesseract:
+
+		Windows 系统
+		下载可执行安装文件https://code.google.com/p/tesseract-ocr/downloads/list安装。
+
+		Linux 系统
+		可以通过 apt-get 安装: $sudo apt-get tesseract-ocr
+
+		Mac OS X系统
+		用 Homebrew(http://brew.sh/)等第三方库可以很方便地安装 brew install tesseract
+
+		要使用 Tesseract 的功能，比如后面的示例中训练程序识别字母，
+		要先在系统中设置一 个新的环境变量 $TESSDATA_PREFIX，
+		让Tesseract知道训练的数据文件存储在哪里，然后搞一份tessdata数据文件，
+		放到Tesseract目录下。
+
+		在大多数 Linux 系统和 Mac OS X 系统上,你可以这么设置: 
+		$export TESSDATA_PREFIX=/usr/local/share/Tesseract
+
+		在 Windows 系统上也类似,你可以通过下面这行命令设置环境变量: 
+		#setx TESSDATA_PREFIX C:\Program Files\Tesseract OCR\Tesseract
+
+	安装pytesseract:
+
+		Tesseract 是一个 Python 的命令行工具，不是通过 import 语句导入的库。
+		安装之后,要用 tesseract 命令在 Python 的外面运行，
+		但我们可以通过 pip 安装支持Python 版本的 Tesseract库：
+
+		pip install pytesseract
+
+
+处理给规范的文字:
+
+	你要处理的大多数文字都是比较干净、格式规范的。
+	格式规范的文字通常可以满足一些需求，不过究竟什么是"格式混乱"
+	什么算"格式规范"，确实因人而异。通常,格式规范的文字具有以下特点:
+
+		1、使用一个标准字体(不包含手写体、草书,或者十分“花哨的”字体)
+		   虽然被复印或拍照,字体还是很清晰,没有多余的痕迹或污点
+
+		2、排列整齐,没有歪歪斜斜的字
+
+		3、没有超出图片范围,也没有残缺不全,或紧紧贴在图片的边缘
+
+	文字的一些格式问题在图片预处理时可以进行解决。例如,可以把图片转换成灰度图,
+	调整亮度和对比度,还可以根据需要进行裁剪和旋转（详情请关注图像与信号处理），
+	但是,这些做法在进行更具扩展性的 训练时会遇到一些限制。
+
+	通过下面的命令运行Tesseract，读取文件并把结果写到一个文本文件中:
+	
+		tesseract test.jpg text
+
+	通过Python代码实现:
+
+		import pytesseract
+		from PIL import Image
+		image = Image.open('test.jpg')
+		text = pytesseract.image_to_string(image)
+		print text
+
+	
+
+从网站图片中抓取文字:
+
+	用 Tesseract 读取硬盘里图片上的文字,可能不怎么令人兴奋,
+	但当我们把它和网络爬虫组合使用时,就能成为一个强大的工具。
+	
+	网站上的图片可能并不是故意把文字做得很花哨(就像餐馆菜单的JPG图片上的艺术字),
+	但它们上面的文字对网络爬虫来说就是隐藏起来了，举个例子：
+
+		1、虽然亚马逊的robots.txt文件允许抓取网站的产品页面,但是图书的预览页通常不让网络机器人采集。
+
+		2、 图书的预览页是通过用户触发Ajax脚本进行加载的,预览图片隐藏在div节点下面;
+			其实,普通的访问者会觉得它们看起来更像是一个 Flash 动画,而不是一个图片文件。
+			当然,即使我们能获得图片,要把它们读成文字也没那么简单。
+		
+		3、下面的程序就解决了这个问题:首先导航到托尔斯泰的《战争与和平》的大字号印刷版 
+			1, 打开阅读器,收集图片的 URL 链接,然后下载图片,识别图片,最后打印每个图片的文字。
+			因为这个程序很复杂,利用了前面几章的多个程序片段,
+			所以我增加了一些注释以让每段代码的目的更加清晰:
+
+		import  time
+
+		from urllib.request import urlretrieve
+		import subprocess
+		from selenium import webdriver
+
+		driver = webdriver.PhantomJS()
+
+		# 用Selenium试试Firefox浏览器:
+		# driver = webdriver.Firefox()
+
+		driver.get("http://www.amazon.com/War-Peace-Leo-Nikolayevich-Tolstoy/dp/1427030200")
+		# 单击图书预览按钮 driver.find_element_by_id("sitbLogoImg").click() imageList = set()
+		# 等待页面加载完成
+		time.sleep(5)
+		# 当向右箭头可以点击时,开始翻页
+		
+		while "pointer" in driver.find_element_by_id("sitbReaderRightPageTurner").get_attribute("style"):
+			driver.find_element_by_id("sitbReaderRightPageTurner").click()
+			time.sleep(2)
+			# 获取已加载的新页面(一次可以加载多个页面,但是重复的页面不能加载到集合中) 
+			pages = driver.find_elements_by_xpath("//div[@class='pageImage']/div/img")
+			for page in pages:
+				image = page.get_attribute("src")
+				imageList.add(image)
+		driver.quit()
+
+		# 用Tesseract处理我们收集的图片URL链接 
+		for image in sorted(imageList):
+			# 保存图片
+			urlretrieve(image, "page.jpg")
+			p = subprocess.Popen(["tesseract", "page.jpg", "page"], stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+			f = open("page.txt", "r")
+			p.wait() 
+			print(f.read())
+
+尝试对知乎网验证码进行处理：
+
+	许多流行的内容管理系统即使加了验证码模块，其众所周知的注册页面也经常会遭到网络 机器人的垃圾注册。
+
+	那么，这些网络机器人究，竟是怎么做的呢?既然我们已经，可以成功地识别出保存在电脑上 的验证码了，
+	那么如何才能实现一个全能的网络机器人呢?
+
+	大多数网站生成的验证码图片都具有以下属性。
+
+		1、它们是服务器端的程序动态生成的图片。验证码图片的 src 属性可能和普通图片不太一 样，
+		   比如 <img src="WebForm.aspx?id=8AP85CQKE9TJ">，但是可以和其他图片一样进行下载和处理。
+
+		2、图片的答案存储在服务器端的数据库里。
+
+		3、很多验证码都有时间限制，如果你太长时间没解决就会失效。
+
+		4、常用的处理方法就是，首先把验证码图片下载到硬盘里，
+		   清理干净，然后用 Tesseract 处理 图片，最后返回符合网站要求的识别结果。
+
+		import requests
+		import time
+		import pytesseract
+		from PIL import Image
+		from bs4 import BeautifulSoup
+
+		def captcha(data):
+			with open('captcha.jpg','wb') as fp:
+				fp.write(data)
+			time.sleep(1)
+			image = Image.open("captcha.jpg")
+			text = pytesseract.image_to_string(image)
+			print "机器识别后的验证码为：" + text
+			command = raw_input("请输入Y表示同意使用，按其他键自行重新输入：")
+			if (command == "Y" or command == "y"):
+				return text
+			else:
+				return raw_input('输入验证码：')
+
+		def zhihuLogin(username,password):
+
+			#构建一个保存Cookie值的session对象
+			sessiona = requests.Session()
+			headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) 
+						Gecko/20100101 Firefox/47.0'}
+			
+			# 先获取页面信息，找到需要POST的数据（并且已记录当前页面的Cookie）
+			html = sessiona.get('https://www.zhihu.com/#signin', headers=headers).content
+			
+			# 找到 name 属性值为 _xsrf 的input标签，取出value里的值
+			_xsrf = BeautifulSoup(html ,'lxml').find('input', attrs={'name':'_xsrf'}).get('value')
+
+			# 取出验证码，r后面的值是Unix时间戳,time.time()
+			captcha_url = 'https://www.zhihu.com/captcha.gif?r=%d&type=login' % (time.time() * 1000)
+			response = sessiona.get(captcha_url, headers = headers)
+
+			data = {
+				"_xsrf":_xsrf,
+				"email":username,
+				"password":password,
+				"remember_me":True,
+				"captcha": captcha(response.content)
+				}
+			
+			response = sessiona.post('https://www.zhihu.com/login/email', data = data, headers=headers)
+			print response.text
+
+			response = sessiona.get('https://www.zhihu.com/people/maozhaojun/activities', headers=headers)
+			print response.text
+
+
+		if __name__ == "__main__":
+			#username = raw_input("username")
+			#password = raw_input("password")
+			zhihuLogin('xxxx@qq.com','ALAxxxxIME')
+
+		
 "-------------------------------------------------------------------"
 
 		第四章  Scrapy 框架
