@@ -4026,6 +4026,385 @@ OCR库概述:
 
 		第四章  Scrapy 框架
 
+
+Scrapy框架:
+
+	1、Scrapy是用纯Python实现一个为了爬取网站数据、提取结构性数据而编写的
+		应用框架，用途非常广泛。
+	
+	2、框架的力量，用户只需要定制开发几个模块就可以轻松实现一个爬虫，
+		用来抓取网页内容以及各种图片，非常方便。
+
+	3、Scrapy使用了Twisted(其主要对手是Tornado)异步网络框架来处理网络通讯。
+		可以加快我们的下载速度，不用自己去实现异步框架，并且包含了各种中间
+		接口，可以灵活的完成各种需求。
+
+Scrapy 架构图：
+
+	1、Scrapy Engine(引擎): 负责 Spider、ItemPipeline、 Downloader、
+	   Scheduler 中间的通讯、信号、数据传递等。
+
+	2、Scheduler(调度器)：它负责接收引擎 发送过来的Request请求，
+		并按照一定的方式进行整理排列，入队、当引擎需要时，交还给引擎。
+
+	3、Downloader(下载器)：负责下载Scrapy Engine(引擎)发送的所有Request请求，
+		并将其获取到的Responses交还给Scrapy Engine(引擎)，有引擎交给Spider处理。
+
+	4、Spider(爬虫)：它负责处理所有Responses,从中分析提取数据，获取item字段需要的数据
+		并将需要跟进的URL提交给引擎，再次进入Scheduler(调度器)。
+
+	5、Item Pipeline(管道)：它负责处理Spider中获取到的Item，并进行后期处理
+		(详细分析、过滤、存储等)的地方。
+
+	6、Downloader Middlewares(下载中间件)：你可以当做是一个可以自定义扩展下载功能的组件
+
+	7、Spider Middlewares(Spider中间件)：你可以理解为是一个可以自定义扩展和操作引擎
+		和Spider中间通信的功能组件(比如进入Spider的Responses;和从Spider出去的Requests).
+
+
+Scrapy 的运作流程：
+
+	1、引擎: hi! Spider,你要处理哪一个网站？
+
+	2、Spider:老大要我处理xxx.com
+
+	3、引擎：你把第一个需要处理的URL给我吧
+
+	4、Spider:给你，第一个URL是xxxxx.com
+
+	5、引擎：hi,调度器，我这有个request请求你帮我排序入队一下。
+
+	6、调度器：好的，我正在处理你等一下
+
+	7、引擎：hi，调度器，把你处理好的request请求给我。
+
+	8、调度器：给你，这是我处理好的request
+
+	9、引擎：hi，下载器，你按照老大的下载中间件的设置帮我下载一下这个request请求。
+
+	10、下载器：好的，给你，这是下载好的东西，（如果失败:sorry,这个request下载失败了，
+		然后 引擎 告诉调度器，这个request下载失败了，你记录一下，我们待会再下载）
+
+	11、引擎：hi,Spider，这是下载好的东西，并且已经按照老大的 下载中间件处理过了
+		你自己处理一下（注意，这儿responses默认是交给def parse() 这个函数处理的）
+
+	12、Spider:(处理完毕数据之后对于需要跟进的URL)，hi，引擎，我这里有两个结果，
+		这个是我需要跟进的URL，还有这个是我获取的item数据。
+
+	13、引擎：hi! 管道，这儿有个item你帮我处理一下，调度器，这个是需要根据URL你帮我处理一下，
+		然后从第四步开始循环，直到获取老大所需要的全部信息。
+
+	14、管道 调度器：好的，现在就做
+
+
+	注意：只有当 调度器 中不存在任何 request 了，整个程序才会停止。
+	(也就是说，对于下载失败的URL，Scrapy也会重新下载)
+
+
+制作Scrapy 爬虫一共需要四步：
+
+	1、新建项目(scrapy startproject xxx):新建一个新的爬虫项目。
+	
+	2、明确目标(编写items.py):明确你想要抓取的目标
+
+	3、制作爬虫(spiders/xxspiders.py):制作爬虫开始爬取网页
+
+	4、存储内容(pipelines.py)：设计管道存储爬取内容。
+
+
+Scrapy的安装介绍:
+
+	Python2/3
+	pip install Scrapy
+
+	安装后，只要在命令终端输入 scrapy，提示类似以下结果，代表已经安装成功
+
+	>>scrapy
+	
+		Scrapy 1.5.1 - no active project
+
+		Usage:
+		scrapy <command> [options] [args]
+
+		Available commands:
+	    bench         Run quick benchmark test
+		fetch         Fetch a URL using the Scrapy downloader
+		genspider     Generate new spider using pre-defined templates
+		runspider     Run a self-contained spider (without creating a project)
+		settings      Get settings values
+		shell         Interactive scraping console
+		startproject  Create new project
+		version       Print Scrapy version
+		view          Open URL in browser, as seen by Scrapy
+
+		[ more ]      More commands available when run from project directory
+		Use "scrapy <command> -h" to see more info about a command
+
+
+入门案例:
+
+	1、学习目标：
+
+		创建一个Scrapy 项目
+	
+		定义提取的结构化数据(item)
+
+		编写爬取网站的 Spider 并提取出结构化数据(item)
+
+		编写item Pipelines 来存储提取到item(即结构化数据)
+
+	2、新建项目(scrapy startproject)
+
+		在开始爬取之前，必须创建一个新的Scrapy项目，进入自定义项目目录中，运行命令：
+
+			scrapy startproject mySpider
+
+		其中，mySpider 为项目名称，可以看到将会创建一个mySpider 文件夹，目录结构大致如下：
+
+			.
+
+			mySpider
+
+				mySpider
+
+					__init__.py
+
+					items.py
+
+					pipelines.py
+
+					settings.py
+
+					spiders
+
+						__init__.py
+
+				scrapy.cfg
+
+		下面来简单介绍一下各个主要文件的作用：
+
+			scrapy.cfg : 项目的配置文件
+
+			mySpider/  : 项目的Python模块，将会从这里引用代码
+
+			mySpider/items.py : 项目的目标文件
+
+			mySpider/pipelines.py :项目的管道文件
+
+			mySpider/settings.py :项目的设置文件
+
+			mySpider/spiders/ : 存储爬虫代码的目录
+
+
+	3、明确目标(mySpider/items.py)
+	
+		我们打算抓取：http://www.itcast.cn/channel/teacher.shtml 网站里的所有讲师的姓名、职称和个人信息。
+
+		1. 打开mySpider目录下的items.py
+
+		2. item 定义结构化数据字段，用来保存爬取到的数据，有点像python中的dict，但是提供了一些额外的
+			保护减少错误
+
+		3. 可以通过创建一个scrapy.ltem类，并且定义类型为scrapy.Field的类属性来定义一个item
+			(可以理解为类似于ORM的映射关系)
+
+		4. 接下来，创建一个itcastitem类，和构建item模型(model)
+
+			import scrapy
+
+			class ItcastItem(scrapy.Item):
+			    name = scrapy.Field()
+				level = scrapy.Field()
+				info = scrapy.Field()
+
+	4、制作爬虫 （spiders/itcastSpider.py）
+
+		爬虫功能要分两步：
+
+		1. 爬数据：
+
+			在当前目录下输入命令，将在/mySpider/spider 目录下创建一个名为itcast的爬虫
+			并指定抓取域的范围：
+
+				scrapy genspider itcast "itcast.cn"
+
+			打开mySpdier/spider目录里的itcast.py，默认增加了下列代码：
+
+				import scrapy
+
+				calss ItcastSpider(scrapy.Spider):
+					
+					name = "itcast"
+					allowed_domains = ["itcast.cn"]
+					start_urls = ['http://www.itcast.cn/channel/teacher.shtml']
+
+					def parse(self,response):
+						pass
+			
+			
+			其实也可以由我们自行创建itcast.py并编写上面的代码，只不过使用命令可以免去编写固定代码的麻烦.
+
+			要创建一个Spider,你必须用scrapy.Spider类创建一个子类，并确定了三个强制的属性和一个方法。
+
+				name = "": 这个爬虫的识别名称，必须是唯一的，在不同的爬虫必须定义不同的名字。
+
+				allow_domains = []: 是搜索的域名范围，也就是爬虫的约束区域，规定爬虫取这个
+					域名下的网页，不存在的URL会忽略。
+
+				start_urls =[]:爬取的url元组/列表，爬虫从这里开始抓取数据，所以，第一个次下载
+					的数据会从这些url开始，其他的url会从这些起始URL中继承产生。
+
+				parse(self,response):解析的方法，每个初始URL完成下载后将被调用，
+					调用的时候传入从每一个URL传回的Response对象来作为唯一的参数，
+					主要作用如下：
+						1.负责解析返回的网页数据(response.body),提取结构化数据(生产item)。
+						2.生产需要下一页的URL请求。
+						
+
+			将start_urls的值修改为需要爬取的第一个url:
+			
+				start_urls = ["http://www.itcast.cn/channel/teacher.shtml"]
+			
+			修改parse()方法:
+
+				def parse(self, response):
+					filename = "teacher.html"
+					open(filename, 'w').write(response.body)
+		
+			然后运行一下看看，在mySpider目录下执行：
+
+				scrapy crawl itcast
+
+			是的，就是itcast,看上面的代码，它是itcastSpider类的name属性，也就是用scrapy genspider命令
+			的唯一爬虫。
+
+			运行之后，如果打印的日志出现[scrapy]INFO:Spider closed (finished)，代表执行完成
+			之后当前文件夹中就出现了一个 teacher.html 文件，里面就是我们刚刚要爬取的网页的全部源代码信息。
+
+
+		2.取数据：
+
+			爬取整个网页完毕，接下来的就是的取过程了，首先观察页面源码：
+			然后使用不同的工具进行取数据。
+
+			我们之前在mySpider/items.py 里定义了一个ItcastItem类。 这里引入进来
+				 from mySpider.items import ItcastItem
+
+			然后将我们得到的数据封装到一个 ItcastItem 对象中，可以保存每个老师的属性：
+
+				from mySpider.items import ItcastItem
+
+				def parse(self, response):
+					#open("teacher.html","wb").write(response.body).close()
+					
+					# 存放老师信息的集合
+					items = []
+							
+					for each in response.xpath("//div[@class='li_txt']"):
+						# 将我们得到的数据封装到一个 `ItcastItem` 对象
+						item = ItcastItem()
+						#extract()方法返回的都是unicode字符串
+						name = each.xpath("h3/text()").extract()
+						title = each.xpath("h4/text()").extract()
+						info = each.xpath("p/text()").extract()
+																		
+						#xpath返回的是包含一个元素的列表
+						item['name'] = name[0]
+						item['title'] = title[0]
+					    item['info'] = info[0]
+						items.append(item)
+				
+					# 直接返回最后数据
+					return items
+
+	5、保存数据：
+
+		scrapy保存信息的最简单方法主要有四种，-o输出指定格式的文件，命令如下：
+
+			1.json格式，默认为Unicode编码
+				
+				scrapy crawl itcast -o teacher.json
+			
+			2.json lines格式，默认为Unicode 编码
+
+				scrapy crawl itcast -o teacher.jsonl
+
+			3. csv 逗号表达式，可用Excel打开
+				
+				scrapy crawl itcast -o teacher.csv
+		
+			4. xml格式
+
+				scrapy crawl itcast -o teacher.xml
+
+	6、思考
+
+		如果将代码改成下面形式，结果完全一样。
+
+		请思考yield在这里的作用：
+
+			from mySpider.items import ItcastItem
+
+			def parse(self, response):
+				#open("teacher.html","wb").write(response.body).close()
+
+				# 存放老师信息的集合
+				#items = []
+
+				for each in response.xpath("//div[@class='li_txt']"):
+					# 将我们得到的数据封装到一个 `ItcastItem` 对象
+					item = ItcastItem()
+					
+					#extract()方法返回的都是unicode字符串
+					name = each.xpath("h3/text()").extract()
+					title = each.xpath("h4/text()").extract()
+					info = each.xpath("p/text()").extract()
+
+					#xpath返回的是包含一个元素的列表
+					item['name'] = name[0]
+					item['title'] = title[0]
+					item['info'] = info[0]
+
+					#items.append(item)
+
+					#将获取的数据交给pipelines
+					yield item
+
+				# 返回数据，不经过pipeline
+				#return items
+
+
+"------------------------------------------------------"
+
+Scrapy Shell
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "-------------------------------------------------------------------"
 
 "-------------------------------------------------------------------"
