@@ -4379,6 +4379,356 @@ Scrapy的安装介绍:
 Scrapy Shell
 
 	
+	Scrapy 终端是一个交互终端，我们可以在未启动spdier的情况下尝试及
+	调试代码，也可以用来测试XPath或CSS表达式，查看他们的工作方式，
+	方便我们爬取的网页中提取的数据。
+
+	如果安装了IPython，Scrapy终端将使用IPython(替代标准的Python终端)
+	IPython 终端与其他相比更强大，提供智能的自动补全，高亮数据，以及其他特性。
+
+
+启动Scrapy Shell:
+
+	进入项目的根目录，执行下列命令来启动shell:
+
+		scrapy shell "http://www.itcast.cn/channel/teacher.shtml"
+
+	Scrapy Shell 根据下载的页面会自动创建一些方面使用的对象，
+	例如Response对象，以及 Selector 对象（对HTML及XML内容）
+
+	1、当shell载入后，将得到一个包含response数据的本地response变量，
+		输入response.body将输出response的包体，输出response.headers可以
+		看到response的包头。
+
+	2、输入response.selector 时，将获取一个response初始化的类Selector的对象。
+		此时可以通过使用response.selector.xpath()或response.selector.css()
+		来对response进行查询。
+
+	3、Scrapy也提供了一些快捷方式，例如response.xpath()或response.css()
+		同样可以生效。
+
+Selector 选择器：
+
+	Scrapy Selectors 内置 XPath和CSS Selector 表达式机制。
+	Selector 有四个基本的方法，最常用的是xpath：
+		
+	1、xpath(): 传入xpath表达式，返回该表达式所对应的所有节点的selector list列表。
+	
+	2、extract():序列化该节点为Unicode字符串并返回list。
+	
+	3、css(): 传入CSS表达式，返回该表达式所对应的所有节点的selector list列表，语法同BeautifulSoup4。
+	
+	4、re(): 根据传入的正则表达式对数据进行提取，返回Unicode字符串list列表。
+
+	尝试Selector：
+
+		我们用腾讯社招的网站http://hr.tencent.com/position.php?&start=0#a举例：
+
+		启动：
+		scrapy shell http://hr.tencent.com/position.php?&start=0#a
+		
+		返回 xpath 选择器对象列表：
+		response.xpath('//title')
+
+		使用extract()方法返回Unicode字符串列表
+		response.xpath('//title').extract()
+
+		打印列表第一个元素，终端编码格式显示
+		print response.xpath('//title').extract()[0]
+
+		返回 xpath选择器对象列表
+		response.xpath('//title/text()')
+
+		返回列表第一个元素的Unicode字符串
+		response.xpath('//title/text()')[0].extract()
+
+		按终端编码格式显示
+		print response.xpath('//title/text()')[0].extract()
+
+	当然Scrapy Shell作用不仅仅如此，但是不属于我们课程重点，不做详细介绍。
+	官方文档：http://scrapy-chs.readthedocs.io/zh_CN/latest/topics/shell.html
+
+
+"--------------------------------------------------------------------"
+
+Item Pipeline:
+
+	当item 在Spider 中被收集之后，它将会被传递到item Pipeline，
+	这些item Pipeline 组件按定义的顺序处理item
+
+	每个item Pipeline 都是实现了简单方法的Python类，比如决定
+	此Item是丢弃而不是存储，以下是item pipeline的一些应用。
+
+		1、验证爬取的数据(检查Itme 包含某些字段，比如说name字段)
+
+		2、查重(并丢弃)
+
+		3、将爬取结果保存到文件或者数据库中。
+
+
+编写item pipeline：
+
+	编写item pipeline 很简单，item pipeline组件是一个独立的Python类
+	其中process_item()方法必须实现：
+
+		import something
+
+		class SomethingPipeline(object):
+			
+			def __init__(self):
+				#可选实现，做参数初始化等
+				# doing something
+
+			def process_item(self,item,spider):
+
+				#item(Item对象) -- 被爬取的item
+				#spider(Spider 对象) --爬取该item的spider
+				#这个方法必须实现，每个item pipeline组件都需要调用这个方法
+				#这个方法必须返回一个item对象，被丢弃的item将不会被之后的pipeline组件所处理。
+
+				return item
+
+			def open_spider(self,spider):
+				
+				#spider(Spider对象) --被开启的spider
+				#可选实现，当spider被开启时，这个方法被调用。
+
+			def close_spider(self,spider):
+				
+				#spider (Spider 对象)--被关闭的spider
+				#可实现，当spider被关闭时，这个方法被调用。
+
+完善之前的案例：
+
+	item 写入JSON文件：
+		
+	以下pipeline 将所有爬取到的item，存储到一个独立的item.json文件，
+	每行包含一个序列化为"JSON"格式的item。
+
+		import json
+
+		class ItcastJsonPipeline(object):
+
+			def __init__(self):
+				self.file = open('teacher.json','wb')
+
+			def process_item(self,item,spider):
+
+				content = json.dumps(dict(item),ensure_ascii=False) + "\n"
+				self.file.write(str.encode(content))
+				return item
+
+			def close_spider(slef,spider):
+				self.file.close()
+
+
+
+启用一个Item Pipeline组件:
+
+	为了启动Item Pipeline组件，必须将它的类添加到settings.py文件ITEM_PIPELINES配置。
+	就像下面的这个例子：
+
+		# Configure item pipelines
+		# See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
+		ITEM_PIPELINES = {
+		    #'mySpider.pipelines.SomePipeline': 300,
+		    "mySpider.pipelines.ItcastJsonPipeline":300
+		}
+
+	分配给每个类的整型值，确定了他们的运行顺序，item按数字从低到高的顺序，通过pipeline
+	通常将这些数字定义在0-1000范围内（0-1000随意设置，数值越低，组件的优先级越高）
+
+重新启动爬虫：
+
+	将parse()方法改为下列代码，然后执行下面的命令：
+
+		import scrapy
+		from mySpider.items import ItcastItem
+
+		class ItcastSpider(scrapy.Spider):
+
+			name = 'itcast'
+			allowed_domains = ['itcast.cn']
+			start_urls = ['http://www.itcast.cn/channel/teacher.shtml']
+
+			def parse(self, response):
+				for each in response.xpath("//div[@class='li_txt']"):
+					# 将我们得到的数据封装到一个 `ItcastItem` 对象
+					item = ItcastItem()
+					#extract()方法返回的都是unicode字符串
+
+					name = each.xpath("h3/text()").extract()
+					level = each.xpath("h4/text()").extract()
+					info = each.xpath("p/text()").extract()
+
+					#xpath返回的是包含一个元素的列表
+					item['name'] = name[0]
+					item['level'] = level[0]
+					item['info'] = info[0]
+
+					#items.append(item)
+					#将获取的数据交给pipelines
+					yield item
+
+	重新执行抓取命令：
+
+		scrapy crawl itcast
+
+	看看当前目录下是否生成teacher.json文件。
+
+"-----------------------------------------------------------"
+
+Spider:
+
+	Spider 类定义了如何抓取某个(某些)网站，包括了抓取的动作(例如：是否根据链接)
+	以及如果从网页的内容中提取结构化数据(抓取item)。换句话说，Spider就是您
+	定义抓取的动作及分析某个网页的地方。
+
+	class srcapy.Spider 是最基本的类，所有编写的爬虫必须继承这个类。
+
+	主要用到的函数以及调用顺序为：
+
+		__init__() : 初始化爬虫名字和start_urls 列表
+
+		start_requests() 调用make_requests_from_url(): 生成Requests对象交给Scrapy下载并返回response
+
+		parse()：解析response，并返回item 或Requests(需指定回调函数)。
+				Item 传给Item pipline持久化，而Requests交由Scrapy下载，
+				并由指定的回调函数处理(默认parse()),一直进行循环，直到处理完所有数据为止。
+
+源码参考:
+
+	#所有爬虫的基类，用户定义的爬虫必须从这个类继承
+	class Spider(object_ref):
+
+		#定义spider名字的字符串(string)。spider 的名字定义了Scrapy如何定位(并初始化)spider
+		#所以其必须是唯一的
+
+		#name 是spider最重要的属性，而且必须的。
+		#一般做法是以该网站(domain)(加或不加后缀)来命名spider。
+		#例如，如何spider抓取 mywebsite.com，该spider通常会被命名为 mywebsite。
+
+		name = None
+
+		#初始化，提取爬虫名字，start_urls
+		def __init__(self,name=None,**kwargs):
+
+			if name is not None:
+				self.name = name
+
+			#如果爬虫没有名字，中断后操作则报错
+			elif not getattr(self,'name',None):
+				raise ValueError("%s must have a name" % type(self).__name__)
+
+			#python 对象或类型通过内置成员__dict__来存储成员信息
+			self.__dict__.update(kwargs)
+
+			#URL列表。当没有指定的URL时，spider将从该列表中开始爬取。
+			#因此，第一个被获取到的页面的URL将是该列表之一。后面的URL将会从获取到的数据中提取。
+
+			if not hasattr(self,'start_urls'):
+				self.start_urls = []
+
+		#打印Scrapy执行后的log信息
+		def log(self,message,level=log.DEBUG,**kw):
+			log.msg(message,spider=self,level=level,**kw)
+
+		#判断对象object的属性是否存在，不存在做断言处理
+
+		def set_crawler(self,crawler):
+			assert not hasattr(self,'_crawler'),"Spider already bounded to %s" % crawler
+			self._crawler = crawler
+
+		@property
+		def crawler(self):
+			assert hasattr(self, '_crawler'), "Spider not bounded to any crawler"
+			return self._crawler
+
+		@property
+		def settings(self):
+			return self.crawler.settings
+
+		#该方法将读取start_urls内的地址，并为每一个地址生成一个Request对象，交给Scrapy下载并返回Response
+		#该方法仅调用一次
+
+		def start_requests(self):
+			for url in self.start_urls:
+				yield self.make_requests_from_url(url)
+		
+		#start_requests()中调用，实际生成Request的函数。
+		#Request对象默认的回调函数为parse()，提交的方式为get
+
+		def make_requests_from_url(self,url):
+			return Request(url,dont_filter=True)
+
+		#默认的Request对象回调函数，处理返回的response。
+		#生成Item或者Request对象。用户必须实现这个类
+
+		def parse(self, response):
+			raise NotImplementedError
+
+		@classmethod
+		def handles_request(cls, request):
+			return url_is_from_spider(request.url, cls)
+
+		def __str__(self):
+			return "<%s %r at 0x%0x>" % (type(self).__name__, self.name, id(self))
+		
+		__repr__ = __str__
+
+
+主要属性和方法：
+
+	name： 定义spider名子的字符串
+
+	allowed_domains : 包含了spider允许爬取的域名(domain)的列表，可选
+
+	start_urls : 初始化URL元组/列表，当没有制定特定的URL时，spider将从该列表中开始抓取。
+
+	start_requests(self): 该方法返回一个可迭代对象(iterable)
+						  该对象包含了spider用于爬取(默认实现是使用 start_urls 的url)的第一个Request。
+						  当spider启动爬取并且未指定start_urls时，该方法被调用。
+
+	parse(self,response): 当请求url返回网页没有指定回调函数时，默认Request对象回调函数。
+						  用来处理网页返回的response，以及生成item或者Request对象。
+
+	log(self,message[,level,component]):使用 scrapy.log.msg() 方法记录(log)message。
+
+
+案例：腾讯招聘网自动翻页采集：
+
+	1、创建一个新的爬虫：
+
+		scrapy genspider tencent "tencent.com"
+
+	2、编写items.py
+
+		获取职位名称、详细信息:
+		class TencentItem(scrapy.Item):
+			name = scrapy.Field()
+			detailLink = scrapy.Field()
+			positionInfo = scrapy.Field()
+			peopleNumber = scrapy.Field()
+			workLocation = scrapy.Field()
+			publishTime = scrapy.Field()
+
+	3、编写tencent.py
+
+		from mySpider.items import TencentItem
+		import scrapy
+		import re
+
+		class TencentSpider(scrapy.Spider):
+			name = "tencent"
+			allowed_domains = ["hr.tencent.com"]
+			start_urls = ["http://hr.tencent.com/position.php?&start=0#a"]
+			
+			def parse(self, response):
+
+				for each in response.xpath('//*[@class="even"]'):
+
+
+	
 
 
 
@@ -4402,10 +4752,7 @@ Scrapy Shell
 
 
 
-
-
-
-"-------------------------------------------------------------------"
+-------------------------------------------------------------------"
 
 "-------------------------------------------------------------------"
 
