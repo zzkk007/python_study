@@ -8390,7 +8390,27 @@ Python 3.0中的字符串应用：
 			'linux'
 		sys.getdefaultencoding()
 			'utf-8'
+			
+	因为python3是bytes-like的，所以我们需要用split的话只能把它转为str
 
+		# bytes object
+  	  	b = b"example"
+
+		# str object
+		s = "example"
+
+		# str to bytes
+		bytes(s, encoding = "utf8")
+
+		# bytes to str
+		str(b, encoding = "utf-8")
+
+		# an alternative method
+		# str to bytes
+		str.encode(s)
+
+		# bytes to str
+		bytes.decode(b)
 
 编码Unicode字符串：
 
