@@ -4782,21 +4782,353 @@ Spider:
 	6、执行爬虫：scrapy crawl tencent
 	
 	
+思考：
+
+	请思考 parse()方法的工作机制：
+
+	1、因为使用的yield,而不是return. parse函数将会被当做一个生成器使用。
+		scrapy会逐一获取parse方法中生成的结果，并判断该结果是一个什么样的类型。
+
+	2、如果是request则加入爬取队列，如果是item类型则使用pipeline处理，其他类型则返回错误。
+
+	3、scrapy取到第一部分的request不会立马就去发送这个request，只是把这个request放到队列里，
+		然后接着从生成器里获取。
+
+	4、取尽第一部分的request，然后再获取第二部分的item,取到item了，就会放到对应的pipeline里处理。
+
+	5、parse()方法作为回调函数（callback）赋值给了Request，指定parse()方法来处理这些请求，
+		scrapy.Request(url,callback=self.parse)
+			
+	6、Request 对象经过调度，执行生成scrapy.http.response()的响应对象，并送回给parse()方法，
+		直到调度器中没有Request（递归的思路）
+
+	7、取尽之后，parse()工作结束，引擎再根据队列和pipelines中的内容去执行相应的操作。
+
+	8、程序在取得各个页面的items前，会先处理完之前所有的request队列里的请求，然后再提取items.
+
+	9、这一切的一切，Scrapy引擎和调度器将负责到底。
+
+"--------------------------------------------------"
+
+CrawlSpiders:
+
+	通过下面的命令可以快速创建 CrawlSpider模板的代码：
+
+		scrapy genspider -t crawl tencent tencent.com
+
+		创建的文件内容如下：
+
+			import scrapy
+			from scrapy.linkextractors import LinkExtractor
+			from scrapy.spiders import CrawlSpider, Rule
+
+
+			class TencentSpider(CrawlSpider):
+				    name = 'tencent'
+					allowed_domains = ['tencent.com']
+					start_urls = ['http://tencent.com/']
+					   
+					rules = (Rule(LinkExtractor(allow=r'Items/'), callback='parse_item', follow=True),)
+
+					def parse_item(self, response):
+						i = {}
+						#i['domain_id'] = response.xpath('//input[@id="sid"]/@value').extract()
+						#i['name'] = response.xpath('//div[@id="name"]').extract()
+						#i['description'] = response.xpath('//div[@id="description"]').extract()
+						return i
+			
+	上一个案例中，我们通过正则表达式，制作了新的url作为Request请求参数，现在我们可以换个花样...
+		
+		class scrapy.spiders.CrawlSpider
+
+	它是Spider的派生类，Spider类的设计原则是只爬取start_url列表中的网页
+	而CrawlSpider类定义了一些规则(rule)来提供跟进的link的方便的机制。
+	从爬取的网页中获取link并继续爬取的工作更合适。
+
+
+源码参考：
+
+	class CrawlSpider(Spider):
+	
+		rules = ()
+		def __init__(self,*a, **kw):
+			spuer(CrawlSpider,self).__init__( *a,**kw)
+			self._compile_rules()
+
+		def parse(self,response):
+			return self._parse_response(response,self.parse_start_url,cb_kwargs={},follow=True)
+
+		def parse_start_url(self,response):
+			return []
+
+		def process_results(self, response, results):
+			return result
+
+		def _requests_to_follow(self,response):
+			if not isinstance(response,HtmlResponse):
+				return
+			seen = set()
+
+			for n,rule in enumberate(self._rules):
+				links = [l for l in rule.link_extractor.extract_links(response) if l not in seen]
+
+				if links and rule.process_links:
+					links = rule.process_links(links)
+
+				for link in links:
+					seen.add(link)
+
+					r = Request(url=link.url, callback=self._response_downloaded)
+					r.meta.update(rule=n, link_text=link.text)
+
+					yield rule.process_request(r)
+
+		def _response_downloaded(self, response):
+
+			rule = self._rules[response.meta['rule']]
+			return self._parse_response(response, rule.callback, rule.cb_kwargs, rule.follow)
+
+		def _parse_response(self, response, callback, cb_kwargs, follow=True):
+
+			if callback:
+
+				cb_res = callback(response, **cb_kwargs) or ()
+				cb_res = self.process_results(response, cb_res)
+
+				for requests_or_item in iterate_spider_output(cb_res):
+					yield requests_or_item
+
+			if follow and self._follow_links:
+				for request_or_item in self._requests_to_follow(response):
+					yield request_or_item
+
+		def _compile_rules(self):
+			def get_method(method):
+				if callable(method):
+					return method
+				elif isinstance(method, basestring):
+					return getattr(self, method, None)
+
+			self._rules = [copy.copy(r) for r in self.rules]
+			for rule in self._rules:
+				rule.callback = get_method(rule.callback)
+				rule.process_links = get_method(rule.process_links)
+				rule.process_request = get_method(rule.process_request)
+
+		def set_crawler(self, crawler):
+			super(CrawlSpider, self).set_crawler(crawler)
+			self._follow_links = crawler.settings.getbool('CRAWLSPIDER_FOLLOW_LINKS', True)
+
+
+		CrawlSpider继承于Spider类，除了继承过来的属性外（name、allow_domains，还提供了新的属性和方法:
+
+
+LnkExtractors:
+
+		class scrapy.linkextractors.LinkExtractor
+
+		Link Extractors 的目的很简单: 提取链接
+
+		每个LinkExtractor有唯一的方法是extract_links(),它接收一个Response对象
+		并返回一个scrapy.link.Link对象。
+
+		Link Extractors 要实例化一次，并且extract_links方法会根据不同的response调用多次提取链接。
+
+		class scrapy.linkextractors.LinkExtractor(
+			allow = (),
+			deny = (),
+			allow_domains = (),
+			deny_domains = (),
+			deny_extensions = None,
+			restrict_xpaths = (),
+			tags = ('a','area'),
+			attrs = ('href'),
+			canonicalize = True,
+			unique = True,
+			process_value = None
+			)
+
+		主要参数：
+
+			allow：满足括号中“正则表达式”的值会被提取，如果为空，则全部匹配。
+
+			deny：与这个正则表达式(或正则表达式列表)不匹配的URL一定不提取。
+
+			allow_domains：会被提取的链接的domains。
+
+			deny_domains：一定不会被提取链接的domains。
+
+			restrict_xpaths：使用xpath表达式，和allow共同作用过滤链接。
 
 
 
+	rules:
+
+		在rules中包含一个或多个Rule对象，每个Rule对爬取网站的动作定义了特定操作。
+		如果多个rule匹配了相同的链接，则根据规则在本集合中被定义的顺序，第一个会被使用。
+
+		class scrapy.spoders.Rule(
+				
+				link_extractor,
+				callback = None,
+				cb_kwargs = None,
+				follow = None,
+				process_links = None,
+				process_request = None			
+				)
+
+		link_extractor :是一个Link Extractor对象，用于定义需要提前的链接
+
+		callback :从 link_extractor中每获取到链接时，参数所指定的值作为回调函数，
+				改函数受一个response作为其第一个参数。
+
+				注意：当编写爬虫规则时，避免使用parse作为回调函数。
+				由于CrawlSpider使用parse方法来实现其逻辑，如果覆盖了 parse方法，crawl spider将会运行失败。
+
+		follow:是一个布尔(boolean)值，指定了根据该规则从response提取的链接是否需要跟进。 
+				如果callback为None，follow 默认设置为True ，否则默认为False。
+
+		process_links：指定该spider中哪个的函数将会被调用，从link_extractor中获取到链接
+						列表时将会调用该函数。该方法主要用来过滤。
+
+		process_request：指定该spider中哪个的函数将会被调用， 该规则提取到每个request时都会调用该函数。 
+						(用来过滤request)
 
 
+爬取规则(Crawling rules):	
+
+	继续用腾讯招聘为例，给出配合rule使用CrawlSpider的例子:
+
+	1、首先运行
+		
+		scrapy shell "http://hr.tencent.com/position.php?&start=0#a"
+
+	2、导入LinkExtractor，创建LinkExtractor实例对象。
+
+		from scrapy.linkextractors import LinkExtractor
+		page_lx = LinkExtractor(allow=('position.php?&start=\d+'))
+
+		
+		allow : LinkExtractor对象最重要的参数之一，这是一个正则表达式，
+		必须要匹配这个正则表达式(或正则表达式列表)的URL才会被提取，
+		如果没有给出(或为空), 它会匹配所有的链接
+
+		deny : 用法同allow，只不过与这个正则表达式匹配的URL不会被提取)
+			   它的优先级高于allow 的参数，如果没有给出(或None), 将不排除任何链接
+
+	3、调用LinkExtractor实例的extract_links()方法查询匹配结果：
+
+		page_lx.extract_links(response)
+
+	4、没有查到：
+		
+		[]
+
+	5、注意转义字符的问题，继续重新匹配：
+
+		page_lx = LinkExtractor(allow=('position\.php\?&start=\d+'))
+		page_lx.extract_links(response)
+
+			[Link(url='https://hr.tencent.com/position.php?&start=10#a', text='2', fragment='', nofollow=False), 
+			Link(url='https://hr.tencent.com/position.php?&start=20#a', text='3', fragment='', nofollow=False), 
+			Link(url='https://hr.tencent.com/position.php?&start=30#a', text='4', fragment='', nofollow=False), 
+			Link(url='https://hr.tencent.com/position.php?&start=40#a', text='5', fragment='', nofollow=False), 
+			Link(url='https://hr.tencent.com/position.php?&start=50#a', text='6', fragment='', nofollow=False), 
+			Link(url='https://hr.tencent.com/position.php?&start=60#a', text='7', fragment='', nofollow=False), 
+			Link(url='https://hr.tencent.com/position.php?&start=70#a', text='...', fragment='', nofollow=False), 
+			Link(url='https://hr.tencent.com/position.php?&start=3000#a', text='301', fragment='', nofollow=False)]
+
+CrawlSpider 版本:
+
+	那么，scrapy shell测试完成之后，修改以下代码
+
+	#提取匹配 'http://hr.tencent.com/position.php?&start=\d+'的链接
+	page_lx = LinkExtractor(allow = ('start=\d+'))
+	
+	rules = [
+	    #提取匹配,并使用spider的parse方法进行分析;并跟进链接(没有callback意味着follow默认为True)
+	    Rule(page_lx, callback = 'parse', follow = True)]
+
+	这么写对吗？
+
+	不对！千万记住 callback 千万不能写 parse，
+	再次强调：由于CrawlSpider使用parse方法来实现其逻辑，
+	如果覆盖了 parse方法，crawl spider将会运行失败。
 
 
+	#tencent.py
+
+	import scrapy
+	from scrapy.spiders import CrawlSpider,Rule
+	from scrapy.linkextractors import LinkExtractor
+	from mySpider.items import TencentItem
+
+	class TencentSpider(CrawlSpider):
+		name = "tencent"
+		allowed_domains = ["hr.tencent.com"]
+		start_urls = ["http://hr.tencent.com/positon.php?&start=0#a"]
+		
+		page_lx = LinkExtractor(allow=("start=\d+"))
+
+		rules = [Rule(page_lx,callback = "parseContent",follow = True)]
+
+		def parseContent(self,response):
+
+			for each in response.xpath('//*[@class="even"]'):
+				name = each.xpath('./td[1]/a/text()').extract()[0]
+				detailLink = each.xpath('./td[1]/a/@href').extract()[0]
+				positionInfo = each.xpath('./td[2]/text()').extract()[0]
+												
+				peopleNumber = each.xpath('./td[3]/text()').extract()[0]
+				workLocation = each.xpath('./td[4]/text()').extract()[0]
+				publishTime = each.xpath('./td[5]/text()').extract()[0]
+
+				item = TencentItem()
+				item['name']=name.encode('utf-8')
+				item['detailLink']=detailLink.encode('utf-8')
+				item['positionInfo']=positionInfo.encode('utf-8')
+				item['peopleNumber']=peopleNumber.encode('utf-8')
+				item['workLocation']=workLocation.encode('utf-8')
+				item['publishTime']=publishTime.encode('utf-8')
+
+			yield item
+
+	运行： scrapy crawl tencent
+
+Logging:
+
+	Scrapy 提供了log功能，可以通过logging模块使用。
+
+	可以修改配置文件setting.py 任意位置添加下面两行，效果会清爽很多。
+
+		LOG_FILE = "TencentSpider.log"
+		LOG_LEVEL = "INFO"
 
 
+Log levels:
 
+	Scrapy提供5层logging级别:
 
+		CRITICAL - 严重错误(critical)
+		ERROR - 一般错误(regular errors)
+		WARNING - 警告信息(warning messages)
+		INFO - 一般信息(informational messages)
+		DEBUG - 调试信息(debugging messages)
 
+logging设置:
 
+	通过在setting.py中进行以下设置可以被用来配置logging:
 
+	1、LOG_ENABLED 默认: True，启用logging
 
+	2、LOG_ENCODING 默认: 'utf-8'，logging使用的编码
+
+	3、LOG_FILE 默认: None，在当前目录里创建logging输出文件的文件名
+
+	4、LOG_LEVEL 默认: 'DEBUG'，log的最低级别
+
+	5、LOG_STDOUT 默认: False 如果为 True，进程所有的标准输出(及错误)将会被重定向到log中。
+		例如，执行 print "hello" ，其将会在Scrapy log中显示。
 
 
 
