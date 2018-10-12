@@ -5676,7 +5676,7 @@ Settings:
 
 		禁用Cookies
 
--------------------------------------------------------------------"
+"-------------------------------------------------------------------"
 
 "-------------------------------------------------------------------"
 
@@ -5737,6 +5737,7 @@ spiders/douban.py:
 		if self.start <= 225:
 		    self.start += 25
 		    yield scrapy.Request(self.url + str(self.start) + self.end, callback=self.parse)
+
 pipelines.py:
 
 	from scrapy.conf import settings
@@ -5816,9 +5817,162 @@ settings.py:
 	> db.DouBanMoives.find()
 
 
+"----------------------------------------------"
 
 
+模拟登陆:
 
+	注意：模拟登陆时，必须保证settings.py里的 COOKIES_ENABLED(Cookie中间件)处于开启状态
+
+		COOKIES_ENABLED = True 或 #COOKIES_ENABLED = False
+
+策略一：直接POST数据(比如需要登录的账号信息)
+
+	只要是需要提供post数据的，就可以用这种方法。下面示例post的数据是账号密码:
+
+	import scrapy
+
+	class Renren1Spider(scrapy.Spider):
+		name = 'renren1'
+		allowed_domains = ["renren.com"]
+
+		def start_requests(self):
+			url = 'http://www.renren.com/PLogin.do'
+
+			yield scrapy.FormRequest(url=url,formdata={
+					"email":" "mr_mao_hacker@163.com", 
+					"password" : "axxxxxxxe"
+					})
+		
+		def parse_page(self,response):
+			while open("mao2.html","w") as filename:
+				filename.write(response.body)
+
+
+策略二：标准的模拟登录步骤：
+	
+	正统模拟登录方法：
+
+		1、首先方送登录页面的get请求，获取到页面里的登录必须的参数(比如说zhihu登录界面的_xsrf)
+		
+		2、然后和账号密码一起post到服务器，登录成功
+
+	import scrapy
+
+	class Renren2Spider(scrapy.Spider):
+		name = "renren2"
+		allow_domains = ["renren.com"]
+		start_urls = ("http://www.renren.com?PLogin.do")
+
+		# 处理start_urls里的登录url的响应内容，提取登陆需要的参数（如果需要的话)
+
+		def parse(self,response):
+
+			# 提取登陆需要的参数
+			#_xsrf = response.xpath("//_xsrf").extract()[0]
+
+
+			# 发送请求参数，并调用指定回调函数处理
+			yield scrapy.FormRequest.from_response(
+					response,
+					formdata = {"email" : "mr_mao_hacker@163.com", "password" : "axxxxxxxe"},#, "_xsrf" = _xsrf}
+					callback = self.parse_page
+					)
+
+			# 获取登录成功状态，访问需要登录后才能访问的页面
+			def parse_page(self,response):
+				url = "http://www.renren.com/422167102/profile"
+				yield scrapy.Request(url, callback = self.parse_newpage)
+
+			 # 处理响应内容
+			def parse_newpage(self, response):
+				with open("xiao.html", "w") as filename:
+					filename.write(response.body)
+
+
+策略三：直接使用保存登录状态的Cookie模拟登录：
+	
+	如果实在没有办法，可以使用这种方法模拟登录，虽然有点麻烦，但是成功率是100%
+
+	import scrapy
+
+	class RenrenSpider(scrapy.Spider):
+		name = "renre"
+		allow_domains = ["renren.com"]
+
+		start_urls = (
+				'http://www.renren.com/111111',
+				'http://www.renren.com/222222',
+				'http://www.renren.com/333333',
+				
+				)
+
+		cookies = {
+
+				"anonymid" : "ixrna3fysufnwv",
+				"_r01_" : "1",
+				"ap" : "327550029",
+				"JSESSIONID" : "abciwg61A_RvtaRS3GjOv",
+				"depovince" : "GW",
+				"springskin" : "set",
+				"jebe_key" : "f6fb270b-d06d-42e6-8b53-e67c3156aa7e%7Cc13c37f53bca9e1e7132d4b58ce00fa3%7C1484060607478%7C1%7C1486198628950",
+				"t" : "691808127750a83d33704a565d8340ae9",
+				"societyguester" : "691808127750a83d33704a565d8340ae9",
+				"id" : "327550029",
+				"xnsid" : "f42b25cf",
+				"loginfrom" : "syshome"
+			}
+			
+		#可以从写Spider类的start_requests方法，附带Cookie值，发送Post请求。
+
+		def start_requests(self):
+			for url in self.start_urls:
+				yield scrapy.FormRequest(url,ccokies= self.cookies,cooback = self.parse_page)
+
+		#处理响应内容
+
+		def parse_page(self,response)；
+			print "===========" + response.url
+			with open("deng.html", "w") as filename:
+			filename.write(response.body)
+
+
+"----------------------------------------"	
+
+通过Fiddler进行手机抓包:
+
+	通过Fiddler抓包工具，可以抓取手机的网络通信，
+	但前提是手机和电脑处于同一局域网内（WI-FI或热点），
+	然后进行以下设置：
+
+用Fiddler对Android应用进行抓包:
+
+	1、打开Fiddler设置
+
+	2、在Connections里设置允许连接远程计算机，确认后重新启动Fiddler
+
+	3、在命令提示符下输入ipconfig查看本机IP
+
+	4、打开Android设备的“设置”->“WLAN”，找到你要连接的网络，在上面长按，然后选择“修改网络”，
+		弹出网络对话框，然后勾选"显示高级选项"
+
+	5、在“代理”后面的输入框选择“手动”，在“代理服务器主机名”后面的输入框输入电脑的ip地址
+		在“代理服务器端口”后面的输入框输入8888，然后点击“保存”按钮。
+	
+	6、启动Android设备中的浏览器，访问网页即可在Fiddler中可以看到完成的请求和响应数据。
+
+用Fiddler对iPhone手机应用进行抓包
+
+	基本流程差不多，只是手机设置不太一样：
+
+	iPhone手机：点击设置 > 无线局域网 > 无线网络 > HTTP代理 > 手动：
+
+	代理地址(电脑IP)：192.168.xx.xxx
+
+	端口号：8888
+
+	
+					
 
 
 "-------------------------------------------------------------------"
