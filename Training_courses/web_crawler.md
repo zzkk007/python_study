@@ -5972,14 +5972,281 @@ settings.py:
 	端口号：8888
 
 	
-					
-
-
 "-------------------------------------------------------------------"
 
 "-------------------------------------------------------------------"
 
 		第六章 scrapy-redis 分布式组件
+
+1、Scrapy 和 scrapy-redis 的区别:
+
+	Scrapy 是一个通用的爬虫框架，但是不支持分布式，Scrapy-reids是为了
+	方便地实现Scrapy分布式爬取，而提供的一些以redis为基础的组件(仅是组件)。
+
+	pip install scrapy-redis
+
+	Scrapy-redis提供了羡慕四种组件(components):(四种组件意味着这四个模块都要做相应的修改)
+
+		1. Scheduler
+
+		2. Duplication Filter
+
+		3. Item Pipeline
+
+		4. Base Spider
+
+	分布式：分布式系统是一组计算机，透过网上相互连接传递消息与通信后并协调它们的行为而形成的系统。
+			组件之间彼此进行交互以实现一个共同的目标。
+
+2、scrapy-redis框架:
+	
+	scrapy-redis在scrapy的框架上增加了reids，基于reids的特性拓展了如下组件：
+
+	1. Scheduler:
+
+		Scrapy 改造了python本来的collection.deque(双向队列)形成了自己的Scrapy queue
+		(https://github.com/scrapy/queuelib/blob/master/queuelib/queue.py)),
+		但是Scrapy多个spider不能共享待爬取队列Scrapy queue，即Scrapy本身不支持
+		爬虫分布式，scrapy-reids的解决就是把这个Scrapy queue换成redis数据库(也是指redis队列)
+		从同一个redis-server存放要爬取的request，便能让多个spider去同一个数据库里读取。
+
+		Scrapy中跟"带爬取队列"直接相关的就是调度器Scheduler，它负责对新的request进行入队列操作
+		（加入Scrapy queue）,取出下一个要爬取的request（从Scrapy queue中取出）等操作。它把待爬取
+		队列按照优先级建立了一个字典结构，比如：
+
+			{
+				优先级0 ： 队列0
+
+				优先级1 ： 队列1
+
+				优先级2 :  队列2
+			}
+
+		然后根据request中的优先级，来决定改入哪个队列，出队列时则按优先级小的优先出列。
+		为了管理这个比较高级的队列字典，Scheduler需要提供一系列的方法。但是原来的Sceduler
+		已经无法使用，所以使用Scrapy-redis的scheduler组件。
+
+	2. Duplication Filter:
+
+		Scrapy中用集合实现这个request去重功能，Scrapy中把已经发送的request指纹放入到
+		一个集合中，把下一个request的指纹拿到集合中对比，如果该指纹存在集合中，说明
+		这个request发送过了，如果没有则继续操作，这个核心的判重功能就是这样实现的：
+
+			def request_seen(self,request):
+
+				#self.request_figerprints就是一个指纹集合
+				fp = self.request_fingerprint(request)
+
+				#这就是判重的核心操作
+
+				if fp in self.fingerprints:
+					return True
+
+				self.fingerprints.add(fp)
+				if self.file:
+					self.file.write(fp + os.linesep)
+		
+		在scrapy-reids中去重是由Duplication Filter 组件来实现的，它通过redis的set不重复的
+		特性，巧妙的实现了Duplication Filter去重。scrapy-redis调度器从引擎接收request,
+		将request的指纹存与redis的set检查是否重复，并将不重复的request push写入redis的request queue。
+
+		引擎请求request(Spider 发出时)，调度器从redis的request queue队列里根据优先级pop出request
+		返回给引擎，引擎将此request 发给spider处理。
+
+
+	3. Item Pipeline:
+
+		引擎将(Spider返回的)爬取到的item给Item Pipeline,scrapy-reids 的Item Pipeline将爬取到的item
+		存入reids的item queue。
+
+		修改过 Item Pipeline 可以很方便的根据key从item queue 提取item,从而实现 items processes集群。
+
+	4. Base Spider:
+
+		不在使用scrapy原有的Spider类，重写的RedisSpider 继承了Spider 和RedisMixin这两个类
+		RedisMixin是用来从redis读取url的类。
+
+		当我们生成一个Spider 继承 RedisSpider时，调用setup_redis函数，这个函数会去链接redis数据库
+		然后会设置signals(信号)：
+
+			一个是spider空闲时候的signal,会调用spider_idle函数，这个函数调用 schedule_next_request
+			函数，保证spider是一直活着的状态，并且抛出DontCloseSpider异常。
+
+			一个是当抓到一个item时的signal，会调用item_scraped函数，这个函数会调用schedule_next_request
+			函数，获取下一个request。
+
+"----------------------------------------------------------------------"
+
+源码分析参考：Connection:
+
+	scrapy-reids 的官方文档写的比较简洁，没有提及运行原理，所以想要全面的
+	理解分布式爬虫的运行原理，还是要看scrapy-redis的源码才行。
+
+	scrapy-redis 工程的主体还是redis和scrapy两个库，工程本身的实现东西不是很多，
+	这个工程就像胶水一样，把这两个插件粘结了记来，下面我们看看，scrapy-redis
+	的每一个源码文件都实现了什么功能，最后如何实现分布式的爬虫系统：
+
+1、connection.py:
+
+	负责根据setting中配置实例化redis连接，被dupefilter和scheduler调用，
+	总之涉及到redis存取的都要使用到这个模块。
+
+	
+	这里引入了redis模块，这个是redis-python库的接口，用于通过Python访问redis数据库，
+	这个文件主要是实现链接redis数据库的功能，这些接口在其他文件中经常被用到。
+
+	import redis
+	import six
+
+	from scrapy.utils.misc import load_object
+
+	DEFAULT_REDIS_CLS = redis.StrictRedis
+
+	#可以在setting文件中配置套接字的超时时间、等待时间等
+	#Sane connection defaults.
+
+	DEFAULT_PARAMS = {
+		'socket_timeout':30,
+		'socket_connect_timeout':30,
+		'retry_on_timeout':True,
+	}
+
+	#想要链接到redis数据库，和其他数据差不多，需要一个ip地址，端口号，用户密码(可选)
+	#和一个整型的数据库编号。
+	# Shortcut maps 'setting name' --> 'parmater name'.
+
+	SETTINGS_PARAMS_MAP = {
+		'REDIS_URL' : 'url',,
+		'REDIS_HOST'；'host',
+		'REDIS_PORT': 'port',
+	}
+
+	def get_redis_from_settings(settings):
+
+		"""Returns a redis client instance from given Scrapy settings object.
+		This function uses ``get_client`` to instantiate the client and uses
+		``DEFAULT_PARAMS`` global as defaults values for the parameters. You can
+		override them using the ``REDIS_PARAMS`` setting.
+		Parameters
+		----------
+		settings : Settings
+			A scrapy settings object. See the supported settings below.
+		Returns
+			-------
+		server
+			Redis client instance.
+		Other Parameters
+			----------------
+		REDIS_URL : str, optional
+			Server connection URL.
+		REDIS_HOST : str, optional
+			Server host.
+		REDIS_PORT : str, optional
+			Server port.
+		REDIS_PARAMS : dict, optional
+			Additional client parameters.
+		"""
+
+		params = DEFAULT_PARAMS.copy()
+		params.update(setting.getdict('REDIS_PARAMS'))
+
+		# xxx: Deprecate REDIS_* settings.
+
+		for source,dest in SETTINGS_PARAMS_MAP.items():
+			val = settings.get(source)
+			if val:
+				params[dest] =  val
+
+		#Allow ``redis_cls`` to be a path to a class.
+		if isinstance(params.get('redis_cls'),six.string_types):
+			params['redis_cls'] = load_object(params['redis_cls'])
+
+		#返回的是redis库的Redis对象，可以直接用来进行数据操作的对象
+		return get_redis( **params)
+
+	#Backwards compatible alias.
+	from_settings = get_redis_from_settings
+
+	def get_redis( **kwargs):
+		
+		"""Returns a redis client instance.
+		Parameters
+		----------
+		redis_cls : class, optional
+			Defaults to ``redis.StrictRedis``.
+		url : str, optional
+			If given, ``redis_cls.from_url`` is used to instantiate the class.
+		**kwargs
+			Extra parameters to be passed to the ``redis_cls`` class.
+		Returns
+		-------
+		
+		server
+			Redis client instance.
+		"""
+
+		redis_cls = kwargs.pop('redis_cls', DEFAULT_REDIS_CLS)
+		url = kwargs.pop('url', None)
+					   
+					   
+		if url:
+			return redis_cls.from_url(url, **kwargs)
+		else:
+			return redis_cls( **kwargs)
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
 
 "-------------------------------------------------------------------"
 
