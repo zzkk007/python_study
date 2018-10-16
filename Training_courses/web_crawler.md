@@ -6840,7 +6840,7 @@ spider.py:
 
 		self.server = connection.from_settings(crawler.settings)
 		# The idle signal is called when the spider has no requests left,
-		# that's when we will schedule new requests from redis queue
+		# thats when we will schedule new requests from redis queue
 		crawler.signals.connect(self.spider_idle, signal=signals.spider_idle)
 
 	    def next_requests(self):
@@ -6928,6 +6928,161 @@ spider.py:
 
 		第七章 scrapy-redis实战
 
+
+1、从零搭建Redis-Scrapy分布式爬虫：
+
+	Scrapy-Redis分布式策略：
+
+		假设有四台电脑：Windows 10、Mac OS X、Ubuntu 16.04、CentOS 7.2，
+		任意一台电脑都可以作为 Master端 或 Slaver端，比如：
+
+		Master端(核心服务器) ：使用Windows 10，搭建一个Redis数据库，不负责爬取，只负责url指纹判重、Request的分配，以及数据的存储。
+
+		Slaver端(爬虫程序执行端) ：使用 Mac OS X 、Ubuntu 16.04、CentOS 7.2，负责执行爬虫程序，运行过程中提交新的Request给Master
+
+
+		1、首先Slave端从Master端拿任务(Request,url)进行数据抓取，Slaver抓取数据的同时，
+			产生新任务的Request便提交给Master处理。
+
+		2、Master端只有一个redis数据库，负责将未处理的Request去重和任务分配，将处理后的Request加入待爬队列
+			并且存储爬取的数据。
+
+	Scrapy-Redis默认使用的就是这种策略，我们实现起来很简单，因为任务调度工作Scrapy-Redis都已经帮我们做好了
+	我们只需要继承RedisSpider、指定redis_key就行了。
+
+	缺点是，Scrapy-Redis调度的任务是Request对象，里面信息量比较大(不仅包含url，还有callback函数、headers信息)
+	可能导致的结果就是会降低爬虫速度，而且会占用Redis大量的存储空间，所以如果要保证效率，那么就需要一定硬件水平。
+
+
+2、源码自带项目说明：
+
+	使用scrapy-redis的example来修改
+
+		先从github上拿到scrapy-redis的示例，然后将里面的example-project目录移到指定的地址：
+
+		# clone github scrapy-redis源码文件
+		git clone https://github.com/rolando/scrapy-redis.git
+
+		# 直接拿官方的项目范例，改名为自己的项目用（针对懒癌患者)
+		mv scrapy-redis/example-project ~/scrapyredis-project
+		
+		我们clone到的 scrapy-redis 源码中有自带一个example-project项目，
+		这个项目包含3个spider，分别是dmoz, myspider_redis，mycrawler_redis。
+		
+
+	1、dmoz (class DmozSpider(CrawlSpider))：
+
+		这个爬虫继承的是CrawlSpider，它是用来说明Redis的持续性，当我们第一次运行dmoz爬虫，
+		然后Ctrl + C停掉之后，再运行dmoz爬虫，之前的爬取记录是保留在Redis里的。
+
+		分析起来，其实这就是一个 scrapy-redis 版 CrawlSpider 类，需要设置Rule规则，
+		以及callback不能写parse()方法。
+
+		执行方式：scrapy crawl dmoz
+
+			from scrapy.linkextractors import LinkExtractor
+			from scrapy.spiders import CrawlSpider, Rule
+
+
+			class DmozSpider(CrawlSpider):
+			    """Follow categories and extract links."""
+				
+				name = 'dmoz'
+				allowed_domains = ['dmoz.org']
+				start_urls = ['http://www.dmoz.org/']
+						   
+				rules = [
+					Rule(LinkExtractor(
+						restrict_css=('.top-cat', '.sub-cat', '.cat-item')
+					), callback='parse_directory', follow=True),
+				]
+								   
+				def parse_directory(self, response):
+					for div in response.css('.title-and-desc'):
+						yield {
+
+							'name': div.css('.site-title::text').extract_first(),
+							'description': div.css('.site-descr::text').extract_first().strip(),
+							'link': div.css('a::attr(href)').extract_first(),
+						}
+	
+	2、myspider_redis (class MySpider(RedisSpider)):
+
+		这个爬虫继承了RedisSpider，它能够支持分布式的抓取，采用的是basic spider，
+		需要些parse函数。其次就是不再有start_urls了，取而代之的是redis_key,
+		scrapy-redis将Redis里pop出来，成为请求的url地址。
+
+			from scrapy_redis.spiders import RedisSpider
+
+			class MySpider(RedisSpider):
+				"""Spider that reads urls from redis queue (myspider:start_urls)."""
+				
+					name = 'myspider_redis'
+
+					#注意redis-key的格式：
+
+					redis-key = 'myspider:start_urls'
+
+					#可选：等效于allow_domains(),__init__方法按规定格式写，使用时只需要修改super()
+					#里的类名参数即可
+
+					def __init__(self,*args,**kwargs):
+						
+						#Dynameically define the allowed domains list.
+						domain = kwargs.pop('domain','')
+						self.allowd_domains = filter(None,domain.split(','))
+						
+						# 修改这里的类名为当前类名
+						super(MySpider, self).__init__( *args, **kwargs)
+
+					def parse(self,response):
+						return {
+							'name':response.css('title::text').extract_first(),
+							'url':response.url,
+						}
+		注意：
+
+			RedisSpider类 不需要写allowd_domains和start_urls：
+
+			1. scrapy-redis 将从构造方法 __init__()里动态定义爬虫爬取域范围，也可以选择直接写allowd_domains。
+
+			2. 必须指定redis_key,即启动爬虫的命令，参考格式：redis_key = 'myspider:start_urls'
+
+			3. 根据指定的格式，start_urls将在 Master端的 redis-cli 里 lpush 到 Redis数据库里，
+				RedisSpider 将在数据库里获取start_urls。
+
+		执行方式：
+
+			1. 通过runspider方法执行爬虫的py文件(也可以分次执行多条)，爬虫将处于等待准备状态：
+
+				scrapy reunspider myspider_redis.py
+
+			2. 在Master端的redis-cli 输入push指令，参考格式：
+
+				$redis > lpush myspider:start_urls http://www.dmoz.org/
+
+			3. Slaver端爬虫获取到请求，开始爬取。
+
+
+	3、mycrawler_redis (class MyCrawler(RedisCrawlSpider))：
+	
+		这个RedisCrawlSpider类爬虫继承了RedisCrawlSpider，能够支持分布式的抓取。
+		因为采用的是crawlSpider，所以需要遵守Rule规则，以及callback不能写parse()方法。
+
+		同样也不再有start_urls了，取而代之的是redis_key，scrapy-redis将key从Redis里pop出来，成为请求的url地址。
+
+
+
+
+
+
+
+
+
+
+
+
+		
 "-------------------------------------------------------------------"
 
 
