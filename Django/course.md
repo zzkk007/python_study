@@ -215,6 +215,120 @@ Python 包管理工具解惑：
 	7、如何进行模块的私有发布（不发布到PyPI）？
 
 
+"------------------------------------------------------------"
+
+1、创建项目：
+
+	命令:diango-admin startproject mysite
+
+	进入mysite目录，目录结构如下：
+
+		manage.py
+		mysite
+			__init__.py
+			settings.py
+			urls.py
+			wsgi.py
+
+	manage.py : 一个命令行工具，可以使你多种方式对Django项目进行交互。
+	内层的目录：项目真正的python包。
+		__init__.py: 一个空文件，它告诉Python这个目录应该被看做一个Python包。
+		settings.py: 项目的配置。
+		urls.py: 项目的URL声明,就像你网站的"目录"。
+		wsgi.py: 项目与WSGI兼容的Web服务器入口。
+
+2、用于开发的简易服务器：
+
+	让我们来确认一下你的Django项目是否真的创建成功了，我们切换到外层的mysite目录下:
+	然后运行下面的命令:
+
+		$ python manage.py runserver
+
+	你应该会看到如下的输出:
+	
+		Performing system checks...
+
+		System check identified no issues (0 silenced).
+
+		You have unapplied migrations; your app may not work properly until they are applied.
+		Run 'python manage.py migrate' to apply them.
+		
+		八月 01, 2018 - 15:50:53
+		Django version 2.0, using settings 'mysite.settings'
+		Starting development server at http://127.0.0.1:8000/
+		Quit the server with CONTROL-C.
+
+	刚刚启动的是Django自带的用于开发的简易服务器，它是一个用纯python写的轻量级服务器。
+	我们将这个服务器内置在Django中是为了让你能够快速的开发出想要的东西，因为你不需要
+	配置生产级别的服务器(比如Apache)方面的工作，除非你已经准备好投入生产环境了。
+
+	现在是个提醒你的好时机：千万不要 将这个服务器用于和生产环境相关的任何地方。
+	这个服务器只是为了开发而设计的。(我们在 Web 框架方面是专家，在 Web 服务器方面并不是。)
+
+	现在，服务器正在运行，浏览器访问 https://127.0.0.1:8000/。你将会看到一个"祝贺"页面，
+	随着一只火箭发射，服务器已经运行了。
+
+
+	更换端口:
+
+		默认情况下，runserver命令会将服务器设置为监听本机内部 ip 的 8000 端口。
+
+		如果你想更换服务器的监听端口，请使用命令行参数，举例，下面的服务器监听8080端口
+
+			$ python $ python manage.py runserver 8080
+
+		如果你想要修改服务器监听的IP，在端口之前输入新的。比如，为了监听所有服务器的公开IP
+			
+			$ python manage.py runserver 0:8000
+
+			0 是 0.0.0.0 的简写
+
+			并且在项目的settings.py配置文件中设置访问ip:ALLOWED_HOSTS = ['*']
+
+
+3、创建投票应用：
+
+	现在你的开发环境 -- 这个"项目"已经配置好了，可以干活了。
+
+	在Django中，每一个应用都是一个python包，并且遵循着相同的约定，
+	Django 自带一个工具，可以帮你生成应用的基础目录结构，这样你就可以
+	专心写代码，而不是创建目录。
+
+	项目 VS 应用：
+
+		项目和应用有啥区别? 应用是一个专门做某件事的网络应用程序--比如博客系统
+		或者公共记录的数据库，或者简单的投票程序。
+		项目则是一个网站使用的配置和应用的集合。项目可以包含很多个应用。应用可以被很多个项目使用。
+
+	你的应用可以存放在任何 Python path 中定义的路径。
+	在这个教程中，我们将在你的 manage.py 同级目录下创建投票应用。
+	这样它就可以作为顶级模块导入，而不是 mysite 的子模块。
+
+	在处于manage.py所在的目录下，然后运行下面命令来创建一个应用：
+
+		$ python manage.py startapp polls
+
+	这将会创建一个polls目录，它的目录结构大致如下：
+
+		polls/
+			__init__.py
+			admin.py
+			apps.py
+			migrations/
+					__init__.py
+			models.py
+			tests.py
+			views.py
+	这个目录结构包括了投票应用的全部内容。
+
+
+
+	
+
+
+	
+
+
 
 
 
