@@ -319,7 +319,232 @@ Python 包管理工具解惑：
 			models.py
 			tests.py
 			views.py
+	
 	这个目录结构包括了投票应用的全部内容。
+
+4、编写第一个视图：
+
+	让我们开始编写第一个视图，打开polls/views.py,把下面这些Python代码输入进去:
+
+		polls/views.py
+		
+		from diango.http import HttpResponse
+		def index(request):
+			return HttpResponse("Hello,world,You're at the polls index.")
+	
+	这是Django 中最简单的视图，如果想看见效果，我们需要将一个URL映射它
+	这是我们需要URLconf的原因了。为了创建URLconf,请在polls目录里新建
+	一个urls.py文件。你应该目录现在看起来应该是这样的：
+
+		polls/
+			__init__.py
+			admin.py
+			apps.py
+			migrations/
+				__init__.py
+			models.py
+			tests.py
+			urls.py
+			views.py
+
+	在polls/urls.py 中，输入如下代码：
+		polls/urls.py
+
+		from django.urls import path
+		from . import views
+
+		urlpatterns = [
+			path('',views.index,name = 'index'),
+		]	
+
+	下一步是要根URLconf 文件中指定我们创建的polls.urls模块。
+	在mysite/urls.py 文件的urlpatterns列表里插入一个include(),如下：
+
+		mysite/urls.py
+
+		from django.contrib import admin
+		from django.urls import incluide,path
+
+		urlpatterns = [
+			path('polls/',include('polls.urls')),
+			path('admin/',admin.site.urls),
+		]
+
+	函数include()允许引用其他的URLconfs。每当Django遇到：func:~django.urls.include时
+	它会截断与此项匹配的URL部分，并将剩余的字符串发送到URLconf以供进一步的处理。
+
+	我们设计include()的理念是使其可以即插即用，因为投票应用有它自己的URLconf(polls.urls)
+	他们能够放在"/polls/","/fun_polls","/content/polls" 或者其他任何路径下都嫩够正常工作。
+
+		何时使用include()
+		当包括其它URL模式时你应该总是使用include(),admin.site.urls是唯一例外。
+
+	你想在把index 视图添加进URLconf，可以验证是否正常工作，运行下面命令：
+
+		$python manage.py runserver
+
+	你用浏览器访问:http://localhost:8000/polls/，你应该可以看到"Hello, world. You're at the polls index."，
+	这是你在 index 视图中定义的。
+
+	如果我们浏览器访问:http://localhost:8000，你应该可以看到如下情况：
+
+		Page not found (404)
+		Request Method:		GET
+		Request URL:	http://172.25.16.226:8000/
+		
+		Using the URLconf defined in mysite.urls, Django tried these URL patterns, in this order:
+
+			1. admin/
+			2. polls/
+
+		The empty path didn't match any of these.
+				
+		You're seeing this error because you have DEBUG = True in your Django settings file.
+		Change that to False, and Django will display a standard 404 page.
+			
+
+	函数path()具有四个参数，两个必须参数：route 和 view 两个可选参数：kwargs 和 name。
+
+		path()参数：route
+
+			route 是一个匹配URL的准则(类似正则表达式)。当Django响应一个请求时
+			它会从urlpatterns的第一项开始，按顺序依次匹配列表中的项，直到找到匹配的项。
+
+			这些准则不会匹配 GET 和 POST 参数或域名。
+			例如，URLconf 在处理请求 https://www.example.com/myapp/ 时，它会尝试匹配 myapp/ 。
+			处理请求 https://www.example.com/myapp/?page=3 时，也只会尝试匹配 myapp/。
+
+		path()参数：view
+
+			当Django找到了一个匹配的准则，就会调用这个特定的视图函数，并传入一个HttpRequest
+			对象作为第一个参数，被"捕获"的参数以关键字参数的形式传入。
+
+		path()参数：kwargs
+
+			任意个关键字参数可以作为一个字典传递给目标视图函数。
+
+		path()参数：name
+
+			为你的 URL 取名能使你在 Django 的任意地方唯一地引用它，尤其是在模板中。
+			这个有用的特性允许你只改一个文件就能全局地修改某个 URL 模式.
+			
+	
+"---------------------------------------------------------------------------"
+
+我们将建立数据库，创建您的第一个模型，并关注Django提供的自动生成的管理页面。
+
+数据库配置：
+
+	现在，打开mysite/settings.py。这是个包含了Django项目设置的Python模块。
+
+	通常，这个配置文件使用SQLite作为默认数据库，Python内置了SQLite,所以
+	你无需安装额外的东西就可以使用它，当你开始一个真正的项目的时候，你
+	可能使用一个更具扩展性的数据库，例如 PostgreSQL，
+	避免中途切换数据库这个令人头疼的问题。
+
+	如果你想使用其他数据库，你需要安装合适的 database bindings，
+	然后改变设置文件中 DATABASES 'default' 项目中的一些键值：
+
+		DATABASES = {	
+			
+			'default': {
+					'ENGINE': 'django.db.backends.sqlite3',
+					'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+				}
+			}
+
+	ENGINE -- 可选值有:
+
+		'django.db.backends.sqlite3','django.db.backends.postgresql',
+		'django.db.backends.mysql'和'django.db.backends.oracle'。
+
+	NAME--数据库名称。如果使用的是SQLite，数据库将是你电脑上的一个文件，在这种情况下，
+	NAME应该是此文件的绝对路径，包括文件名。默认值os.path.join(BASE_DIR,'db.sqlite3')
+	将会把数据库文件储存在项目的根目录。
+
+	如果你不使用SQLite，则必须添加一些额外的设置，比如USER、PASSWORD、HOST等等。
+	如果你使用了 SQLite 以外的数据库，请确认在使用前已经创建了数据库。
+	你可以通过在你的数据库交互式命令行中使用 "CREATE DATABASE database_name;" 命令来完成这件事。
+	另外，还要确保该数据库用户中提供 mysite/settings.py 具有 "create database" 权限。
+	这使得自动创建的 test database 能被以后的教程使用。
+	如果你使用SQLite，那么你不需要在使用前做任何事——数据库会在需要的时候自动创建。
+
+	编辑mysite/settings.py文件前，先设置TIME_ZONE为你自己时区。
+
+	此外，关注一下settings.py 头部文件的INSTALLED_APPS设置项。
+	这里包括了会在你项目中启用的所有Django应用。应用能在多个项目中使用，
+	你也可以打包并且发布应用，让别人使用。
+
+	通常，INSTALLED_APPS默认包括了一下Django的自带应用：
+
+		django.contrib.admin  管理员站点
+		django.contrib.auth   认证授权系统
+		django.contrib.contenttypes 内容类型框架
+		django.contrib.sessions  会话框架
+		django.contrib.messages  消息框架
+		django.contrib.staticfiles 管理静态文件的框架
+
+	这些应用被默认启用是为了给常规项目提供方便。
+
+	默认开启的某些应用需要至少一个数据表，所以在使用之前需要在数据库中创建一些表，执行下面命令：
+
+		$python manage.py migrate
+
+	这个migrate命令检查INSTALLED_APPS设置，为其中每个应用创建需要的数据表，至于具体会创建什么
+	这取决于你的mysite/setting.py设置文件和每个应用的数据库迁移文件。
+	这个命令执行的每个迁移操作都会在终端中显示出来，如果你感兴趣的话
+	运行你数据库的命令行工具，并输入 \dt (PostgreSQL)， 
+	SHOW TABLES; (MySQL)， .schema (SQLite)或者 
+	SELECT TABLE_NAME FROM USER_TABLES; (Oracle) 来看看 Django 到底创建了哪些表。
+
+	就像之前说的，为了方便大多数项目，我们默认激活了一些应用，但并不是每个人都需要它们。
+	如果你不需要某个或某些应用，你可以在运行 migrate 前毫无顾虑地从 INSTALLED_APPS 里注释或者删除掉它们。 
+	migrate 命令只会为在 INSTALLED_APPS 里声明了的应用进行数据库迁移。
+
+
+创建模型：
+
+	在Django里写一个数据库驱动的Web应用的第一步是定义模型--也就是数据库结构设计和附加的其它元数据。
+
+		模型是真实数据的简单明确的描述，它包含了储存的数据所必须的字段和行为。
+		Django 遵守DRY Principle。它的目标是你只需要定义数据类型，然后其他的
+		杂七杂八的代码你都不需要关心，它们会自动从模型生成。
+
+		Django 的迁移代码时由你的模型文件自动生成的，它本质上只是个历史记录，
+		Django 可以用它来进行数据库的滚动更新，通过这种方式使其能够和当前的
+		模式匹配。
+
+	
+	在简单的投票系统中，需要创建两个模型：问题Question 和选项 Choice.
+	Question模型包括问题描述和发布时间。Choice 模型有两个字段，选项
+	描述和当前得票数。每个选项属于一个问题。
+
+	这些概念可以通过一个简单的Python类来描述。按照下面的例子来编辑polls/models.py文件。
+
+		polls/models.py:
+
+		from django.db import models
+
+		class Question(models.Model):
+			question_text = models.CharField(max_length=200)
+			pub_date = models.DateTimeField('date published')
+
+		class Choice(models.Model):
+			question = models.ForeignKey(Question,on_delete=models.CASCADE)
+			choice_text = models.CharField(max_length=200)
+			votes = models.IntegerField(default=0)
+
+	代码非常直白。每个模型被表示为 django.db.models.Model 类的子类。
+	每个模型有一些类变量，它们都表示模型里的一个数据库字段。
+
+
+
+	
+
+
+			
+	
+	
 
 
 
