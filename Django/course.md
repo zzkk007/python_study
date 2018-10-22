@@ -511,10 +511,8 @@ Python 包管理工具解惑：
 		杂七杂八的代码你都不需要关心，它们会自动从模型生成。
 
 		Django 的迁移代码时由你的模型文件自动生成的，它本质上只是个历史记录，
-		Django 可以用它来进行数据库的滚动更新，通过这种方式使其能够和当前的
-		模式匹配。
+		Django 可以用它来进行数据库的滚动更新，通过这种方式使其能够和当前的模式匹配。
 
-	
 	在简单的投票系统中，需要创建两个模型：问题Question 和选项 Choice.
 	Question模型包括问题描述和发布时间。Choice 模型有两个字段，选项
 	描述和当前得票数。每个选项属于一个问题。
@@ -536,15 +534,288 @@ Python 包管理工具解惑：
 
 	代码非常直白。每个模型被表示为 django.db.models.Model 类的子类。
 	每个模型有一些类变量，它们都表示模型里的一个数据库字段。
-
-
-
 	
+	每个字段都是 Field 类的实例 - 比如，字符字段被表示为 CharField ，日期时间字段被表示为 DateTimeField 。
+	这将告诉 Django 每个字段要处理的数据类型。
+
+	每个Field类实例变量的名字(question_text或pub_date)也是字段名，所以最好使用对机器友好的格式。
+
+	定义某些 Field 类实例需要参数。例如 CharField 需要一个 max_length 参数。
+	这个参数的用处不止于用来定义数据库结构，也用于验证数据，我们稍后将会看到这方面的内容。
+
+	注意在最后，我们使用 ForeignKey 定义了一个关系。这将告诉 Django，每个 Choice 对象都关联到一个 Question 对象。
+	Django 支持所有常用的数据库关系：多对一、多对多和一对一。
 
 
+激活模块：
+	
+	上面的一小段用于创建模型的代码给了Django很多信息，通过这些信息，Django可以：
+
+		1、为这个应用创建数据库 schema(生成 CREATE TABLE语句)
+		2、创建可以与Question 和 Choice 对象进行交互的Python 数据库API。
+
+	但是，首先得把polls应用安装到我们的项目里。
+
+		设计哲学
+		Django 应用是“可插拔”的。你可以在多个项目中使用同一个应用。除此之外，你还可以发布自己的应用，
+		因为它们并不会被绑定到当前安装的 Django 上。
+
+	为了在我们的工程中包含这个应用，我们需要在配置类INSTALLED_APPS中添加设置。
+	因为PollsConfig类写在文件polls/apps.py中,所以它的点式路径是'polls.apps.PollsConfig'。
+	在文件mysite/settings.py中INSTALLED_APPS子项添加点式路径后，它看起来是这样的：
+
+		mysite/settings.py
+
+		INSTALLED_APPS =[
 			
+		'polls.apps.PollsConfig',
+		'django.confib.admin',
+		'django.contrib.auth',
+		'django.contrib.contenttypes',
+		'django.contrib.sessions',
+		'django.contrib.messages',
+		'django.contrib.staticfiles',	
+		]
 	
+	现在你的Django项目会包含polls应用，接着运行下面的命令：
+
+		$python manage.py makemigrations polls
+
+	你讲会看到类似于下面这样的输出：
+
+		Migrations for 'polls':
+			polls/migrations/001_initial.py:
+				- Create model Choice
+				- Create model Question
+				- Add field question to choice
+
+	通过运行makemigrations命令，Django会检测你对模型文件的修改
+	(在这种情况下，你已经取得了新的)，并且把修改的部分存储为一次迁移。
+
+	迁移是Django对模型定义(也就是你的数据库结构)的变化的储存形式-没那么玄乎。
+	它们其实也只是一些你磁盘上的文件，如果你想的话，你可以阅读一下你模型的迁移数据，
+	它被储存在 polls/migrations/0001_initial.py 里。别担心，你不需要每次都阅读迁移文件，
+	但是它们被设计成人类可读的形式，这是为了便于你手动修改它们。
+
+	Django 有一个自动执行数据库迁移并同步管理你的数据库结构的命令--这个命令就是migrate,
+	我们马上就会接触它，但是首先，让我们看看迁移命令会执行哪些 SQL 语句。
+	sqlmigrate 命令接收一个迁移的名称，然后返回对应的 SQL：
+
+		$python manage.py sqlmigrate polls 0001
+
+	你将会看到类似下面这样的输出(我把输出重组成了人类可读的格式)：
+
+		BEGIN;
+		--
+		-- Create model Choice
+		--
+		CREATE TABLE "polls_choice" (
+			"id" serial NOT NULL PRIMARY KEY,
+			"choice_text" varchar(200) NOT NULL,
+			"votes" integer NOT NULL
+			);
+		--
+		-- Create model Question
+		--
+		CREATE TABLE "polls_question" (
+			"id" serial NOT NULL PRIMARY KEY,
+			"question_text" varchar(200) NOT NULL,
+			"pub_date" timestamp with time zone NOT NULL
+			);
+		--
+		-- Add field question to choice
+		--
+		ALTER TABLE "polls_choice" ADD COLUMN "question_id" integer NOT NULL;
+		ALTER TABLE "polls_choice" ALTER COLUMN "question_id" DROP DEFAULT;
+		CREATE INDEX "polls_choice_7aa0f6ee" ON "polls_choice" ("question_id");
+		ALTER TABLE "polls_choice"
+		ADD CONSTRAINT "polls_choice_question_id_246c99a640fbbd72_fk_polls_question_id"
+		FOREIGN KEY ("question_id")
+		REFERENCES "polls_question" ("id")
+		DEFERRABLE INITIALLY DEFERRED;
+
+		COMMIT;
 	
+
+	请注意以下几点：
+
+		输出的内容和你使用的数据有关，上面的输出示例使用的是PostgreSQL
+
+		数据库的表名是由应用名(polls)和模型名的小写形式( question 和 choice)连接而来.
+
+		主键(IDs)会被自动创建。(当然，你也可以自定义。)
+
+		默认的，Django 会在外键字段名后追加字符串 "_id" 。
+
+		外键关系由 FOREIGN KEY 生成。你不用关心 DEFERRABLE 部分，它只是告诉 PostgreSQL，
+		请在事务全都执行完之后再创建外键关系。
+
+		生成的 SQL 语句是为你所用的数据库定制的，所以那些和数据库有关的字段类型，
+		比如 auto_increment (MySQL)、 serial (PostgreSQL)和 integer primary key autoincrement (SQLite)，
+		Django 会帮你自动处理。那些和引号相关的事情 - 例如，是使用单引号还是双引号 - 也一样会被自动处理。
+
+		这个 sqlmigrate 命令并没有真正在你的数据库中的执行迁移 - 它只是把命令输出到屏幕上，
+		让你看看 Django 认为需要执行哪些 SQL 语句。这在你想看看 Django 到底准备做什么，
+		或者当你是数据库管理员，需要写脚本来批量处理数据库时会很有用。
+
+		如果你感兴趣，你也可以试试运行 python manage.py check ;这个命令帮助你检查项目中的问题，
+		并且在检查过程中不会对数据库进行任何操作。
+	
+	现在，再次运行migrate命令，在数据库里创建新定义的模型的数据表：
+
+		$Python manage.py migrate
+		Operations	to perform:
+			Apply all migrations:admin,auth,contenttypes,polls,sessions
+		Running migrations:
+			Rendering model states ... DONE
+			Applying polls.001_inital ...  ok
+
+	这个 migrate 命令选中所有还没有执行过的迁移
+	（Django 通过在数据库中创建一个特殊的表 django_migrations 来跟踪执行过哪些迁移）并应用在数据库上 -
+	也就是将你对模型的更改同步到数据库结构上。
+
+	迁移是非常强大的功能，它能让你在开发过程中持续的改变数据库结构而不需要重新删除和创建表 
+	- 它专注于使数据库平滑升级而不会丢失数据。我们会在后面的教程中更加深入的学习这部分内容，
+	现在，你只需要记住，改变模型需要这三步：
+
+		1、编辑models.py 文件，改变模型
+
+		2、运行python manage.py makemigrations 为模型的改变生产迁移文件。
+
+		3、运行python manage.py migrate 来应用数据库迁移。
+
+	数据库迁移被分解成生成和应用两个命令是为了让你能够在代码控制系统上提交
+	迁移数据库并使其能在多个应用里使用；这不仅仅会让开发更加简单，也给别的开发者和生产环境中的使用带来方便。
+
+"-----------------------------------------------------------------------------"
+
+初试 API：
+
+	现在让我们进入交互式Python命令行，尝试一下Django为你创建各种API.通过以下命令打开
+	Python命令行：
+
+		$python manage.py shell
+
+	我们使用这个命令而不是简单的使用"Python"是因为manage.py会设置DJANGO_SETTINGS_MODULE环境变量
+	这个变量让Django根据mysite/settings.py文件来设置Python包的导入路径。
+
+	当你成功进入命令后，来试试database API吧：
+		
+	>>> from polls.models import Choice, Question  # Import the model classes we just wrote.
+
+	# No questions are in the system yet.
+	>>> Question.objects.all()
+		<QuerySet []>
+
+	# Create a new Question.
+	# Support for time zones is enabled in the default settings file, so
+	# Django expects a datetime with tzinfo for pub_date. Use timezone.now()
+	# instead of datetime.datetime.now() and it will do the right thing.
+	
+	>>> from django.utils import timezone
+	>>> q = Question(question_text="What's new?", pub_date=timezone.now())
+
+	# Save the object into the database. You have to call save() explicitly.
+	>>> q.save()
+
+	# Now it has an ID.
+	>>> q.id
+	1
+
+	# Access model field values via Python attributes.
+	>>> q.question_text
+	"What's new?"
+	>>> q.pub_date
+	datetime.datetime(2012, 2, 26, 13, 0, 0, 775217, tzinfo=<UTC>)
+
+	# Change values by changing the attributes, then calling save().
+	>>> q.question_text = "What's up?"
+	>>> q.save()
+
+	# objects.all() displays all the questions in the database.
+	>>> Question.objects.all()
+	<QuerySet [<Question: Question object (1)>]>
+
+	<Question: Question object (1)> 对于我们了解这个对象的细节没什么帮助。
+	让我们通过编辑 Question 模型的代码（位于 polls/models.py 中）来修复这个问题。
+	给 Question 和 Choice 增加 __str__() 方法。
+
+	polls/models.py
+	from django.db import models
+	
+	class Question(models.Model):
+		#...
+		def __str__(self):
+			return self.question_text
+
+	class Choice(models.Model):
+		#...
+		def __str__(self):
+			return self.choice_text
+
+	给模型增加 __str__() 方法是很重要的，这不仅仅能给你在命令行里使用带来方便，
+	Django 自动生成的 admin 里也使用这个方法来表示对象。
+
+"----------------------------------------------------"
+
+介绍Django 管理界面:
+
+	设计哲学:
+	
+		为你的员工或客户生成一个用户添加，修改和删除内容的后台是一项缺乏创造性和乏味的工作。
+		因此，Django 全自动地根据模型创建后台界面。
+
+		Django 产生于一个公众页面和内容发布者页面完全分离的新闻类站点的开发过程中。
+		站点管理人员使用管理系统来添加新闻、事件和体育时讯等，这些添加的内容被显示在公众页面上。
+		Django 通过为站点管理人员创建统一的内容编辑界面解决了这个问题。
+
+		管理界面不是为了网站的访问者，而是为管理者准备的。
+
+	创建一个管理员账号：
+
+		首先，我们得创建一个能登录管理页面的用户，请运行下面命令：
+			$python manage.py createsuperuser
+
+		键入你想要使用的用户名，然后按下回车键：
+			Username: admin
+
+		然后提示你输入想要使用的邮件地址：
+			Email address: admin@example.com
+
+		最后一步是输入密码。你会被要求输入两次密码，第二次的目的是为了确认第一次输入的确实是你想要的密码。
+
+			Password: **********
+			Password (again): *********
+			Superuser created successfully.
+	
+
+	启动开发服务器：
+
+		Django 的管理界面默认就是启用的，让我们启动开发服务器，看看它到底是什么样的。
+
+		如果开发服务器未启动，用下面命令启动它：
+
+			$python manage.py runserver
+
+		现在，打开浏览器，转到你本地域名的 "/admin/" 目录， -- 比如 "http://127.0.0.1:8000/admin/" 。
+		你应该会看见管理员登录界面：
+
+
+	向管理页面中加入投票应用:
+
+		但是我们的投票应用在哪呢？它没在索引页面里显示。
+
+		只需要做一件事：我们得告诉管理页面，问题 Question 对象需要被管理。
+		打开 polls/admin.py 文件，把它编辑成下面这样
+
+		polls/admin.py
+		from django.contrib import admin
+		from .models import Question
+		admin.site.register(Question)
+
+
+
+		
 
 
 
