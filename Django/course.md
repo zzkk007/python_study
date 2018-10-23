@@ -905,13 +905,223 @@ Python 包管理工具解惑：
 	但是，别这样做，这太傻了。
 	
 
+"---------------------------------------------------------------------------"
 
+写一个真正有用的视图:
+
+	每个视图必须要做的只有两件事:返回一个包含请求也内容的HttpResponse对象，
+	或者抛出一个异常，比如Http404。至于你还想干什么，随便你。
+
+	你的视图可以从数据库里读取记录，可以使用一个模板引擎(比如Django自带的，或者其他第三方)
+	可以生产一个PDF文件，可以输出一个XML,创建一个ZIP文件，你可以想做任何事情，使用任何python库。
+
+	Django 只要求返回的是一个HttpResponse，或者抛出一个异常。
+
+	因为Django自带的数据库API 很方便，所以我们在视图里使用它，我们在index()函数里插入了一些新内容。
+	让它能展示数据库里发布日期的最近5个投票问题，以空格分割：
+
+		polls/views.py
+
+		from django.http import HttpResponse
+
+		form .models import Question
+
+		def index(request):
+
+			latest_question_list = Question.objects.order_by('-pub_date')[:5]
+			output = ','.join([q.question_text for q in	latest_question_list])
+			return HttpResponse(output)
+
+	这里有一个问题：页面的设计是死在视图函数的代码里的，如果你想改变页面的样子，你需要编辑Python代码。
+	所以我们使用Django的模板系统，只要创建一个视图，就可以将页面的设计从代码里分离出来。
+
+	首先，在你的polls目录里创建一个template目录，Django将会在这个目录里查找模板文件。
+
+	你项目的TEMPLATES配置项描述了Django如何载入和渲染模块。默认的设置文件设置了DjangoTemplates后端。
+	并将APP_DIRS设置成了True,这一选项会让DjangoTemplates在每个INSTALLED_APPS文件夹中寻找"templates"
+	子目录。这就是为什么尽管我们没有想在DIRS 设置，Django也能正确找到polls的模板位置的原因。
+
+	在你刚刚创建的templates目录里，再创建一个目录polls,然后在其中创建一个文件index.html。
+	换句话说，你的模板文件的路径应该是polls/templates/polls/index.html。因为Django会寻找到
+	对应的app_directories,所以你只需要是用polls/index.html就可以引用到这一模块了。
+
+	将下面的代码输入到刚刚创建的模板文件中：
+
+		polls/templates/polls/index.html
+
+		{% if latest_question_list %}
+			<ul>
+			{% for question in latest_question_list %}
+				<li><a href="/polls/{{question.id }}/">{{question.question_text }}</a></li>
+			{% endfor %}
+			</ul>
+		{% else %}
+			<p>No polls are available.</p>
+		{% endif %}
+
+	然后，让我们更新一下 polls/views.py 里的 index 视图来使用模板：
+
+
+		polls/views.py
+		from django.http import HttpResponse
+		from django.template import loader
+
+		from .models import Question
+
+		def index(request):
+			latest_question_list = Question.objects.order_by('-pub_date')[:5]
+			template = loader.get_template('polls/index.html')
+			context = {
+				'latest_question_list':latest_question_list,
+			}
+			return  HttpResponse(template.render(context, request))
+
+	上述代码的作用是，载入polls/index.html模板文件，并且向它传递一个上下文(context).
+	这个上下文是一个字典，它将模板内的变量映射为Python对象。
+		
+
+	一个快捷函数：render():
+
+	[载入模板，填充上下文，再返回由它生产的HttpResponse对象]是一个非常常用的操作流程。
+	于是Django提供了一个快捷函数，我们用它来重写index()视图：
+
+	polls/view.py
+
+	form django.shortcuts import render
+	from .models import Question
+	def index(request):
+		latest_question_list = Question.objects.order_by('-pub_date')[:5]
+		context = {'latest_question_list':latest_question_list}
+		return render(request,'polls/index.html',context)
+
+	注意到，我们不再需要导入 loader 和 HttpResponse 。
+	不过如果你还有其他函数（比如说 detail, results, 和 vote ）需要用到它的话，
+	就需要保持 HttpResponse 的导入。
+
+
+抛出404错误：
+
+	现在，我们来处理投票详情视图--它会显示指定投票的问题标题，下面是这个视图代码：
+
+		polls/views.py
+
+		form django.http import Http404
+		from django.shortcuts import render
+
+		from .models import Question
+
+		def detail(request,question_id):
+			try:
+				question = Question.objects.get(pk=question_id)
+			except Question.DoesNotExist:
+				raise Http404("Question does not exist")
+			return render(request, 'polls/detail.html', {'question': question})
+
+	这里有个新原则。如果指定问题 ID 所对应的问题不存在，这个视图就会抛出一个 Http404 异常。
+	我们稍后再讨论你需要在 polls/detail.html 里输入什么，
+	但是如果你想试试上面这段代码是否正常工作的话，你可以暂时把下面这段输进去：
+
+		polls/templates/polls/detail.html
+		{{question }}
+
+一个快捷函数： get_object_or_404():
+
+	尝试用get()函数获取一个对象，如果对象不存在就抛出Http404错误也是一个普遍的流程。
+	Django也提供了一个快捷函数，下面是修改后的detail()视图代码：
+
+		polls/views.py
+		from django.shortcuts import get_object_or_404,render
+
+		from .models import Question
+
+		def detail(request,question_id):
+			question = get_object_or_404(Question,pk=question_id)
+			return render(request, 'polls/detail.html', {'question': question})
+
+	设计哲学
+
+		为什么我们使用辅助函数 get_object_or_404() 而不是自己捕获 ObjectDoesNotExist 异常呢？
+		还有，为什么模型 API 不直接抛出 ObjectDoesNotExist 而是抛出 Http404 呢？
+
+		因为这样做会增加模型层和视图层的耦合性。指导 Django 设计的最重要的思想之一就是要保证松散耦合。
+		一些受控的耦合将会被包含在 django.shortcuts 模块中。
+					
+		也有 get_list_or_404() 函数，工作原理和 get_object_or_404() 一样，
+		除了 get() 函数被换成了 filter() 函数。如果列表为空的话会抛出 Http404 异常。	
+			
+
+使用模板系统：
+
+	看我们的detail()视图，它像模板传递了上下文变量question。下面是polls/detail.html模板里正式的代码：
+
+		polls/templates/polls/detail.html
+		<h1>{{question.question_text }}</h1>
+		<ul>
+		{% for choice in question.choice_set.all %}
+			<li>{{ choice.choice_text }}</li>
+		{% endfor %}
+		</ul>
+
+	模板系统统一使用点符号来访问变量的属性。在示例 {{question.question_text }} 中，
+	首先 Django 尝试对 question 对象使用字典查找（也就是使用 obj.get(str) 操作），
+	如果失败了就尝试属性查找（也就是 obj.str 操作），结果是成功了。
+	如果这一操作也失败的话，将会尝试列表查找（也就是 obj[int] 操作）。
+
+	在 {% for %} 循环中发生的函数调用：question.choice_set.all 被解释为 Python 代码 
+	question.choice_set.all() ，将会返回一个可迭代的 Choice 对象，这一对象可以在 {% for %} 标签内部使用。
+
+
+去除模板中的硬编码 URL:
+
+	我们在 polls/index.html 里编写投票链接时，链接是硬编码的：
+		<li><a href="/polls/{{question.id }}/">{{question.question_text }}</a></li>
+
+	问题在于，硬编码和强耦合的链接，对于一个包含很多应用的项目来说，修改起来十分困难。
+	然而，因为你在polls.urls的url() 函数中通过name参数为URL定义了名字，你可以使用{% url %}标签来代替它。
+
+		<li><a href="{% url 'detail' question.id %}">{{ question.question_text}}</a></li>
+
+	这个标签的工作方式是在 polls.urls 模块的 URL 定义中寻具有指定名字的条目。
+	你可以回忆一下，具有名字 'detail' 的 URL 是在如下语句中定义的:
+
+		...
+
+		# the 'name' value as called by the {% url %} template tag
+		path('<int:question_id>/', views.detail, name='detail'),
+		
+		...
 	
 
+为URL名称添加命名空间：
 
+
+	教程项目只有一个应用，polls 。在一个真实的 Django 项目中，可能会有五个，十个，二十个，
+	甚至更多应用。Django 如何分辨重名的 URL 呢？举个例子，polls 应用有detail视图，
+	可能另一个博客应用也有同名的视图。Django 如何知道 {% url %} 标签到底对应哪一个应用的 URL 呢？
 	
+	答案是：在根 URLconf 中添加命名空间。在 polls/urls.py 文件中稍作修改，加上 app_name 设置命名空间：
 
+		polls/urls.py
 
+		app_name = 'polls'
+		urlpatterns = [
+		    path('', views.index, name='index'),
+			path('<int:question_id>/', views.detail, name='detail'),
+			path('<int:question_id>/results/', views.results, name='results'),
+			path('<int:question_id>/vote/', views.vote, name='vote'),
+		]
+
+	现在，编辑 polls/index.html 文件，从：
+
+		polls/templates/polls/index.html
+		<li><a href="{% url 'detail' question.id %}">{{question.question_text }}</a></li>
+
+	修改为指向具有命名空间的详细视图：
+
+		polls/templates/polls/index.html
+
+		<li><a href="{% url 'polls:detail' question.id %}">{{question.question_text }}</a></li>
+	
 
 
 
