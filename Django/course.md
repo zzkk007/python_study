@@ -855,10 +855,55 @@ Python 包管理工具解惑：
 		
 	现在我们想polls/views.py 里添加多视图，这些视图有些不同，因为他们接受参数：
 
-	polls/views.py
+		polls/views.py
 
-	def detail(request,question_id):
-		return HttpResponse("You're")
+		def detail(request,question_id):
+			return HttpResponse("You're looking at question %s." % question_id)
+
+		def results(request,question_id):
+			response = "You're looking at the results of question %s."
+			return HttpResponse(response % question_id)
+
+		def vote(request,question_id):
+			return HttpResponse("You're voting on question %s." question_id)
+
+	把这些新视图添加polls.urls模块里，只要添加几个url()函数调用就行：
+
+		polls/urls.py
+
+		from django.urls import path
+
+		form . import view
+
+		urlpatterns = [
+			
+			path('',view.index,name = 'index'),
+
+			path('<int:question_id>/',views.detail,name='detail').
+
+			path('<int:question_id>/results/',view.results,name='results'),
+			
+			path('<int:question_id>/vote/',view.vote,name='vote'),
+		]
+	
+	然后看看你的浏览器，如果你转到"/polls/34",Django将会运行detail()方法并且展示你在URL里
+	提供的问题ID。再试试"/polls/34/vote"和"/polls/34/vote"你将会看到暂时用于占位的结果和投票页。
+
+	当某人请求你的某一个网页时--比如说，"/polls/34/",Django将会载入mysite.urls模块，因为这在配置
+	项ROOT_URLCONF中设置了。然后Django寻找名为urlpatterns变量并且按序匹配正则表达式。
+	在找到匹配项"polls/"，它切掉了匹配的文本("polls/"),将剩余文本--"34/",发送至polls.urls，URLconf
+	做进一步的处理，在这里剩余文本匹配了'<int:question_id>/',使得我们Django以如下的形式调用detail():
+
+		detail(request=<HttpRequest object>,question_id=34)
+	
+	question_id=34 由<int:question_id>匹配生产，使用尖括号"捕获"这部分URL,且以关键字的形式
+	发送给视图函数，上述字符串的 :question_id 部分定义了将被用于区分匹配模式的变量名，
+	而 int: 则是一个转换器决定了应该以什么变量类型匹配这部分的 URL 路径。
+
+	为每个 URL 加上不必要的东西，例如 .html ，是没有必要的。不过如果你非要加的话，也是可以的:
+		path('polls/latest.html', views.index),
+	但是，别这样做，这太傻了。
+	
 
 
 	
