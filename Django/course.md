@@ -1657,28 +1657,547 @@ ORM简介：
 		]
 
 
+"----------------------------------------------------------------------"
+
+视图：
+
+	视图接受Web请求请求并且返回Web响应。
+
+	视图就是一个python函数，被定义在views.py中。
+
+	响应可以是一张网页的HTML内容，一个重定义向，一个404错误等等。
+
+	响应处理过程如下图：
+
+		用户在浏览器中输入网址www.itcast.cn/1/100 ---> django获取地址信息，去除域名与端口部分，1/100--->
+		将请求地址，按定义顺序逐个匹配urlconf的正则部分，一旦匹配成功，则记录下来对应的方法名称--->
+		调用找到的方法，接收request及正则中获取的值，处理并返回response对象。
 
 
+URLconf:
+
+	在settings.py 文件中通过ROOT_URLCONF指定根级url的配置
+
+	urlpatterns 是一个url()实例的列表
+
+	一个url()对象包括：
+		正则表达式
+		视图函数
+		名称name
+
+	编写URLconf的注意：
+		若要从url中获取一个值，需要在它周围设置一对圆括号
+		不需要添加一个前导的反斜杠，如应该写作'test/',而不应该写作'/test/'
+		每个正则表达式清明的r表示字符串不转义
+
+	请求的url被看做是一个普通的python字符串，进行匹配时不包括get或post请求的参数及域名。
+		http://www.itcast.cn/python/1/?i=1&p=new，只匹配“/python/1/”部分
+
+	正则表达式非命名组，通过位置参数传递给视图
+		url(r'^([0-9]+)/$', views.detail, name='detail'),
+
+	正则表达式命名组，通过关键字参数传递给视图，本例中关键字参数为id
+		url(r'^(?P<id>[0-9]+)/$', views.detail, name='detail'),
+
+	参数匹配规则：优先使用命名参数，如果没有命名参数则使用位置参数
+
+	每个捕获的参数都作为一个普通的python字符串传递给视图
+
+	性能：urlpatterns中的每个正则表达式在第一次访问它们时被编译，这使得系统相当快
 
 
+包含其它的URLconfs:
+
+	在应用中创建urls.py文件，定义本应用中的urlconf，再在项目的settings中使用include()
+
+		from django.conf.urls import include, url
+		urlpatterns = [url(r'^', include('booktest.urls', namespace='booktest')),]
+
+	匹配过程：先与主URLconf匹配，成功后再用剩余的部分与应用中的URLconf匹配
+		请求http://www.itcast.cn/booktest/1/
+		在主url中配置：
+			url(r'^booktest/', include('booktest.urls', namespace='booktest')),
+		在booktest应用urls.py中配置
+			url(r'^([0-9]+)/$', views.detail, name='detail'),
+		匹配部分是：/booktest/1/
+		匹配过程：在settings.py中与"booktest/"成功，再用"1/"与booktest应用的urls匹配
+
+	使用include可以去除urlconf的冗余
+	参数：视图会收到来自父URLconf、当前URLconf捕获的所有参数
+	在include中通过namespace定义命名空间，用于反解析
+
+URL的反向解析:
+
+	如果在视图、模板中使用硬编码的链接，在urlconf发生改变时，维护是一件非常麻烦的事情
+	解决：在做链接时，通过指向urlconf的名称，动态生成链接地址
+	视图：使用django.core.urlresolvers.reverse()函数
+	模板：使用url模板标签
+		
+
+定义视图:
+
+	本质就是一个函数
+
+	视图参数：
+
+		一个HttpRequest实例
+		通过正则表达式组获取的位置参数
+		通过正则表达式组获取得到关键字参数
+
+	在应用目录下默认有views.py文件，一般视图都定义在这个文件中
+
+	如果处理功能过多，可以将函数定义到不同的py文件中
+
+		新建views1.py
+		from django.http import HttpResponse
+		def index(request):
+			return HttpResponse("您好")
+
+		在urls.py中修改配置
+		from . import views1
+		url(r'^$',views1.index,name='index'),
+
+错误视图:
+
+	Django原始自带几个默认视图用于处理HTTP错误
+
+	404 (page not found) 视图:
+		defaults.page_not_found(request, template_name='404.html')
+		默认的404视图将传递一个变量给模板：request_path，它是导致错误的URL
+		如果Django在检测URLconf中的每个正则表达式后没有找到匹配的内容也将调用404视图
+		如果在settings中DEBUG设置为True，那么将永远不会调用404视图，而是显示URLconf 并带有一些调试信息
+		在templates中创建404.html
+
+			<!DOCTYPE html>
+			<html>
+			<head>
+			<title></title>
+			</head>
+			<body>
+			找不到了
+			<hr/>
+			{{request_path}}
+			</body>
+			</html>
 
 
+	在settings.py中修改调试:
+		DEBUG = False
+		ALLOWED_HOSTS = ['*', ]
 
 
+	请求一个不存在的地址:
+		http://127.0.0.1:8000/test/
+
+	500 (server error) 视图:
+
+		defaults.server_error(request, template_name='500.html')
+		在视图代码中出现运行时错误
+		默认的500视图不会传递变量给500.html模板
+		如果在settings中DEBUG设置为True，那么将永远不会调用505视图，而是显示URLconf 并带有一些调试信息.
+
+	400 (bad request) 视图:
+
+		defaults.bad_request(request, template_name='400.html')
+		错误来自客户端的操作
+		当用户进行的操作在安全方面可疑的时候，例如篡改会话cookie
+
+HttpReqeust对象:
+
+	服务器接收到http协议的请求后，会根据报文创建HttpRequest对象
+	视图函数的第一个参数是HttpRequest对象
+	在django.http模块中定义了HttpRequest对象的API
+
+	属性：
+		
+		下面除非特别说明，属性都是只读的
+		path：一个字符串，表示请求的页面的完整路径，不包含域名
+		
+		method：一个字符串，表示请求使用的HTTP方法，常用值包括：'GET'、'POST'
+		
+		encoding：一个字符串，表示提交的数据的编码方式
+				如果为None则表示使用浏览器的默认设置，一般为utf-8
+			
+				这个属性是可写的，可以通过修改它来修改访问表单数据使用的编码，
+				接下来对属性的任何访问将使用新的encoding值
+
+		GET：一个类似于字典的对象，包含get请求方式的所有参数
+
+		POST：一个类似于字典的对象，包含post请求方式的所有参数
+
+		FILES：一个类似于字典的对象，包含所有的上传文件
+
+		COOKIES：一个标准的Python字典，包含所有的cookie，键和值都为字符串
+
+		session：一个既可读又可写的类似于字典的对象，表示当前的会话，
+				只有当Django 启用会话的支持时才可用，详细内容见“状态保持”
+		
+
+	方法：
+
+		is_ajax()：如果请求是通过XMLHttpRequest发起的，则返回True
+
+QueryDict对象：
+
+	定义在django.http.QueryDict
+
+	request对象的属性GET、POST都是QueryDict类型的对象
+
+	与python字典不同，QueryDict类型的对象用来处理同一个键带有多个值的情况
+
+	方法get()：根据键获取值
+
+			只能获取键的一个值
+			如果一个键同时拥有多个值，获取最后一个值
+			
+			dict.get('键',default)
+			或简写为
+			dict['键']
+
+	方法getlist()：根据键获取值
+			将键的值以列表返回，可以获取一个键的多个值
+			dict.getlist('键',default)
 
 
+GET属性:
+
+	QueryDict类型的对象
+
+	包含get请求方式的所有参数
+
+	与url请求地址中的参数对应，位于?后面
+
+	参数的格式是键值对，如key1=value1
+
+	多个参数之间，使用&连接，如key1=value1&key2=value2
+
+	键是开发人员定下来的，值是可变的
+
+	示例如下
+	创建视图getTest1用于定义链接，getTest2用于接收一键一值，getTest3用于接收一键多值:
+
+		def getTest1(request):
+			return render(request,'booktest/getTest1.html')
+		def getTest2(request):
+			return render(request,'booktest/getTest2.html')
+		def getTest3(request):
+			return render(request,'booktest/getTest3.html')
+	
+	配置url:
+
+		url(r'^getTest1/$', views.getTest1),
+		url(r'^getTest2/$', views.getTest2),
+		url(r'^getTest3/$', views.getTest3),
+
+	创建getTest1.html，定义链接:
+
+		<html>
+		<head>
+		<title>Title</title>
+		</head>
+		<body>
+		链接1：一个键传递一个值
+		<a href="/getTest2/?a=1&b=2">gettest2</a><br>
+		链接2：一个键传递多个值
+		<a href="/getTest3/?a=1&a=2&b=3">gettest3</a>
+		</body>
+		</html>
+
+	完善视图getTest2的代码:
+
+		def getTest2(request):
+			a=request.GET['a']
+			b=request.GET['b']
+			context={'a':a,'b':b}
+			return render(request,'booktest/getTest2.html',context)
+
+	创建getTest2.html，显示接收结果:
+
+		<html>
+		<head>
+		<title>Title</title>
+		</head>
+		<body>
+		a:{{ a }}<br>
+		b:{{ b }}
+		</body>
+		</html>
+
+	完善视图getTest3的代码:
+
+		def getTest3(request):
+			a=request.GET.getlist('a')
+			b=request.GET['b']
+			context={'a':a,'b':b}
+			return render(request,'booktest/getTest3.html',context)
+
+	创建getTest3.html，显示接收结果:
+
+		<html>
+		<head>
+		<title>Title</title>
+		</head>
+		<body>
+		a:{% for item in a %}
+		{{ item }}
+		{ % endfor %}
+		<br>
+		b:{{ b }}
+		</body>
+		</html>
 
 
+POST属性:
+
+	QueryDict类型的对象
+
+	包含post请求方式的所有参数
+
+	与form表单中的控件对应
+
+	问：表单中哪些控件会被提交?
+
+		答：控件要有name属性，则name属性的值为键，value属性的值为键，构成键值对提交
+		对于checkbox控件，name属性一样为一组，当控件被选中后会被提交，存在一键多值的情况
+
+	键是开发人员定下来的，值是可变的
+	示例如下
+	定义视图postTest1:
+
+		def postTest1(request):
+			return render(request,'booktest/postTest1.html')
+
+	配置url:
+		url(r'^postTest1$',views.postTest1)
+
+	创建模板postTest1.html:
+
+		<html>
+		<head>
+		<title>Title</title>
+		</head>
+		<body>
+		<form method="post" action="/postTest2/">
+			姓名：<input type="text" name="uname"/><br>
+			密码：<input type="password" name="upwd"/><br>
+			性别：<input type="radio" name="ugender" value="1"/>男
+			<input type="radio" name="ugender" value="0"/>女<br>
+			爱好：<input type="checkbox" name="uhobby" value="胸口碎大石"/>胸口碎大石
+			<input type="checkbox" name="uhobby" value="跳楼"/>跳楼
+			<input type="checkbox" name="uhobby" value="喝酒"/>喝酒
+			<input type="checkbox" name="uhobby" value="爬山"/>爬山<br>
+			<input type="submit" value="提交"/>
+		</form>
+		</body>
+		</html>
 
 
+	创建视图postTest2接收请求的数据:
+
+		def postTest2(request):
+			uname=request.POST['uname']
+			upwd=request.POST['upwd']
+			ugender=request.POST['ugender']
+			uhobby=request.POST.getlist('uhobby')
+			context={'uname':uname,'upwd':upwd,'ugender':ugender,'uhobby':uhobby}
+			return render(request,'booktest/postTest2.html',context)
 
 
+	配置url:
+
+		url(r'^postTest2$',views.postTest2)
+
+	创建模板postTest2.html:
+
+		<html>
+		<head>
+		<title>Title</title>
+		</head>
+		<body>
+		{{uname }}<br>
+		{{upwd }}<br>
+		{{ugender }}<br>
+		{{uhobby }}
+		</body>
+		</html>
+
+	注意：使用表单提交，注释掉settings.py中的中间件crsf
 
 
+HttpResponse对象:
+
+	在django.http模块中定义了HttpResponse对象的API
+	HttpRequest对象由Django自动创建，HttpResponse对象由程序员创建
+	不调用模板，直接返回数据:
+
+		#coding=utf-8
+		from django.http import HttpResponse
+
+		def index(request):
+		    return HttpResponse('你好')
+
+	调用模板:
+
+		from django.http import HttpResponse
+		from django.template import RequestContext, loader
+
+		def index(request):
+			t1 = loader.get_template('polls/index.html')
+			context = RequestContext(request, {'h1': 'hello'})
+			return HttpResponse(t1.render(context))
+	
+	属性:
+
+		content：表示返回的内容，字符串类型
+		charset：表示response采用的编码字符集，字符串类型
+		status_code：响应的HTTP响应状态码
+		content-type：指定输出的MIME类型
 
 
+	方法:
+
+		init ：使用页内容实例化HttpResponse对象
+
+		write(content)：以文件的方式写
+
+		flush()：以文件的方式输出缓存区
+
+		set_cookie(key, value='', max_age=None, expires=None)：设置Cookie
+			
+			key、value都是字符串类型
+			
+			max_age是一个整数，表示在指定秒数后过期
+			
+			expires是一个datetime或timedelta对象，会话将在这个指定的日期/时间过期，
+			
+			注意datetime和timedelta值只有在使用PickleSerializer时才可序列化
+			
+			max_age与expires二选一
+			
+			如果不指定过期时间，则两个星期后过期
+
+		
+			from django.http import HttpResponse
+			from datetime import *
+
+			def index(request):
+				response = HttpResponse()
+				if request.COOKIES.has_key('h1'):
+					response.write('<h1>' + request.COOKIES['h1'] + '</h1>')
+				response.set_cookie('h1', '你好', 120)
+				# response.set_cookie('h1', '你好', None, datetime(2016, 10, 31))
+				return response
+
+		delete_cookie(key)：删除指定的key的Cookie，如果key不存在则什么也不发生
 
 
+	子类HttpResponseRedirect:
+
+		重定向，服务器端跳转
+
+		构造函数的第一个参数用来指定重定向的地址
+
+			在views1.py中
+			from django.http import HttpResponse,HttpResponseRedirect
+			def index(request):
+			    return HttpResponseRedirect('js/')
+			def index2(request,id):
+				return HttpResponse(id)
+						
+			在应用的urls.py中增加一个url对象
+			url(r'^([0-9]+)/$', views1.index2, name='index2'),
 
 
+	推荐使用反向解析:
 
+		from django.core.urlresolvers import reverse
+
+		def index(request):
+			    return HttpResponseRedirect(reverse('booktest:index2', args=(1,)))
+
+	
+	子类JsonResponse:
+
+		返回json数据，一般用于异步请求
+		_init _(data)
+		帮助用户创建JSON编码的响应
+		参数data是字典对象
+		JsonResponse的默认Content-Type为application/json
+
+		from django.http import JsonResponse
+
+		def index2(requeset):
+			return JsonResponse({'list': 'abc'})
+
+
+简写函数:
+
+	render
+
+		render(request, template_name[, context])
+		结合一个给定的模板和一个给定的上下文字典，并返回一个渲染后的HttpResponse对象
+		request：该request用于生成response
+		template_name：要使用的模板的完整名称
+		context：添加到模板上下文的一个字典，视图将在渲染模板之前调用它
+
+		from django.shortcuts import render
+		def index(request):
+			return render(request, 'booktest/index.html', {'h1': 'hello'})
+				
+
+	重定向:
+
+	redirect(to)
+	为传递进来的参数返回HttpResponseRedirect
+	to推荐使用反向解析
+
+		from django.shortcuts import redirect
+		from django.core.urlresolvers import reverse
+
+		def index(request):
+			return redirect(reverse('booktest:index2'))
+
+	得到对象或返回404
+
+		get_object_or_404(klass, args, *kwargs)
+
+		通过模型管理器或查询集调用get()方法，如果没找到对象，不引发模型的DoesNotExist异常，而是引发Http404异常
+		
+		klass：获取对象的模型类、Manager对象或QuerySet对象
+	
+		**kwargs：查询的参数，格式应该可以被get()和filter()接受
+	
+		如果找到多个对象将引发MultipleObjectsReturned异常
+
+		
+			 from django.shortcuts import *
+
+			 def detail(request, id):
+				try:
+					book = get_object_or_404(BookInfo, pk=id)
+				except BookInfo.MultipleObjectsReturned:
+					book = None
+				return render(request, 'booktest/detail.html', {'book': book})
+							   
+			将settings.py中的DEBUG改为False
+			将请求地址输入2和100查看效果
+
+	得到列表或返回404:
+
+		get_list_or_404(klass, args, *kwargs)
+		klass：获取列表的一个Model、Manager或QuerySet实例
+		**kwargs：查寻的参数，格式应该可以被get()和filter()接受
+		
+		from django.shortcuts import *
+
+		def index(request):
+			# list = get_list_or_404(BookInfo, pk__lt=1)
+			list = get_list_or_404(BookInfo, pk__lt=6)
+			return render(request, 'booktest/index.html', {'list': list})
+		
+		将settings.py中的DEBUG改为False
+
+
+状态保持:
+
+	
