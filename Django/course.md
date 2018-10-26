@@ -2200,4 +2200,416 @@ HttpResponse对象:
 
 状态保持:
 
+	http协议是无状态的：每次请求都是一次新的请求，不会记得之前通信的状态
+
+	客户端与服务器端的一次通信，就是一次会话
+
+	实现状态保持的方式：在客户端或服务器端存储与会话有关的数据
+
+	存储方式包括cookie、session，会话一般指session对象
+
+	使用cookie，所有数据存储在客户端，注意不要存储敏感信息
+
+	推荐使用sesison方式，所有数据存储在服务器端，在客户端cookie中存储session_id
+
+	状态保持的目的是在一段时间内跟踪请求者的状态，可以实现跨页面访问当前请求者的数据
+
+	注意：不同的请求者之间不会共享这个数据，与请求者一一对应
+
+
+	启用session:
+		
+		使用django-admin startproject创建的项目默认启用
+
+		在settings.py文件中
+
+			项INSTALLED_APPS列表中添加：
+			'django.contrib.sessions',
+			
+			项MIDDLEWARE_CLASSES列表中添加：
+			'django.contrib.sessions.middleware.SessionMiddleware',
+
+			禁用会话：删除上面指定的两个值，禁用会话将节省一些性能消耗
+
+	使用session:
+
+		启用会话后，每个HttpRequest对象将具有一个session属性，它是一个类字典对象
+		get(key, default=None)：根据键获取会话的值
+		clear()：清除所有会话
+		flush()：删除当前的会话数据并删除会话的Cookie
+		del request.session['member_id']：删除会话
+
+
+	用户登录示例:
+
+		在views.py文件中创建视图:
+
+			from django.shortcuts import render, redirect
+			from django.core.urlresolvers import reverse
+
+			def index(request):
+				uname = request.session.get('uname')
+				return render(request, 'booktest/index.html', {'uname': uname})
+
+			def login(request):
+				return render(request, 'booktest/login.html')
+
+			def login_handle(request):
+				request.session['uname'] = request.POST['uname']
+				return redirect(reverse('main:index')
+
+			def logout(request):
+				# request.session['uname'] = None
+			    # del request.session['uname']
+			    # request.session.clear()
+			    request.session.flush()
+				return redirect(reverse('main:index'))
+
+		配置url:
+
+			主url：
+
+			from django.conf.urls import include, url
+			urlpatterns = [
+			    url(r'^', include('booktest.urls', namespace='main'))
+				]
+
+			应用url：
+			from django.conf.urls import url
+			from . import views
+				urlpatterns = [
+						url(r'^$', views.index, name='index'),
+					    url(r'login/$', views.login, name='login'),
+						url(r'login_handle/$', views.login_handle, name='login_handle'),
+						url(r'logout/$', views.logout, name='logout')
+						]
+
+		创建模板index.html:
+			
+			<!DOCTYPE html>
+			<html>
+			<head>
+			<title>首页</title>
+			</head>
+			<body>
+			你好：{{uname}}
+			<hr/>
+			<a href="{%url 'main:login'%}">登录</a>
+			<hr/>
+			<a href="{%url 'main:logout'%}">退出</a>
+			</body>
+			</html>
+
+		创建模板login.html：
+
+			<!DOCTYPE html>
+			<html>
+			<head>
+			<title>登录</title>
+			</head>
+			<body>
+			<form method="post" action="/login_handle/">
+				<input type="text" name="uname"/>
+				<input type="submit" value="登录"/>
+			</form>
+			</body>
+			</html>
+
+
+	会话过期时间：
+
+		set_expiry(value)：设置会话的超时时间
+		如果没有指定，则两个星期后过期
+		如果value是一个整数，会话将在values秒没有活动后过期
+		若果value是一个imedelta对象，会话将在当前时间加上这个指定的日期/时间过期
+		如果value为0，那么用户会话的Cookie将在用户的浏览器关闭时过期
+		如果value为None，那么会话永不过期
+		修改视图中login_handle函数，查看效果
+
+		def login_handle(request):
+			request.session['uname'] = request.POST['uname']
+			# request.session.set_expiry(10)
+			# request.session.set_expiry(timedelta(days=5))
+			# request.session.set_expiry(0)
+			# request.session.set_expiry(None)
+			return redirect(reverse('main:index'))
+
+	存储session:
+
+		使用存储会话的方式，可以使用settings.py的SESSION_ENGINE项指定
+		基于数据库的会话：这是django默认的会话存储方式，需要添加django.contrib.sessions到的
+		INSTALLED_APPS设置中，运行manage.py migrate在数据库中安装会话表，可显示指定为
+
+			SESSION_ENGINE='django.contrib.sessions.backends.db'
+
+		基于缓存的会话：只存在本地内在中，如果丢失则不能找回，比数据库的方式读写更快
+
+			SESSION_ENGINE='django.contrib.sessions.backends.cache'
+
+		可以将缓存和数据库同时使用：优先从本地缓存中获取，如果没有则从数据库中获取
+
+			SESSION_ENGINE='django.contrib.sessions.backends.cached_db'
+
+
+	使用Redis缓存session:
+
+		会话还支持文件、纯cookie、Memcached、Redis等方式存储，下面演示使用redis存储
+		安装包
+
+		pip install django-redis-sessions
+
+		修改settings中的配置，增加如下项
+
+			SESSION_ENGINE = 'redis_sessions.session'
+			SESSION_REDIS_HOST = 'localhost'
+			SESSION_REDIS_PORT = 6379
+			SESSION_REDIS_DB = 0
+			SESSION_REDIS_PASSWORD = ''
+			SESSION_REDIS_PREFIX = 'session'
+
+		管理redis的命令
+			
+			启动：sudo redis-server /etc/redis/redis.conf
+			停止：sudo redis-server stop
+			重启：sudo redis-server restart
+			redis-cli：使用客户端连接服务器
+			keys *：查看所有的键
+			get name：获取指定键的值
+			del name：删除指定名称的键
+
+"-------------------------------------------------------------"
+
+模板介绍:
+
+	作为Web框架，Django提供了模板，可以很便利的动态生成HTML
+
+	模版系统致力于表达外观，而不是程序逻辑
+
+	模板的设计实现了业务逻辑(view)与显示内容（template）的分离，一个视图可以使用任意一个模板，
+	一个模板可以供多个视图使用
+
+	模板包含:
+		HTML的静态部分
+		动态插入内容部分
+
+	Django模板语言，简写DTL，定义在django.template包中
+
+	由startproject命令生成的settings.py定义关于模板的值：
+
+		DIRS定义了一个目录列表，模板引擎按列表顺序搜索这些目录以查找模板源文件
+
+		APP_DIRS告诉模板引擎是否应该在每个已安装的应用中查找模板
+
+	常用方式：在项目的根目录下创建templates目录，设置DIRS值
+
+		DIRS=[os.path.join(BASE_DIR,"templates")]
+
+模板处理:
+
+	Django处理模板分为两个阶段
+
+	Step1 加载：根据给定的标识找到模板然后预处理，通常会将它编译好放在内存中
+
+		loader.get_template(template_name)，返回一个Template对象
+
+
+	Step2 渲染：使用Context数据对模板插值并返回生成的字符串
+
+		Template对象的render(RequestContext)方法，使用context渲染模板
+
+	加载渲染完整代码：
+
+		from django.template import loader, RequestContext
+		from django.http import HttpResponse
+
+		def index(request):
+			tem = loader.get_template('temtest/index.html')
+			context = RequestContext(request, {})
+			return HttpResponse(tem.render(context))
+
+快捷函数:
+
+	为了减少加载模板、渲染模板的重复代码，django提供了快捷函数
+	render_to_string("")
+	render(request,'模板',context)
+
+	from django.shortcuts import render
+
+	def index(request):
+		return render(request, 'temtest/index.html')
+
+
+定义模板:
+
+		模板语言包括:
+
+			变量
+
+			标签 {% 代码块 %}
+
+			过滤器
+
+			注释{# 代码或html #}
+
+变量：
+
+	语法：{{ variable }}
+		
+	当模板引擎遇到一个变量，将计算整个变量，然后将结果输出
+
+	变量名必须由字母、数字、下划线(不能以下划线开头)和点组成
+
+	当模板引擎遇到点("."),会按照下列顺序查询：
+		1、字典查询，例如：foo["bar"]
+		2、属性或方法查询，例如：foo.bar
+		3、数字索引查询，例如：foo[bar]
+
+	如果变量不存在， 模版系统将插入' ' (空字符串) 
+
+	在模板中调用方法时不能传递参数
+
+
+在模板中调用对象的方法:
+
+	在models.py 中定义类HeroInfo
+
+		from django.db import models
+		class HeroInfo(models.Model):
+			...
+			def showName(self):
+				return self.hname
+
+	在 view.py中传递HeroInfo对象
+
+		from django.shortcuts import render
+		from models import *
+
+		def index(request):
+			hero = HeroInfo(hname='abc')
+			context = {'hero': hero}
+			return render(request, 'temtest/detail.html', context)
+
+	在模板detail.html中调用:
+
+		{{hero.showName}}
+
+
+标签:
+
+	语法：{{% tag %}}
+	作用：
+		在输出中创建文本
+		控制循环或逻辑
+		加载外部信息到模板中供以后的变量使用
+
+	for标签：
+
+		{%for ... in ...%}
+		循环逻辑
+		{{forloop.counter}}表示当前是第几次循环
+		{%empty%}
+		给出的列表为或列表不存在时，执行此处
+		{%endfor%}
+	
+	if标签:
+
+		{%if ...%}
+			逻辑1
+		{%elif ...%}
+			逻辑2
+		{%else%}
+			逻辑3
+		{%endif%}
+		
+	comment标签：
+
+		{% comment % }
+			多行注释
+		{% endcomment % }
+	
+	include：加载模板并以标签内的参数渲染：
+
+		{%include "foo/bar.html" % }
+
+	url：反向解析：
+
+		{% url 'name' p1 p2 %}
+
+	csrf_token：这个标签用于跨站请求伪造保护：
+
+		{% csrf_token %}
+
+	布尔标签：and、or，and比or的优先级高
+	block、extends：详见“模板继承”
+	autoescape：详见“HTML转义”
+
+过滤器：
+
+	语法: {{变量|过滤器 }}，例如{{name|lower }}，表示将变量name的值变为小写输出
+
+	使用管道符号 (|)来应用过滤器
+
+	通过使用过滤器来改变变量的计算结果
+
+	可以在if标签中使用过滤器结合运算符
+		if list1|length > 1
+
+	过滤器能够被“串联”，构成过滤器链
+		name|lower|upper
+				
+	过滤器可以传递参数，参数使用引号包起来
+		list|join:", "
+
+	default：如果一个变量没有被提供，或者值为false或空，则使用默认值，否则使用变量的值
+		value|default:"什么也没有"
+
+	date：根据给定格式对一个date变量格式化
+		value|date:'Y-m-d'
+
+注释
+
+	单行注释:{#...#}
+
+	注释可以包含任何模版代码，有效的或者无效的都可以
+	{# {% if foo % }bar{% else % } #}
+
+	使用comment标签注释模版中的多行内容
+
+
+模板继承:
+
+	模板继承可以减少页面内容的重复定义，实现页面内容的重用
+	典型应用：网站的头部、尾部是一样的，这些内容可以定义在父模板中，子模板不需要重复定义
+	block标签：在父模板中预留区域，在子模板中填充
+	extends继承：继承，写在模板文件的第一行
+
+	定义父模板base.html:
+
+		{%block block_name%}
+		 这里可以定义默认值
+		 如果不定义默认值，则表示空字符串
+		{%endblock%}
+
+	定义子模板index.html:
+		{% extends "base.html" %}
+	
+	在子模板中使用block填充预留区域:
+		{%block block_name%}
+		实际填充内容
+		{%endblock%}
+	
+	说明:
+
+		如果在模版中使用extends标签，它必须是模版中的第一个标签
+		不能在一个模版中定义多个相同名字的block标签
+		子模版不必定义全部父模版中的blocks，如果子模版没有定义block，则使用了父模版中的默认值
+		如果发现在模板中大量的复制内容，那就应该把内容移动到父模板中
+		使用可以获取父模板中block的内容
+		为了更好的可读性，可以给endblock标签一个名字
+
+		{% block block_name %}
+		 区域内容
+		{% endblock block_name %}
+
+
 	
