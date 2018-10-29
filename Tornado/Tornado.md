@@ -736,11 +736,84 @@
 
 		我们来实现一个上传文件并保存在服务器本地的小程序upload.py：
 
-			
+		# coding:utf-8
 
+		import tornado.web
+		import tornado.ioloop
+		import tornado.httpserver
+		import tornado.options
+		from tornado.options import options, define
+		from tornado.web import RequestHandler
 
+		define("port", default=8000, type=int, help="run server on the given port.")
 
+		class IndexHandler(RequestHandler):
+		    def get(self):
+			self.write("hello itcast.")
 
+		class UploadHandler(RequestHandler): 
+		    def post(self):
+			files = self.request.files
+			img_files = files.get('img')
+			if img_files:
+			    img_file = img_files[0]["body"]
+			    file = open("./itcast", 'w+')
+			    file.write(img_file)
+			    file.close()
+			self.write("OK")
+
+		if __name__ == "__main__":
+		    tornado.options.parse_command_line()
+		    app = tornado.web.Application([
+			(r"/", IndexHandler),
+			(r"/upload", UploadHandler),
+		    ])
+		    http_server = tornado.httpserver.HTTPServer(app)
+		    http_server.listen(options.port)
+		    tornado.ioloop.IOLoop.current().start()	
+
+	5、 正则提取uri：
+		
+		tornado中对于路由映射也支持正则提取uri，提取出来的参数会作为RequestHandler中对应请求方式的成员方法参数。
+		若在正则表达式中定义了名字，则参数按名传递；若未定义名字，则参数按顺序传递。
+		提取出来的参数会作为对应请求方式的成员方法的参数。
+		
+		
+			# coding:utf-8
+
+			import tornado.web
+			import tornado.ioloop
+			import tornado.httpserver
+			import tornado.options
+			from tornado.options import options, define
+			from tornado.web import RequestHandler
+
+			define("port", default=8000, type=int, help="run server on the given port.")
+
+			class IndexHandler(RequestHandler):
+			    def get(self):
+				self.write("hello itcast.")
+
+			class SubjectCityHandler(RequestHandler):
+			    def get(self, subject, city):
+				self.write(("Subject: %s<br/>City: %s" % (subject, city)))
+
+			class SubjectDateHandler(RequestHandler):
+			    def get(self, date, subject):
+				self.write(("Date: %s<br/>Subject: %s" % (date, subject)))
+
+			if __name__ == "__main__":
+			    tornado.options.parse_command_line()
+			    app = tornado.web.Application([
+				(r"/", IndexHandler),
+				(r"/sub-city/(.+)/([a-z]+)", SubjectCityHandler), # 无名方式
+				(r"/sub-date/(?P<subject>.+)/(?P<date>\d+)", SubjectDateHandler), #　命名方式
+			    ])
+			    http_server = tornado.httpserver.HTTPServer(app)
+			    http_server.listen(options.port)
+			    tornado.ioloop.IOLoop.current().start()
+
+		建议：提取多个值时最好用命名方式。
 
 
 
