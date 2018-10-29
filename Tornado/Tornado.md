@@ -700,9 +700,50 @@
 	
 	思考
 
-	什么时候设置default，什么时候不设置default？
-	default的默认值_ARG_DEFAULT是什么？	
-	什么时候使用strip，亦即什么时候要截断空白字符，什么时候不需要？
+		什么时候设置default，什么时候不设置default？
+		default的默认值_ARG_DEFAULT是什么？	
+		什么时候使用strip，亦即什么时候要截断空白字符，什么时候不需要？
+
+	4、 关于请求的其他信息
+
+		RequestHandler.request 对象存储了关于请求的相关信息，具体属性有：
+
+			method HTTP的请求方式，如GET或POST;
+			host 被请求的主机名；
+			uri 请求的完整资源标示，包括路径和查询字符串；
+			path 请求的路径部分；
+			query 请求的查询字符串部分；
+			version 使用的HTTP版本；
+			headers 请求的协议头，是类字典型的对象，支持关键字索引的方式获取特定协议头信息，
+					例如：request.headers["Content-Type"]
+			body 请求体数据；
+			remote_ip 客户端的IP地址；
+			files 用户上传的文件，为字典类型，型如:
+				{
+					"form_filename1":[<tornado.httputil.HTTPFile>, <tornado.httputil.HTTPFile>],
+					"form_filename2":[<tornado.httputil.HTTPFile>,],
+					...
+				}
+
+			tornado.httputil.HTTPFile是接收到的文件对象，它有三个属性：
+				
+				filename 文件的实际名字，与form_filename1不同，字典中的键名代表的是表单对应项的名字；
+				
+				body 文件的数据实体；
+				
+				content_type 文件的类型。 这三个对象属性可以像字典一样支持关键字索引，
+				如request.files["form_filename1"][0]["body"]
+
+		我们来实现一个上传文件并保存在服务器本地的小程序upload.py：
+
+			
+
+
+
+
+
+
+
 
 
 
