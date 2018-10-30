@@ -1053,23 +1053,270 @@
 
 
 
-	3.4 接口与调用顺序：
+3.4 接口与调用顺序：
 
 	下面的接口方法是由tornado框架进行调用的，我们可以选择性的重写这些方法。
+	
+	1、initialize()：
+
+		对应每个请求的处理类Handler在构造一个实例后首先执行initialize()方法。
+		在讲输入时提到，路由映射中的第三个字典型参数会作为该方法的命名参数传递，如：
+			
+			class ProfileHandler(RequestHandler):
+				def initialize(self,database):
+					self.database = database
+
+				def get(self):
+					...
+
+			app = Application([(r'/user/(.*)',ProfileHandler,dict(database=database)),])
+
+			此方法通常用来初始化参数（对象属性），很少使用。
+
+	2、prepare():
+
+		预处理，即在执行对应请求方式的HTTP方法(如果get、post等)前先执行，
+		注意：不论以何种HTTP请求方式，都会执行prepare()方法。
+
+		import json
+
+		class IndexHandler(RequestHandler):
+			def prepare(self):
+				if self.request.headers.get("Content-Type").startswith("application/json"):
+					self.json_dict = json.loads(self.request.body)
+				else:
+					self.json_dict = None
+
+			def post(self):
+				if self.json_dict:
+					for key,value in self.json_dict.items():
+						self.write("<h3>%s</h3><p>%s</p>" % (key, value))
+
+			def put(self):
+				if self.json_dict:
+					for key, value in self.json_dict.items():
+						self.write("<h3>%s</h3><p>%s</p>" % (key, value))
+	
+	3、HTTP方法：
+
+		方法	描述
+		get		请求指定的页面信息，并返回实体主体。
+		head	类似于get请求，只不过返回的响应中没有具体的内容，用于获取报头
+		post	向指定资源提交数据进行处理请求（例如提交表单或者上传文件）。
+				数据被包含在请求体中。POST请求可能会导致新的资源的建立和/或已有资源的修改。
+		delete	请求服务器删除指定的内容。
+		patch	请求修改局部数据。
+		put		从客户端向服务器传送的数据取代指定的文档的内容。
+		options	返回给定URL支持的所有HTTP方法。
+
+	4、on_finish()：
+
+		在请求处理结束后调用，即在调用HTTP方法后调用。通常该方法用来进行资源清理释放或处理日志等。
+		注意：请尽量不要在此方法中进行响应输出。
+
+	5、set_default_headers()
+
+	6、write_error()
 
 
+	7、 调用顺序：
+		我们通过一段程序来看上面这些接口的调用顺序。
+		
+		class IndexHandler(RequestHandler):
+			def initialize(self):
+				print "调用了initialize()"
+
+			def prepare(self):
+				print "调用了prepare()"
+
+			def set_default_headers(self):
+				print "调用了set_default_headers()"
+			
+			def write_error(self, status_code, **kwargs):
+				print "调用了write_error()"
+
+			def get(self):
+				print "调用了get()"
+							
+			def post(self):
+				print "调用了post()"
+				self.send_error(200)  # 注意此出抛出了错误
+												  
+			def on_finish(self):
+				print "调用了on_finish()"
 
 
+		在正常情况未抛出错误时，调用顺序为：
 
+			set_defautl_headers()
+			initialize()
+			prepare()
+			HTTP方法
+			on_finish()
+		
+		在有错误抛出时，调用顺序为：
+
+			set_default_headers()
+			initialize()
+			prepare()
+			HTTP方法
+			set_default_headers()
+			write_error()
+			on_finish()
 
 "----------------------------------------------------"
 
-
-
-"-----------------------------------------------------"
-
-
 			4. 模板
+
+	知识点：
+
+		静态文件配置
+			static_path
+			StaticFileHandler
+
+		模板使用
+			变量与表达式
+			控制语句
+			函数
+			块
+
+4.1 静态文件
+
+	现在有一个预先写好的静态页面文件， 我们来看下如何用tornado提供静态文件。
+	
+	static_path:
+		
+		我们可以通过向web.Application类的构造函数传递一个名为static_path的参数
+		来告诉Tornado从文件系统的一个特定位置提供静态文件，如：
+
+			app = tornado.web.Application([(r'/',IndexHandler)],
+					static_path=os.path.join(os.path.dirname(__file__),"statuc"))
+
+		在这里，我们设置了一个当前应用目录下名为statics的子目录作为static_path的参数。
+		现在应用将以读取statics目录下的filename.ext来响应诸如/static/filename.ext的请求，
+		并在响应的主体中返回。
+
+	对于静态文件目录的命名，为了便于部署，建议使用static:
+
+		对于我们提供的静态文件资源，可以通过http://127.0.0.1/static/html/index.html来访问。
+		而且在index.html中引用的静态资源文件，我们给定的路径也符合/static/...的格式，故页面可以正常浏览。
+
+			<link href="/static/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+			<link href="/static/plugins/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+			<link href="/static/css/reset.css" rel="stylesheet">
+			<link href="/static/css/main.css" rel="stylesheet">
+			<link href="/static/css/index.css" rel="stylesheet">
+		
+			<script src="/static/js/jquery.min.js"></script>
+			<script src="/static/plugins/bootstrap/js/bootstrap.min.js"></script>
+			<script src="/static/js/index.js"></script>
+
+	StaticFileHandler:
+
+		我们再看刚刚访问页面时使用的路径http://127.0.0.1/static/html/index.html，
+		这中url显然对用户是不友好的，访问很不方便。我们可以通过tornado.web.StaticFileHandler
+		来自由映射静态文件与其访问路径url。
+
+		tornado.web.StaticFileHandler是tornado预置的用来提供静态资源文件的handler。
+
+			import os
+
+			current_path = os.path.dirname(__file__)
+			app = tornado.web.Application(
+				[
+					(r'^/()$',StaticFileHandler,{"path":os.path.join(current_path,"static/html"), "default_filename":"index.html"})
+					(r'^/view/(.*)$', StaticFileHandler, {"path":os.path.join(current_path, "statics/html")}),	
+				], static_path=os.path.join(current_path, "statics"),))
+
+		path 用来指明提供静态文件的根路径，并在此目录中寻找在路由中用正则表达式提取的文件名。
+		default_filename 用来指定访问路由中未指明文件名时，默认提供的文件。
+		
+		现在，对于静态文件statics/html/index.html，可以通过三种方式进行访问：
+			http://127.0.0.1/static/html/index.html
+			http://127.0.0.1/
+			http://127.0.0.1/view/index.html
+
+
+4.2 使用模板
+
+	1、路径与渲染：
+
+		使用模板，需要仿照静态文件路径设置一样，向web.Application类的构造函数传递一个名为
+		template_path的参数来告诉Tornado从文件系统的一个特定位置提供模板文件，如：
+
+			app = tornado.web.Application(
+				[(r'/', IndexHandler)],
+					static_path=os.path.join(os.path.dirname(__file__), "statics"),
+					template_path=os.path.join(os.path.dirname(__file__), "templates"),
+				)
+
+		在这里，我们设置了一个当前应用目录下名为templates的子目录作为template_path的参数。
+		在handler中使用的模板将在此目录中寻找。
+		
+		现在我们将静态文件目录statics/html中的index.html复制一份到templates目录中，此时文件目录结构为：
+
+			.
+			├── statics
+			│   ├── css
+			│   │   ├── index.css
+			│   │   ├── main.css
+			│   │   └── reset.css
+			│   ├── html
+			│   │   └── index.html
+			│   ├── images
+			│   │   ├── home01.jpg
+			│   │   ├── home02.jpg
+			│   │   ├── home03.jpg
+			│   │   └── landlord01.jpg
+			│   ├── js
+			│	│   ├── index.js
+			│   │   └── jquery.min.js
+			│   └── plugins
+			│       ├── bootstrap
+			│       │   └─...
+			│       └── font-awesome
+			│           └─...
+			├── templates
+			│   └── index.html
+			└── test.py
+		
+		在handler中使用render()方法来渲染模板并返回给客户端。
+
+			class IndexHandler(RequestHandler):
+				def get(self):
+					self.render("index.html") # 渲染主页模板，并返回给客户端。
+
+			current_path = ps.path.dirname(__file__)
+			app = tornado.web.Application([
+					(r'^/$',IndexHandler),
+					(r'^/view/(.*)$',StaticFileHandler,{"path":os.path.join(current_path,"statics/html")}),
+					],
+					static_path=os.path.join(current_path, "statics"),
+					template_path=os.path.join(os.path.dirname(__file__), "templates"),
+			)
+
+	2、模板语法
+		
+		2-1 变量与表达式
+
+		在tornado的模板中使用{{}}作为变量或表达式的占位符，使用render渲染后占位符{{}}会被替换为相应的结果值。
+
+		我们将index.html中的一条房源信息记录
+		
+			
+
+
+	
+
+
+
+
+
+
+
+
+
+
 
 "-----------------------------------------------------"
 
