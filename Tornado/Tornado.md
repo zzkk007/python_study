@@ -1445,7 +1445,129 @@
 	
 	2-3 函数:
 	
+		static_url()
+	
+		Tornado模板模块提供了一个叫作static_url的函数来生成静态文件目录下文件的URL。如下面的示例代码：
+			<link rel="stylesheet" href="{{ static_url("style.css") }}">
+	
+		这个对static_url的调用生成了URL的值，并渲染输出类似下面的代码：
+			<link rel="stylesheet" href="/static/style.css?v=ab12">
 		
+		优点：
+
+			static_url函数创建了一个基于文件内容的hash值，并将其添加到URL末尾（查询字符串的参数v）。
+			这个hash值确保浏览器总是加载一个文件的最新版而不是之前的缓存版本。无论是在你应用的开发阶段，
+			还是在部署到生产环境使用时，都非常有用，因为你的用户不必再为了看到你的静态内容而清除浏览器缓存了。
+			
+			另一个好处是你可以改变你应用URL的结构，而不需要改变模板中的代码。
+			例如，可以通过设置static_url_prefix来更改Tornado的默认静态路径前缀/static。
+			如果使用static_url而不是硬编码的话，代码不需要改变。
+		
+		
+		转义
+			我们新建一个表单页面new.html
+			
+			<!DOCTYPE html>
+			<html>
+			    <head>
+				<title>新建房源</title>
+			    </head>
+			    <body>
+				<form method="post">
+				    <textarea name="text"></textarea>
+				    <input type="submit" value="提交">
+				</form>
+				{{text}}
+			    </body>
+			</html>
+			
+			对应的handler为：	
+			
+			class NewHandler(RequestHandler):
+
+			    def get(self):
+				self.render("new.html", text="")
+
+			    def post(self):
+				text = self.get_argument("text", "") 
+				print text
+				self.render("new.html", text=text)
+
+		当我们在表单中填入如下内容时：
+			<script>alert("hello!");</script>
+		
+
+		我们查看页面源代码，发现<、>、"等被转换为对应的html字符。
+
+		&lt;script&gt;alert(&quot;hello!&quot;);&lt;/script&gt;
+		这是因为tornado中默认开启了模板自动转义功能，防止网站受到恶意攻击。
+
+		我们可以通过raw语句来输出不被转义的原始格式，如：
+
+			{% raw text %}
+		注意：在Firefox浏览器中会直接弹出alert窗口，而在Chrome浏览器中，需要set_header("X-XSS-Protection", 0)
+
+		若要关闭自动转义，一种方法是在Application构造函数中传递autoescape=None，另一种方法是在每页模板中修改自动转义行为，
+		添加如下语句：
+			{% autoescape None %}
+			
+		escape()
+			关闭自动转义后，可以使用escape()函数来对特定变量进行转义，如：
+			{{ escape(text) }}
+	
+	自定义函数:
+	
+		在模板中还可以使用一个自己编写的函数，只需要将函数名作为模板的参数传递即可，就像其他变量一样。
+
+		我们修改后端如下：	
+
+		def house_title_join(titles):
+   			 return "+".join(titles)
+
+		class IndexHandler(RequestHandler):
+		    def get(self):
+			house_list = [
+			{
+			    "price": 398,
+			    "titles": ["宽窄巷子", "160平大空间", "文化保护区双地铁"],
+			    "score": 5,
+			    "comments": 6,
+			    "position": "北京市丰台区六里桥地铁"
+			},
+			{
+			    "price": 398,
+			    "titles": ["宽窄巷子", "160平大空间", "文化保护区双地铁"],
+			    "score": 5,
+			    "comments": 6,
+			    "position": "北京市丰台区六里桥地铁"
+			}]
+			self.render("index.html", houses=house_list, title_join = house_title_join)
+
+		前段模板我们修改为：
+
+			<ul class="house-list">
+			    {% if len(houses) > 0 %}
+				{% for house in houses %}
+				<li class="house-item">
+				    <a href=""><img src="/static/images/home01.jpg"></a>
+				    <div class="house-desc">
+					<div class="landlord-pic"><img src="/static/images/landlord01.jpg"></div>
+					<div class="house-price">￥<span>{{house["price"]}}</span>/晚</div>
+					<div class="house-intro">
+					    <span class="house-title">{{title_join(house["titles"])}}</span>
+					    <em>整套出租 - {{house["score"]}}分/{{house["comments"]}}点评 - {{house["position"]}}</em>
+					</div>
+				    </div>
+				</li>
+				{% end %}
+			    {% else %}
+				对不起，暂时没有房源。
+			    {% end %}
+			</ul>
+		
+
+
+
 
 
 
