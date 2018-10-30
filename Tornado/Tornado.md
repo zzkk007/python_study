@@ -1303,14 +1303,149 @@
 
 		我们将index.html中的一条房源信息记录
 		
+			<li class="house-item">
+			    <a href=""><img src="/static/images/home01.jpg"></a>
+			    <div class="house-desc">
+				<div class="landlord-pic"><img src="/static/images/landlord01.jpg"></div>
+				<div class="house-price">￥<span>398</span>/晚</div>
+				<div class="house-intro">
+				    <span class="house-title">宽窄巷子+160平大空间+文化保护区双地铁</span>
+				    <em>整套出租 - 5分/6点评 - 北京市丰台区六里桥地铁</em>
+				</div>
+			    </div>
+			</li>	
+		改为模板：
+			<li class="house-item">
+			    <a href=""><img src="/static/images/home01.jpg"></a>
+			    <div class="house-desc">
+				<div class="landlord-pic"><img src="/static/images/landlord01.jpg"></div>
+				<div class="house-price">￥<span>{{price}}</span>/晚</div>
+				<div class="house-intro">
+				    <span class="house-title">{{title}}</span>
+				    <em>整套出租 - {{score}}分/{{comments}}点评 - {{position}}</em>
+				</div>
+			    </div>
+			</li>
 			
+		渲染方式如下：
+		
+			class IndexHandler(RequestHandler):
+			    def get(self):
+				house_info = {
+				    "price": 398,
+				    "title": "宽窄巷子+160平大空间+文化保护区双地铁",
+				    "score": 5,
+				    "comments": 6,
+				    "position": "北京市丰台区六里桥地铁"
+				}
+				self.render("index.html", **house_info)
+				
+		{{}}不仅可以包含变量，还可以是表达式，如：	
+			
+			<li class="house-item">
+			    <a href=""><img src="/static/images/home01.jpg"></a>
+			    <div class="house-desc">
+				<div class="landlord-pic"><img src="/static/images/landlord01.jpg"></div>
+				<div class="house-price">￥<span>{{p1 + p2}}</span>/晚</div>
+				<div class="house-intro">
+				    <span class="house-title">{{"+".join(titles)}}</span>
+				    <em>整套出租 - {{score}}分/{{comments}}点评 - {{position}}</em>
+				</div>
+			    </div>
+			</li>
+		
+		class IndexHandler(RequestHandler):
+		    def get(self):
+			house_info = {
+			    "p1": 198,
+			    "p2": 200,
+			    "titles": ["宽窄巷子", "160平大空间", "文化保护区双地铁"],
+			    "score": 5,
+			    "comments": 6,
+			    "position": "北京市丰台区六里桥地铁"
+			}
+			self.render("index.html", **house_info)
 
+	2-2 控制语句:
+	
+		可以在Tornado模板中使用Python条件和循环语句。控制语句以{\%和\%}包围，并以类似下面的形式被使用：
+
+		{% if page is None %}
+		或
+
+		{% if len(entries) == 3 %}
+		控制语句的大部分就像对应的Python语句一样工作，支持if、for、while，注意end:
+
+		{% if ... %} ... {% elif ... %} ... {% else ... %} ... {% end %}
+		{% for ... in ... %} ... {% end %}
+		{% while ... %} ... {% end %}
+		再次修改index.html:
+
+		<ul class="house-list">
+		    {% if len(houses) > 0 %}
+			{% for house in houses %}
+			<li class="house-item">
+			    <a href=""><img src="/static/images/home01.jpg"></a>
+			    <div class="house-desc">
+				<div class="landlord-pic"><img src="/static/images/landlord01.jpg"></div>
+				<div class="house-price">￥<span>{{house["price"]}}</span>/晚</div>
+				<div class="house-intro">
+				    <span class="house-title">{{house["title"]}}</span>
+				    <em>整套出租 - {{house["score"]}}分/{{house["comments"]}}点评 - {{house["position"]}}</em>
+				</div>
+			    </div>
+			</li>
+			{% end %}
+		    {% else %}
+			对不起，暂时没有房源。
+		    {% end %}
+		</ul>
+		python中渲染语句为：
+
+		class IndexHandler(RequestHandler):
+		    def get(self):
+			houses = [
+			{
+			    "price": 398,
+			    "title": "宽窄巷子+160平大空间+文化保护区双地铁",
+			    "score": 5,
+			    "comments": 6,
+			    "position": "北京市丰台区六里桥地铁"
+			},
+			{
+			    "price": 398,
+			    "title": "宽窄巷子+160平大空间+文化保护区双地铁",
+			    "score": 5,
+			    "comments": 6,
+			    "position": "北京市丰台区六里桥地铁"
+			},
+			{
+			    "price": 398,
+			    "title": "宽窄巷子+160平大空间+文化保护区双地铁",
+			    "score": 5,
+			    "comments": 6,
+			    "position": "北京市丰台区六里桥地铁"
+			},
+			{
+			    "price": 398,
+			    "title": "宽窄巷子+160平大空间+文化保护区双地铁",
+			    "score": 5,
+			    "comments": 6,
+			    "position": "北京市丰台区六里桥地铁"
+			},
+			{
+			    "price": 398,
+			    "title": "宽窄巷子+160平大空间+文化保护区双地铁",
+			    "score": 5,
+			    "comments": 6,
+			    "position": "北京市丰台区六里桥地铁"
+			}]
+			self.render("index.html", houses=houses)
 
 	
-
-
-
-
+	2-3 函数:
+	
+		
 
 
 
