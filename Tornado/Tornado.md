@@ -2148,7 +2148,44 @@
 
 		新建一个页面json.html：
 
-		
+		<!DOCTYPE html>
+		<html>
+		<head>
+		    <meta charset="utf-8">
+		    <title>测试XSRF</title>
+		</head>
+		<body>
+		    <a href="javascript:;" onclick="xsrfPost()">发送POST请求</a>
+		    <script src="http://cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+		    <script type="text/javascript">
+			//获取指定Cookie的函数
+			function getCookie(name) {
+			    var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+			    return r ? r[1] : undefined;
+			}
+			//AJAX发送post请求，json格式数据
+			function xsrfPost() {
+			    var xsrf = getCookie("_xsrf");
+			    var data = {
+				key1:1,
+				key1:2
+			    };
+			    var json_data = JSON.stringify(data);
+			    $.ajax({
+				url: "/new",
+				method: "POST",
+				headers: {
+				    "X-XSRFToken":xsrf,
+				},
+				data:json_data,
+				success:function(data) {
+				    alert("OK");
+				}
+			    })
+			}
+		    </script>
+		</body>
+		</html>
 
 
 
