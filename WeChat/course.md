@@ -790,6 +790,145 @@
 			多出的字段中，Format为语音格式，一般为amr，Recognition为语音识别结果，使用UTF8编码。
 		
 
+	6、回复其他普通消息:
+
+		回复图片消息:
+
+			<xml>
+			<ToUserName><![CDATA[toUser]]></ToUserName>
+			<FromUserName><![CDATA[fromUser]]></FromUserName>
+			<CreateTime>12345678</CreateTime>
+			<MsgType><![CDATA[image]]></MsgType>
+			<Image>
+			<MediaId><![CDATA[media_id]]></MediaId>
+			</Image>
+			</xml>
+
+
+
+			参数	        是否必须	说明
+			ToUserName	      是		接收方帐号（收到的OpenID）
+			FromUserName	  是		开发者微信号
+			CreateTime	      是		消息创建时间 （整型）
+			MsgType	          是		image
+			MediaId	          是		通过素材管理接口上传多媒体文件，得到的id。
+
+		回复语音消息：
+
+			<xml>
+			<ToUserName><![CDATA[toUser]]></ToUserName>
+			<FromUserName><![CDATA[fromUser]]></FromUserName>
+			<CreateTime>12345678</CreateTime>
+			<MsgType><![CDATA[voice]]></MsgType>
+			<Voice>
+			<MediaId><![CDATA[media_id]]></MediaId>
+			</Voice>
+			</xml>
+
+
+			参数			是否必须		说明
+			ToUserName			是			接收方帐号（收到的OpenID）
+			FromUserName		是			开发者微信号
+			CreateTime			是			消息创建时间戳 （整型）
+			MsgType				是			语音，voice
+			MediaId				是			通过素材管理接口上传多媒体文件，得到的id
+
+	
+		回复视频消息：
+
+			<xml>
+			<ToUserName><![CDATA[toUser]]></ToUserName>
+			<FromUserName><![CDATA[fromUser]]></FromUserName>
+			<CreateTime>12345678</CreateTime>
+			<MsgType><![CDATA[video]]></MsgType>
+			<Video>
+			<MediaId><![CDATA[media_id]]></MediaId>
+			<Title><![CDATA[title]]></Title>
+			<Description><![CDATA[description]]></Description>
+			</Video> 
+			</xml>
+
+			参数		是否必须			说明
+			ToUserName		是				接收方帐号（收到的OpenID）
+			FromUserName	是				开发者微信号
+			CreateTime		是				消息创建时间 （整型）
+			MsgType			是				video
+			MediaId			是				通过素材管理接口上传多媒体文件，得到的id
+			Title			否				视频消息的标题
+			Description		否				视频消息的描述
+
+
+	7、回复用户语音消息识别:
+		
+		class WechatHandler(WeChatBaseHandler):
+			"""微信接入接口"""
+			def get(self):
+				"""开发者验证接口"""
+				echostr = self.get_argument("echostr")
+				self.write(echostr)"")
+
+			def post(self):
+				"""收发消息接口"""
+				req_xml = self.request.body
+				req = xmltodict.parse(req_xml)['xml']
+				msg_type = req.get("MsgType")
+
+				if "text" == msg_type:
+					resp ={
+						"ToUserName":req.get("FromUserName", ""),
+						"FromUserName":req.get("ToUserName", ""),
+						"CreateTime":int(time.time()),
+						"MsgType":"text",
+						"Content":req.get("Content", "")
+					}
+				elif "voice" == msg_type:
+					resp = {
+							"ToUserName":req.get("FromUserName", ""),
+							"FromUserName":req.get("ToUserName", ""),
+							"CreateTime":int(time.time()),
+							"MsgType":"text",
+							"Content":req.get("Recognition", u"未识别")
+						}
+				else:
+					resp = {
+						
+							 "ToUserName":req.get("FromUserName", ""),
+							 "FromUserName":req.get("ToUserName", ""),
+							 "CreateTime":int(time.time()),
+							 "MsgType":"text",
+							 "Content":"I love you, itcast!"
+					}
+				resp_xml = xmltodict.unparse({"xml":resp})
+				self.write(resp_xml)	
+				
+
+	8、关注/取消关注事件：
+
+		用户在关注与取消关注公众号时，微信会把这个事件推送到开发者填写的URL。
+
+		微信服务器在五秒内收不到响应会断掉连接，并且重新发起请求，总共重试三次。
+
+		假如服务器无法保证在五秒内处理并回复，可以直接回复空串，微信服务器不会对此作任何处理，并且不会发起重试。
+
+			<xml>
+			<ToUserName><![CDATA[toUser]]></ToUserName>
+			<FromUserName><![CDATA[FromUser]]></FromUserName>
+			<CreateTime>123456789</CreateTime>
+			<MsgType><![CDATA[event]]></MsgType>
+			<Event><![CDATA[subscribe]]></Event>
+			</xml>
+
+			参数			描述
+			ToUserName		开发者微信号
+			FromUserName	发送方帐号（一个OpenID）
+			CreateTime		消息创建时间 （整型）
+			MsgType			消息类型，event
+			Event			事件类型，subscribe(订阅)、unsubscribe(取消订阅)
+
+		
+			
+
+
 
 
 
@@ -799,8 +938,33 @@
 
 "----------------------------------------------------------------"
 
-
 						微信网页授权						
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 "----------------------------------------------------------------"
 
