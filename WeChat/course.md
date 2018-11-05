@@ -980,10 +980,253 @@
 			self.write(resp_xml)	
 
 
+	9、获取接口调用凭据：
+		
+		access_token是公众号的全局唯一票据，公众号调用各接口时都需使用access_token。
+		开发者需要进行妥善保存。access_token的存储至少要保留512个字符空间。
+		access_token的有效期目前为2个小时，需定时刷新，重复获取将导致上次获取的access_token失效。
 
 
+		接口说明：
+
+		
+		请求方法：
+
+			https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=APPID&secret=APPSECRET
+
+		参数说明：
+
+			参数          是否必须           说明
+
+			grant_type     是              获取access_token填写client_credential
+
+			appid          是              第三方用户唯一凭证
+
+			secret         是              第三方用于唯一凭证秘药，即appsecret
+
+		返回值：
+
+			正确时返回的JSON数据包如下：
+
+				{
+					"access_token":"ACCESS_TOKEN",
+					"expires_in":7200
+				}
+
+				参数              说明
+
+				access_token     获取到的凭证
+
+				expires_in       凭证有效时间，单位：秒
+
+			
+			错误时微信会返回JSON数据包如下:
+
+				{
+					"errcode":40013,
+					"errcode":40013,
+				}
+		
+		
+		代码实现：
+
+			class  AccessToken(object):
+				"""微信接口调用Token"""
+				_access_token ={
+					"token":"",
+					"updatetime":tatetime.datetime.new()
+				}
+			
+			@classmethod
+			@tornado.gen.coroutine
+			def update_access_token(cls):
+				client = AsyncHTTPClient()
+				url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s" % (WECHAT_APPID, WECHAT_APPSECRET)
+				resp = yield client.fetch(url)
+				print resp.body
+				ret = json.loads(resp.body)
+				token = ret.get("access_token")
+				if token:
+					cls._access_token["token"] = token
+				    cls._access_token['updatetime'] = datetime.datetime.now()
+
+			@classmethod
+			@tornado.gen.coroutine
+			def get_access_token(cls):
+				"""获取access_token"""
+				if not cls._access_token["token"] or (datetime.datetime.now()-cls._access_token["updatetime"]).seconds>=6600:
+					yield cls.update_access_token()
+				raise tornado.gen.Return(cls._access_token["token"])
+
+	10、带参数的二维码：
+
+		为了满足用户渠道推广分析和用户帐号绑定等场景的需要，公众平台提供了生成带参数二维码的接口。
+		使用该接口可以获得多个带不同场景值的二维码，用户扫描后，公众号可以接收到事件推送。
+		
+		目前有2种类型的二维码：
+
+			临时二维码，是有过期时间的，最长可以设置为在二维码生成后的30天（即2592000秒）后过期，
+			但能够生成较多数量。临时二维码主要用于帐号绑定等不要求二维码永久保存的业务场景
+
+			永久二维码，是无过期时间的，但数量较少（目前为最多10万个）。
+			永久二维码主要用于适用于帐号绑定、用户来源统计等场景。
+	
+
+		获取带参数的二维码的过程包括两步，首先创建二维码ticket，然后凭借ticket到指定URL换取二维码。
 
 
+		创建二维码ticket：
+		
+			每次创建二维码ticket需要提供一个开发者自行设定的参数（scene_id），
+			分别介绍临时二维码和永久二维码的创建二维码ticket过程。
+
+			临时二维码请求说明：
+
+				http请求方式: POST
+				URL: https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token=TOKEN
+				POST数据格式：json
+				POST数据例子：
+					{"expire_seconds": 604800, "action_name": "QR_SCENE", "action_info":
+						{"scene": {"scene_id": 123}}}
+			
+			永久二维码请求说明：
+
+				http请求方式: POST
+				URL: https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token=TOKEN
+				POST数据格式：json
+				POST数据例子：{"action_name": "QR_LIMIT_SCENE", "action_info": {"scene": {"scene_id": 123}}}
+				或者也可以使用以下POST数据创建字符串形式的二维码参数：
+				{"action_name": "QR_LIMIT_STR_SCENE", "action_info": {"scene": {"scene_str": "123"}}}
+			
+				参数                    说明
+
+				expire_seconds        该二维码的有效时间，以秒为单位，最大不超过2592000（即30天），
+									  此字段如果不填，则默认有效期为30秒。
+			
+				action_name           二维码类型，QR_SCENE为临时,QR_LIMIT_SCENE为永久,
+									  QR_LIMIT_STR_SCENE为永久的字符串参数值
+
+				action_info           二维码详细信息
+
+				scene_id              场景值ID，临时二维码时为32位非0整型，永久二维码时最大值为100000
+									 （目前参数只支持1--100000）
+
+				scene_str             场景值ID,字符串形式的ID字符串类型，长度限制为1到64,仅永久二维码支持此字段
+		
+
+			返回说明:
+				
+				正确的Json返回结果:
+
+				{"ticket":"gQH47joAAAAAAAAAASxodHRwOi8vd2VpeGluLnFxLmNvbS9xL2taZ2Z3TVRt
+					NzJXV1Brb3ZhYmJJAAIEZ23sUwMEmm3sUw==","expire_seconds":60,
+					"url":"http:\/\/weixin.qq.com\/q\/kZgfwMTm72WWPkovabbI"}
+
+				参数              说明
+
+				ticket          获取的二维码ticket，凭借此ticket可以在有效时间内换取二维码。
+
+				expire_seconds	该二维码有效时间，以秒为单位。 最大不超过2592000（即30天）。
+
+				url	            二维码图片解析后的地址，开发者可根据该地址自行生成需要的二维码图片
+			
+				
+				错误的Json返回示例:
+
+					{"errcode":40013,"errmsg":"invalid appid"}
+
+
+		通过ticket换取二维码:
+
+			获取二维码ticket后，开发者可用ticket换取二维码图片。请注意，本接口无须登录态即可调用。
+
+			请求说明
+
+				HTTP GET请求（请使用https协议）
+				https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=TICKET
+
+		
+		代码实例:
+
+			class QRCodeHandler(RequestHandler):
+				@tornado.gen.coroutine
+				def get(self):
+					access_token = yield AccessToken.get_access_token()
+					print "access_token", access_token
+					url = "https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token=%s" % access_token
+					scene_id = self.get_argument("scene_id")
+					req_body = '{"expire_seconds": 7200, "action_name": "QR_SCENE", "action_info": {
+								"scene": {"scene_id": %s}}}' % scene_id
+					
+					client = AsyncHTTPClient()
+					req = HTTPRequest(url, method="POST", body=req_body)
+			        resp = yield client.fetch(req)
+					if "errcode" in resp.body:
+			            self.write("error")
+					else:
+						resp_data = json.loads(resp.body)
+						ticket = resp_data['ticket']
+				        self.write('<img src="https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=%s">' % ticket)
+						
+
+	11、扫描带参数二维码：
+
+		用户扫描带场景值二维码时，可能推送以下两种事件：
+
+			如果用户还未关注公众号，则用户可以关注公众号，关注后微信会将带场景值关注事件推送给开发者。
+
+			如果用户已经关注公众号，则微信会将带场景值扫描事件推送给开发者。
+
+		1. 用户未关注时，进行关注后的事件推送
+
+			推送XML数据包示例：
+
+			<xml><ToUserName><![CDATA[toUser]]></ToUserName>
+			<FromUserName><![CDATA[FromUser]]></FromUserName>
+			<CreateTime>123456789</CreateTime>
+			<MsgType><![CDATA[event]]></MsgType>
+			<Event><![CDATA[subscribe]]></Event>
+			<EventKey><![CDATA[qrscene_123123]]></EventKey>
+			<Ticket><![CDATA[TICKET]]></Ticket>
+			</xml>
+
+			参数              描述
+
+			ToUserName		开发者微信号
+			FromUserName	发送方帐号（一个OpenID）
+			CreateTime		消息创建时间 （整型）
+			MsgType			消息类型，event
+			Event			事件类型，subscribe
+			EventKey		事件KEY值，qrscene_为前缀，后面为二维码的参数值
+			Ticket			二维码的ticket，可用来换取二维码图片
+
+		
+		2. 用户已关注时的事件推送
+
+			推送XML数据包示例：
+
+			<xml>
+			<ToUserName><![CDATA[toUser]]></ToUserName>
+			<FromUserName><![CDATA[FromUser]]></FromUserName>
+			<CreateTime>123456789</CreateTime>
+			<MsgType><![CDATA[event]]></MsgType>
+			<Event><![CDATA[SCAN]]></Event>
+			<EventKey><![CDATA[SCENE_VALUE]]></EventKey>
+			<Ticket><![CDATA[TICKET]]></Ticket>
+			</xml>
+		
+			参数			描述
+			ToUserName		开发者微信号
+			FromUserName	发送方帐号（一个OpenID）
+			CreateTime		消息创建时间 （整型）
+			MsgType			消息类型，event
+			Event			事件类型，SCAN
+			EventKey		事件KEY值，是一个32位无符号整数，即创建二维码时的二维码scene_id
+			Ticket			二维码的ticket，可用来换取二维码图片
+
+		3. 代码
+
+			
 
 
 
