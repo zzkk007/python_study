@@ -68,10 +68,10 @@
 	Docker Machine Docker Machine 是一个简化Docker 安装的命令行工具，通过一个简单的命令行即可在
 			相应的平台上安装Docker。
 
-	
-	
 
 
+	
+	
 
 
 
