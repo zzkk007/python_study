@@ -929,20 +929,276 @@
 		我们也将能够得到前一个指令成功执行构建出的镜像，这对调试 Dockerfile 非常有帮助。
 		我们可以运行最新的这个镜像定位指令失败的原因。
 
+		我们来看一个调试的例子。Dockerfile 内容如下：
+
+			FROM  busybox
+			RUN  touch tempfile
+			RUN  /bin/bash -c echo "continue to build..."
+			COPY testfile /
+
+		执行 docker build:
+
+			root@ubuntu:~# docker build -t image-debug .
+
+			root@zk-virtual-machine:~# docker build -t image-debug .
+			Sending build context to Docker daemon  12.29kB
+			Step 1/4 : FROM busybox
+			latest: Pulling from library/busybox
+			90e01955edcd: Pull complete 
+			Digest: sha256:2a03a6059f21e150ae84b0973863609494aad70f0a80eaeb64bddd8d92465812
+			Status: Downloaded newer image for busybox:latest
+			---> 59788edf1f3e
+			Step 2/4 : RUN touch tmpfile
+			---> Running in 4191f31e37dc
+			Removing intermediate container 4191f31e37dc
+			---> b49b56c46860
+			Step 3/4 : RUN /bin/bash -c echo "continue to build ..."
+			---> Running in 15461112c08a
+			/bin/sh: /bin/bash: not found
+			The command '/bin/sh -c /bin/bash -c echo "continue to build ..."' returned a non-zero code: 127
+
+			Dockerfile 在执行第三步 RUN 指令时失败。
+			我们可以利用第二步创建的镜像 4191f31e37dc 进行调试，方式是通过 docker run -it 启动镜像的一个容器。
+
+			root@zk-virtual-machine:~# docker run -it b49b56c46860
+			/ # 
+			/ # /bin/sh -c /bin/bash -c echo "continue to build ..."
+			sh: /bin/bash: not found
+			/#
+
+			手工执行 RUN 指令很容易定位失败的原因是 busybox 镜像中没有 bash。
+			虽然这是个极其简单的例子，但它很好地展示了调试 Dockerfile 的方法。
+
+			到这里相信大家对 Dockerfile 的功能和使用流程有了比较完整的印象，
+			但还没有系统学习 Dockerfile 的各种指令和实际用法
+	
+	4.7 Dockerfile 常用指令：
+
+		下面列出了 Dockerfile 中最常用的指令：
+
+			FROM : 指定 base 镜像。
+
+			MAINTAINER : 设置镜像的作者，可以是任意字符串。
+
+			COPY : 将文件从 build context 复制到镜像。
+		
+				COPY 支持两种形式：
+
+				1. COPY src dest
+				2. COPY ["src", "dest"]
+		
+				注意：src 只能指定 build context 中的文件或目录。
+		
+			ADD: 与 COPY 类似，从 build context 复制文件到镜像。
+				不同的是，如果 src 是归档文件（tar, zip, tgz, xz 等），文件会被自动解压到 dest。
+		
+			ENV : 设置环境变量，环境变量可被后面的指令使用。
+				例如：
+				...
+				ENV MY_VERSION 1.3
+				RUN apt-get install -y mypackage=$MY_VERSION
+				...
+		
+		
+			EXPOSE: 指定容器中的进程会监听某个端口，Docker 可以将该端口暴露出来。我们会在容器网络部分详细讨论。
+		
+			VOLUME: 将文件或目录声明为 volume。我们会在容器存储部分详细讨论。
+		
+			WORKDIR: 为后面的 RUN, CMD, ENTRYPOINT, ADD 或 COPY 指令设置镜像中的当前工作目录。
+		
+			RUN : 在容器中运行指定的命令。
+		
+			CMD : 容器启动时运行指定的命令。
+				Dockerfile 中可以有多个 CMD 指令，但只有最后一个生效。
+				CMD 可以被 docker run 之后的参数替换。
+		
+			ENTRYPOINT:	设置容器启动时运行的命令。
+						Dockerfile 中可以有多个 ENTRYPOINT 指令，但只有最后一个生效。
+						CMD 或 docker run 之后的参数会被当做参数传递给 ENTRYPOINT。
+		
+		下面我们来看一个较为全面的 Dockerfile：
+
+			# my dockerfile
+
+			FROM busybox						  "指定base镜像"
+			MAINTAINER cloudman@example.net		  "设置镜像的作者"
+			WORKDIR   /testdir					  "指令设置镜像中的当前工作目录,如果WORKDIR不存在，Docker会自动为我们创建"
+			RUN   touch tmpfile1				  "创建tmpfile1文件"	
+			COPY ["tmpfile2","."]                 "从build context 复制到当前工作目录"
+			ADD ["buch.tar.gz","."]               "令从 build context 复制的归档文件 bunch.tar.gz已经自动解压。"
+			ENV WELCOME "You are in my container,welcome!"  "设置环境变量"
+
+			注：Dockerfile 支持以“#”开头的注释。
+
+			构建前确保 build context 中存在需要的文件(buch.tar.gz、tempfile2、Dockerfile)。
+
+			依次执行 Dockerfile 指令，完成构建。
+
+	
+	4.8 RUN vs CMD vs ENTRYPOINT:
+
+		RUN、CMD 和 ENTRYPOINT 这三个 Dockerfile 指令看上去很类似，很容易混淆。
+		本节将通过实践详细讨论它们的区别。简单的说：
+
+			1. RUN 执行命令并创建新的镜像层，RUN 经常用于安装软件包。
+
+			2. CMD 设置容器启动后默认执行的命令及其参数，但 CMD 能够被 docker run 后面跟的命令行参数替换。
+
+			3. ENTRYPOINT 配置容器启动时运行的命令。
+
+		Shell 和 Exec 格式:
+
+			我们可用两种方式指定 RUN、CMD 和 ENTRYPOINT 要运行的命令：
+			Shell 格式和 Exec 格式二者在使用上有细微的区别。
+
+			Shell 格式:
+
+				<instruction> <command>
+
+				例如：
+
+					RUN apt-get install python3  
+					CMD echo "Hello world"  
+					ENTRYPOINT echo "Hello world"
+
+				当指令执行时，shell 格式底层会调用 /bin/sh -c <command> 。
+
+				例如下面的 Dockerfile 片段：
+
+					ENV name Cloud Man  
+					ENTRYPOINT echo "Hello, $name"
+
+				执行 docker run <image> 将输出：
+					Hello, Cloud Man
+
+				注意环境变量 name 已经被值 Cloud Man 替换。
+
+
+			Exec 格式:
+
+				<instruction> ["executable", "param1", "param2", ...]
+
+				例如：
+
+					RUN ["apt-get", "install", "python3"]  
+					CMD ["/bin/echo", "Hello world"]  
+					ENTRYPOINT ["/bin/echo", "Hello world"]
+
+				当指令执行时，会直接调用 <command>，不会被 shell 解析。
+				例如下面的 Dockerfile 片段：
+
+					ENV name Cloud Man  
+					ENTRYPOINT ["/bin/echo", "Hello, $name"]
+
+				运行容器将输出：
+					Hello, $name
+
+				注意环境变量“name”没有被替换。
+				如果希望使用环境变量，照如下修改
+
+				ENV name Cloud Man  
+				ENTRYPOINT ["/bin/sh", "-c", "echo Hello, $name"]
+				运行容器将输出：
+					Hello, Cloud Man
+		
+			CMD 和 ENTRYPOINT 推荐使用 Exec 格式，因为指令可读性更强，更容易理解。RUN 则两种格式都可以。
+		
+		RUN:
+
+			RUN 指令通常用于安装应用和软件包。		
+			
+			RUN apt-get update && apt-get install -y \  
+				bzr \
+				cvs \
+				git \
+			    mercurial \
+				subversion
+
+			注意：apt-get update 和 apt-get install 被放在一个 RUN 指令中执行，
+			这样能够保证每次安装的是最新的包。
+			如果 apt-get install 在单独的 RUN 中执行，则会使用 apt-get update 创建的镜像层，
+			而这一层可能是很久以前缓存的。
+
+		CMD:
+
+			CMD 指令允许用户指定容器的默认执行的命令。
+
+			此命令会在容器启动且 docker run 没有指定其他命令时运行。
+
+				1. 如果 docker run 指定了其他命令，CMD 指定的默认命令将被忽略。
+				2. 如果 Dockerfile 中有多个 CMD 指令，只有最后一个 CMD 有效。
+
+			CMD 有三种格式：
+
+				1.  Exec 格式：CMD ["executable","param1","param2"]
+					这是 CMD 的推荐格式。
+				
+				2. CMD ["param1","param2"] 为 ENTRYPOINT 提供额外的参数，此时 ENTRYPOINT 必须使用 Exec 格式。
+				
+				3. Shell 格式：CMD command param1 param2
+			
+			Exec 和 Shell 格式前面已经介绍过了。
+			第二种格式 CMD ["param1","param2"] 要与 Exec 格式 的 ENTRYPOINT 指令配合使用，
+			其用途是为 ENTRYPOINT 设置默认的参数。我们将在后面讨论 ENTRYPOINT 时举例说明。
+
+			下面看看 CMD 是如何工作的。Dockerfile 片段如下：
+
+				CMD echo "Hello world"
+			运行容器 docker run -it [image] 将输出：
+				Hello world
+			但当后面加上一个命令，比如 docker run -it [image] /bin/bash，CMD 会被忽略掉，命令 bash 将被执行：
+			root@10a32dc7d3d3:/#
 		
 
+		ENTRYPOINT:
 
+			ENTRYPOINT 指令可让容器以应用程序或者服务的形式运行。
 
+			ENTRYPOINT 看上去与 CMD 很像，它们都可以指定要执行的命令及其参数。
+			不同的地方在于 ENTRYPOINT 不会被忽略，一定会被执行，即使运行 docker run 时指定了其他命令。
+	
+			ENTRYPOINT 有两种格式：
+				1. Exec 格式：ENTRYPOINT ["executable", "param1", "param2"] 这是 ENTRYPOINT 的推荐格式。
+				2. Shell 格式：ENTRYPOINT command param1 param2
 
+			在为 ENTRYPOINT 选择格式时必须小心，因为这两种格式的效果差别很大。
 
+			Exec 格式:
 
+				ENTRYPOINT 的 Exec 格式用于设置要执行的命令及其参数，同时可通过 CMD 提供额外的参数。
+				ENTRYPOINT 中的参数始终会被使用，而 CMD 的额外参数可以在容器启动时动态替换掉。
 
+				比如下面的 Dockerfile 片段：
 
+					ENTRYPOINT ["/bin/echo", "Hello"]  
+				
+					CMD ["world"]
+				
+				当容器通过 docker run -it [image] 启动时，输出为：
+					Hello world
+		
+				而如果通过 docker run -it [image] CloudMan 启动，则输出为：
+				
+					Hello CloudMan
 
+			Shell 格式:
 
+				ENTRYPOINT 的 Shell 格式会忽略任何 CMD 或 docker run 提供的参数。
 
+			最佳实践:
 
+				使用 RUN 指令安装应用和软件包，构建镜像。
 
+				如果 Docker 镜像的用途是运行应用程序或服务，
+				比如运行一个 MySQL，应该优先使用 Exec 格式的 ENTRYPOINT 指令。
+				CMD 可为 ENTRYPOINT 提供额外的默认参数，同时可利用 docker run 命令行替换默认参数。
 
+				如果想为容器设置默认的启动命令，可使用 CMD 指令。用户可在 docker run 命令行中替换此默认命令。
 
+				到这里，我们已经具备编写 Dockerfile 的能力了。如果大家还觉得没把握，
+				推荐一个快速掌握 Dockerfile 的方法：去 Docker Hub 上参考那些官方镜像的 Dockerfile。
+
+	4.9 镜像命名最佳实践：
+
+		
 
