@@ -354,17 +354,82 @@
 
 		Docker 镜像:
 
-			
+			可将 Docker 镜像看着只读模板，通过它可以创建 Docker 容器。
+
+			例如某个镜像可能包含一个 Ubuntu 操作系统、一个 Apache HTTP Server 以及用户开发的 Web 应用。
+
+			镜像有多种生成方法：
+				可以从无到有开始创建镜像
+				也可以下载并使用别人创建好的现成的镜像
+				还可以在现有镜像上创建新的镜像
+
+				我们可以将镜像的内容和创建步骤描述在一个文本文件中，这个文件被称作 Dockerfile，
+				通过执行 docker build <docker-file> 命令可以构建出 Docker 镜像，后面我们会讨论。
+
+		Docker 容器:
+
+			Docker 容器就是 Docker 镜像的运行实例。
+
+			用户可以通过 CLI（docker）或是 API 启动、停止、移动或删除容器。
+			可以这么认为，对于应用软件，镜像是软件生命周期的构建和打包阶段，而容器则是启动和运行阶段。
+
+		Registry：
+
+			Registry 是存放 Docker 镜像的仓库，Registry 分私有和公有两种。
+
+			Docker Hub（https://hub.docker.com/） 是默认的 Registry，
+			由 Docker 公司维护，上面有数以万计的镜像，用户可以自由下载和使用。
+
+			docker pull 命令可以从 Registry 下载镜像。
+			docker run 命令则是先下载镜像（如果本地没有），然后再启动容器。
+
+
+	3.4、Docker 组件是如何工作的：
+
+		还记得我们运行的第一个容器吗？现在通过它来体会一下 Docker 各个组件是如何协作的。
+		容器启动过程如下：
+
+			root@ubuntu:~#docker run -d -p 80:80 httpd		(1)
+			Unable to find image 'httpd:latest' locally		(2)
+			latest:Pulling from library/httpd
+			385a066cd84a:Pull complete                      (3)
+				....
+			Status: Downloaded newer image for httpd:latest (4)
+			170edfc2054fsgfds3w43214324u2h52nr432194jdsfksjadfwer53fsa212 (5)
+
+				(1)Docker 客户端执行 docker run 命令。
+				(2)Docker daemon 发现本地没有 httpd 镜像。
+				(3)daemon 从 Docker Hub 下载镜像。
+				(4)下载完成，镜像 httpd 被保存到本地。
+				(5)Docker daemon 启动容器。
+		
+			docker images 可以查看到下载到本地的镜像。	
+			docker ps 或者 docker container ls 显示容器正在运行。
+
+		Docker 借鉴了集装箱的概念。标准集装箱将货物运往世界各地，
+		Docker 将这个模型运用到自己的设计哲学中，唯一不同的是：集装箱运输货物，而 Docker 运输软件。
+
+		每个容器都有一个软件镜像，相当于集装箱中的货物。容器可以被创建、启动、关闭和销毁。
+		和集装箱一样，Docker 在执行这些操作时，并不关心容器里到底装的什么，
+		它不管里面是 Web Server，还是 Database。
+
+		用户不需要关心容器最终会在哪里运行，因为哪里都可以运行。
+
+		开发人员可以在笔记本上构建镜像并上传到 Registry，
+		然后 QA 人员将镜像下载到物理或虚拟机做测试，最终容器会部署到生产环境。
+
+		使用 Docker 以及容器技术，我们可以快速构建一个应用服务器、一个消息中间件、一个数据库、一个持续集成环境。
+		因为 Docker Hub 上有我们能想到的几乎所有的镜像。
+
+		如果你是一个开发人员，想学习怎么用 django 开发 Python Web 应用，执行 docker run django，
+		在容器里随便折腾吧，不用担心会搞乱 Host 的环境。
+
+
+4、 镜像
 
 
 
-
-
-
-
-
-
-
+	
 
 
 
