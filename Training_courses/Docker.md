@@ -1344,8 +1344,565 @@
 			3. 安全原因很多组织不允许将镜像放到外网。
 		
 		解决方案就是搭建本地的 Registry。
+		
+			Docker 已经将 Registry 开源了，同时在 Docker Hub 上也有官方的镜像 registry。
+			下面我们就在 Docker 中运行自己的 registry。
+
+			1. 启动 registry 容器。
+
+				root@ubuntu:~# docker run -d -p 5000:5000 -v /myregistry:/var/lib/registry registry:2
+
+				我们使用的镜像是 registry:2。
+				-d 是后台启动容器。
+				-p 将容器的 5000 端口映射到 Host 的 5000 端口。5000 是 registry 服务端口。
+					端口映射我们会在容器网络章节详细讨论。
+				-v 将容器 /var/lib/registry 目录映射到 Host 的 /myregistry，用于存放镜像数据。
+				-v 的使用我们会在容器存储章节详细讨论。
+
+			2. 通过 docker tag 重命名镜像，使之与 registry 匹配。
+
+				root@ubuntu:~# docker tag zhangkun09211916/httpd:v1 registry.example.net:5000/zhangkun09211916/httpd:v1
+				我们在镜像的前面加上了运行 registry 的主机名称和端口。
+
+				前面已经讨论了镜像名称由 repository 和 tag 两部分组成。
+				而 repository 的完整格式为：[registry-host]:[port]/[username]/xxx
+				
+				只有 Docker Hub 上的镜像可以省略 [registry-host]:[port] 。
+
+			3. 通过 docker push 上传镜像。
+
+				root@ubuntu:~# docker push  registry.example.net:5000/zhangkun09211916/httpd:v1          
+
+			4. 现在已经可通过 docker pull 从本地 registry 下载镜像了。
+
+				root@ubuntu:~#docker pull registry.example.net:5000/zhangkun09211916/httpd:v1  
+
+			以上是搭建本地 registry 的简要步骤。当然 registry 也支持认证，https 安全传输等特性，
+			具体可以参考官方文档 https://docs.docker.com/registry/configuration/
+	
+	4.12  Docker 镜像小结:
+
+		这一部分我们首先讨论了镜像的分层结构，然后学习了如何构建镜像，
+		最后实践使用 Docker Hub 和本地 registry。
+	
+		下面是镜像的常用操作子命令：
+
+			images    显示镜像列表
+			history   显示镜像构建历史
+
+			commit    从容器创建新镜像
+			build     从 Dockerfile 构建镜像
+		
+			tag       给镜像打 tag
+
+			pull      从 registry 下载镜像
+			push      将 镜像 上传到 registry
+
+			rmi       删除 Docker host 中的镜像
+			search    搜索 Docker Hub 中的镜像
+
+		除了 rmi 和 search，其他命令都已经用过了。
+
+			rmi 
+				只能删除 host 上的镜像，不会删除 registry 的镜像。
+
+				如果一个镜像对应了多个 tag，只有当最后一个 tag 被删除时，镜像才被真正删除。
+				例如 host 中 debian 镜像有两个 tag：
+
+			search:
+
+				search 让我们无需打开浏览器，在命令行中就可以搜索 Docker Hub 中的镜像。
+
+				root@ubuntu:~# docker search httpd
+
+5、容器：
+
+	我们学习了如何构建 Docker 镜像，并通过镜像运行容器。
+	本章将深入讨论容器：学习容器的各种操作，容器各种状态之间如何转换，以及实现容器的底层技术。
+
+	5.1 如何运行容器：
+
+		docker run 是启动容器的方法。
+		在讨论 Dockerfile 时我们已经学习到，可用三种方式指定容器启动时执行的命令：
+
+			1. CMD 指令
+
+			2. ENTRYPOINT 指令
+
+			3. 在docker run 命令行中指定。
+
+		例如下面的例子：
+		
+			root@zk-virtual-machine:~# docker run ubuntu pwd
+			/
+			root@zk-virtual-machine:~# 
+
+		容器启动时执行 pwd，返回的 / 是容器中的当前目录。 
+		执行docker ps或docker container ls 可以查看Docker host中当前运行的容器：
+
+			root@zk-virtual-machine:~# docker ps
+			CONTAINER ID        IMAGE   COMMAND    CREATED      STATUS      PORTS        NAMES
+			a82555f4986f        httpd   "httpd-foreground"   46 hours ago Up 46 hours         0.0.0.0:80->80/tcp   agitated_sammet
+
+		怎么没有容器？用 docker ps -a 或 docker container ls -a 看看。
+
+			root@zk-virtual-machine:~# docker ps -a
+			CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                      PORTS                NAMES
+			a19ce8409ead        ubuntu              "pwd"                    2 minutes ago       Exited (0) 2 minutes ago                         cocky_hamilton
+			e14f3e6bdb79        b49b56c46860        "sh"                     21 hours ago        Exited (130) 21 hours ago                        goofy_clarke
+			15461112c08a        b49b56c46860        "/bin/sh -c '/bin/ba…"   21 hours ago        Exited (127) 21 hours ago                        stoic_bose
+			b268b625358e        ubuntu              "/bin/bash"              25 hours ago        Exited (100) 22 hours ago                        zen_lewin
+			6ddb67368e71        ubuntu              "/bin/bash"              25 hours ago        Exited (0) 25 hours ago                          kind_ride
+			ae7186116373        centos              "/bin/bash"              25 hours ago        Exited (0) 25 hours ago                          angry_ardinghelli
+			4592ec02e89b        hello-world         "/hello"                 26 hours ago        Exited (0) 26 hours ago                          cocky_noether
+			e57e23f06daa        centos              "/bin/bash"              44 hours ago        Exited (127) 44 hours ago                        brave_gates
+			a76762160ae8        hello-world         "/hello"                 45 hours ago        Exited (0) 45 hours ago                          elegant_yalow
+			8609f530f520        hello-world         "/hello"                 45 hours ago        Exited (0) 45 hours ago                          stupefied_villani
+			a82555f4986f        httpd               "httpd-foreground"       46 hours ago        Up 46 hours                 0.0.0.0:80->80/tcp   agitated_sammet
+
+		-a 会显示所有状态的容器，可以看到，之前的容器已经退出了，状态为Exited。
+
+		这种“一闪而过”的容器通常不是我们想要的结果，我们希望容器能够保持 runing 状态，这样才能被我们使用。
+
+		
+		让容器长期运行:
+
+			如何让容器保存运行呢？
+			因为容器的生命周期依赖于启动时执行的命令，只要该命令不结束，容器也就不会退出。
+			理解了这个原理，我们就可以通过执行一个长期运行的命令来保持容器的运行状态。例如执行下面的命令：
+
+			root@ubuntu:~# docker run ubuntu /bin/bash -c "while true;do sleep 1;done"
+
+			while 语句让 bash 不会退出。我们可以打开另一个终端查看容器的状态：
+
+			可见容器仍处于运行状态。不过这种方法有个缺点：它占用了一个终端。
+
+			我们可以加上参数 -d 以后台方式启动容器。
+
+			root@ubuntu:~# docker run -d unbuntu /bin/bash -c "while true;do sleep 1;done"
+
+			容器启动后回到了 docker host 的终端。
+			这里看到 docker 返回了一串字符，这是容器的 ID。通过 docker ps 查看容器：
 
 
+			现在我们有了两个正在运行的容器。这里注意一下容器的 CONTAINER ID和 NAMES 这两个字段。
+
+			CONTAINER ID 是容器的 “短ID”，前面启动容器时返回的是 “长ID”。短ID是长ID的前12个字符。
+
+			NAMES 字段显示容器的名字，在启动容器时可以通过 --name 参数显示地为容器命名，
+			如果不指定，docker 会自动为容器分配名字。
+
+			对于容器的后续操作，我们需要通过"长ID","短ID"或者"名称"来指定要操作的容器。
+			
+			比如下面停止一个容器：
+
+			root@ubuntu:~# docker stop fe39cc3ccc5b
+
+			这里我们就是通过 “短ID” 指定了要停止的容器
+
+			通过 while 启动的容器虽然能够保持运行，但实际上没有干什么有意义的事情。
+			容器常见的用途是运行后台服务，例如前面我们已经看到的 http server：
+			
+
+			这一次我们用 --name 指定了容器的名字。 我们还看到容器运行的命令是httpd-foreground，
+			通过 docker history 可知这个命令是通过 CMD 指定的。
+
+			root@zk-virtual-machine:~# docker run --name "my_http_server" -d httpd
+			229d6290867189f35029a405399c09b3d13b1f51ad9b27d4be4bb6ba2f5a4495
+			root@zk-virtual-machine:~# 
+			root@zk-virtual-machine:~# 
+			root@zk-virtual-machine:~# docker ps
+			CONTAINER ID   IMAGE   COMMAND   CREATED   STATUS       PORTS            NAMES
+			229d62908671   httpd "httpd-foreground"   4 seconds ago Up 2 seconds 80/tcp     my_http_server
+			
+			root@zk-virtual-machine:~# docker history httpd
+			IMAGE               CREATED             CREATED BY                                  SIZE COMMENT
+			55a118e2a010        2 weeks ago         /bin/sh -c #(nop)  CMD ["httpd-foreground"]     0B
+			<missing>           2 weeks ago         /bin/sh -c #(nop)  EXPOSE 80/tcp                0B          
+			<missing>           2 weeks ago         /bin/sh -c #(nop) COPY file:761e313354b918b6…   133B         
+			
+			我们经常需要进到容器里去做一些工作，比如查看日志、调试、启动其他进程等。
+
+	5.2 如何进入容器内部:
+
+		我们经常需要进到容器里去做一些工作，比如查看日志、调试、启动其他进程等。
+		有两种方法进入容器：attach 和 exec。
+		
+		docker attach:
+
+			通过 docker attach 可以 attach 到容器启动命令的终端，例如：
+
+			root@zk-virtual-machine:~#docker run -d ubuntu /bin/bash -c "while true;do sleep1;echo I_am_in_container;done"
+			ed7d16aabc34c230bbf2526d3086b798cd620cc5f6d1bd2a51fe8c81663a4396
+			root@zk-virtual-machine:docker attach ed7d16aabc34c230bbf2526d3086b798cd620cc5f6d1bd2a51fe8c81663a4396
+			I_am_in_container
+			I_am_in_container
+			I_am_in_container
+			I_am_in_container
+
+			这次我们通过 “长ID” attach 到了容器的启动命令终端，之后看到的是echo 每隔一秒打印的信息。
+			注：可通过 Ctrl+p 然后 Ctrl+q 组合键退出 attach 终端。
+
+		docker exec:
+
+			通过 docker exec 进入相同的容器：
+
+			root@ubuntu:~# docker exec -it 969fac2f0e41 bash (1)
+			root@969fac2f0e41:/#		(2)
+			root@969fac2f0e41:/# ps -elf (3)
+			...
+			root@969fac2f0e41:/#exit		(4)
+			root@ubuntu:~#
+
+
+			(1) -it 以交互模式打开 pseudo-TTY，执行 bash，其结果就是打开了一个 bash 终端。
+			(2) 进入到容器中，容器的 hostname 就是其 “短ID”。
+			(3) 可以像在普通 Linux 中一样执行命令。ps -elf 显示了容器启动进程while 以及当前的 bash 进程。
+			(4) 执行 exit 退出容器，回到 docker host。
+
+			docker exec -it <container> bash|sh 是执行 exec 最常用的方式。
+
+		attach VS exec:
+
+			attach 直接进入容器 启动命令 的终端，不会启动新的进程。
+
+			exec 则是在容器中打开新的终端，并且可以启动新的进程。
+
+			如果想直接在终端中查看启动命令的输出，用 attach；其他情况使用 exec。
+
+			当然，如果只是为了查看启动命令的输出，可以使用 docker logs 命令：
+
+			root@ubuntu:~#docker logs -f 969fac2f0e41
+
+			f 的作用与 tail -f 类似，能够持续打印输出。
+
+
+	5.3  运行容器的最佳实践:
+
+		按用途容器大致可分为两类：服务类容器和工具类的容器。
+
+		1. 服务类容器以 daemon 的形式运行，对外提供服务。比如 web server，数据库等。
+			通过 -d 以后台方式启动这类容器是非常合适的。
+			如果要排查问题，可以通过 exec -it 进入容器。
+	
+		2. 工具类容器通常给能我们提供一个临时的工作环境，通常以 run -it 方式运行，
+			比如：
+
+			root@zk-virtual-machine:~# docker run -it busybox
+			/ # wget www.baidu.com
+			Connecting to www.baidu.com (104.193.88.77:80)index.html           100% |*******|  2381  0:00:00 ETA
+			/ # exit
+			root@zk-virtual-machine:~# 
+
+			运行 busybox，run -it 的作用是在容器启动后就直接进入。
+			我们这里通过 wget 验证了在容器中访问 internet 的能力。
+			执行 exit 退出终端，同时容器停止。
+
+			工具类容器多使用基础镜像，例如 busybox、debian、ubuntu 等。
+
+		3. 容器运行相关的知识点：
+
+				当 CMD 或 Entrypoint 或 docker run 命令行指定的命令运行结束时，容器停止。
+
+				通过 -d 参数在后台启动容器。
+
+				通过 exec -it 可进入容器并执行命令。
+
+			指定容器的三种方法：
+
+				短ID。
+	
+				长ID。
+
+				容器名称。 可通过 --name 为容器命名。重命名容器可执行docker rename。
+
+			容器按用途可分为两类：
+
+				服务类的容器。
+
+				工具类的容器
+
+	5.4 容器的其他操作:
+
+		stop/start/restart 容器
+
+		1. 通过 docker stop 可以停止运行的容器。
+			
+			容器在 docker host 中实际上是一个进程，docker stop 命令本质上是向该进程发送一个 SIGTERM 信号。
+			如果想快速停止容器，可使用 docker kill 命令，其作用是向容器进程发送 SIGKILL 信号。
+
+		2. 对于处于停止状态的容器，可以通过 docker start 重新启动
+
+			docker start 会保留容器的第一次启动时的所有参数。
+			docker restart 可以重启容器，其作用就是依次执行 docker stop 和docker start。
+
+			容器可能会因某种错误而停止运行。对于服务类容器，我们通常希望在这种情况下容器能够自动重启。
+			启动容器时设置 --restart 就可以达到这个效果。
+
+			root@ubuntu:~# docker run -d --restart=always httpd
+
+			--restart=always 意味着无论容器因何种原因退出（包括正常退出），就立即重启。
+			该参数的形式还可以是 --restart=on-failure:3，意思是如果启动进程退出代码非0，则重启容器，最多重启3次。
+
+		3. pause/unpause 容器
+
+			有时我们只是希望暂时让容器暂停工作一段时间，比如要对容器的文件系统打个快照，
+			或者 dcoker host 需要使用 CPU，这时可以执行 docker pause。
+
+			处于暂停状态的容器不会占用 CPU 资源，直到通过 docker unpause 恢复运行。
+
+		4. 删除容器
+
+			root@ubuntu:~#docker ps -a
+
+			使用 docker 一段时间后，host 上可能会有大量已经退出了的容器。
+			
+			这些容器依然会占用 host 的文件系统资源，如果确认不会再重启此类容器，可以通过 docker rm 删除。
+
+			docker rm 一次可以指定多个容器，如果希望批量删除所有已经退出的容器，可以执行如下命令：
+
+			root@ubuntu:~# docker rm -v $(docker ps -aq -f status=exited)
+
+			顺便说一句：docker rm 是删除容器，而 docker rmi 是删除镜像。
+
+	5.5 容器的各种状态：
+
+		容器大致有：create、running、paused、stopped、deleted记住状态。
+
+		1. 可以先创建容器，稍后再启动。
+
+			docker create 创建的容器处于 Created 状态。
+			docker start 将以后台方式启动容器。 
+			
+			docker run 命令实际上是 docker create 和 docker start 的组合。
+
+		2. 只有当容器的启动进程 退出 时，--restart 才生效。 
+
+			退出包括正常退出或者非正常退出。
+			
+			这里举了两个例子：启动进程正常退出或发生 OOM，
+			此时 docker会根据 --restart的策略判断是否需要重启容器。
+			但如果容器是因为执行 docker stop 或docker kill 退出，则不会自动重启
+
+	5.6	限制容器对内存使用：
+
+		一个 docker host 上会运行若干容器，每个容器都需要 CPU、内存和 IO 资源。
+		对于 KVM，VMware 等虚拟化技术，用户可以控制分配多少 CPU、内存资源给每个虚拟机。
+		对于容器，Docker 也提供了类似的机制避免某个容器因占用太多资源而影响其他容器乃至整个 host 的性能。
+
+		1. 内存限额:
+
+			与操作系统类似，容器可使用的内存包括两部分：物理内存和 swap。 
+			Docker 通过下面两组参数来控制容器内存的使用量。
+
+				-m 或 --memory：设置内存的使用限额，例如 100M, 2G。
+
+				--memory-swap：设置 内存+swap 的使用限额。
+			
+			当我们执行如下命令：
+
+				docker run -m 200M --memory-swap=300M ubuntu
+
+				其含义是允许该容器最多使用 200M 的内存和 100M 的 swap。
+				默认情况下，上面两组参数为 -1，即对容器内存和 swap 的使用没有限制。
+
+			下面我们将使用 progrium/stress 镜像来学习如何为容器分配内存。
+			该镜像可用于对容器执行压力测试。执行如下命令：
+
+				docker run -it -m 200M --memory-swap=300M progrium/stress --vm 1 --vm-bytes 280M
+
+				--vm 1：启动 1 个内存工作线程。
+
+				--vm-bytes 280M：每个线程分配 280M 内存。
+			因为 280M 在可分配的范围（300M）内，所以工作线程能够正常工作，其过程是：
+				分配 280M 内存。
+				释放 280M 内存。
+				再分配 280M 内存。
+				再释放 280M 内存。
+				一直循环......
+
+			如果让工作线程分配的内存超过 300M，结果如下：
+				分配的内存超过限额，stress 线程报错，容器退出。
+				如果在启动容器时只指定 -m 而不指定 --memory-swap，那么 --memory-swap 默认为 -m 的两倍，比如：
+				docker run -it -m 200M ubuntu
+				容器最多使用 200M 物理内存和 200M swap。
+	
+	5.7 限制容器对 CPU 资源的使用:
+
+			默认设置下，所有容器可以平等地使用 host CPU 资源并且没有限制。
+
+			Docker 可以通过 -c 或 --cpu-shares 设置容器使用 CPU 的权重。如果不指定，默认值为 1024。
+
+			与内存限额不同，通过 -c 设置的 cpu share 并不是 CPU 资源的绝对数量，而是一个相对的权重值。
+			某个容器最终能分配到的 CPU 资源取决于它的 cpu share 占所有容器 cpu share 总和的比例。
+
+			换句话说：通过 cpu share 可以设置容器使用 CPU 的优先级。
+
+			比如在 host 中启动了两个容器：
+			docker run --name "container_A" -c 1024 ubuntu
+			docker run --name "container_B" -c 512 ubuntu
+			
+			container_A 的 cpu share 1024，是 container_B 的两倍。
+			当两个容器都需要 CPU 资源时，container_A 可以得到的 CPU 是 container_B 的两倍
+
+			需要特别注意的是，这种按权重分配 CPU 只会发生在 CPU 资源紧张的情况下。
+			如果 container_A 处于空闲状态，这时，为了充分利用 CPU 资源，container_B 也可以分配到全部可用的 CPU。
+
+			下面我们继续用 progrium/stress 做实验。
+
+				1. 启动 container_A，cpu share 为 1024： 
+
+					root@ubuntu:~# docker run --name container_A -it -c 1024 progrium/stress --pu 1
+
+					--cpu 用来设置工作线程的数量。
+					因为当前 host 只有 1 颗 CPU，所以一个工作线程就能将 CPU 压满。
+					如果 host 有多颗 CPU，则需要相应增加 --cpu 的数量。
+
+				2. 启动 container_B，cpu share 为 512： 
+
+					root@ubuntu:~# docker run --name container_B -it -c 512 progrium/stress --pu 1
+
+				3. 在 host 中执行 top，查看容器对 CPU 的使用情况： 
+
+				4. 现在暂停 container_A： 
+
+					root@ubuntu:~# docker pause container_A
+
+				5. top 显示 container_B 在 container_A 空闲的情况下能够用满整颗 CPU： 
+
+	5.8 限制容器对 Block IO 带宽资源的使用:
+
+		Block IO 是另一种可以限制容器使用的资源。
+		Block IO 指的是磁盘的读写，docker 可通过设置权重、限制 bps 和 iops 的方式控制容器读写磁盘的带宽，
+		下面分别讨论。
+
+		注：目前 Block IO 限额只对 direct IO（不使用文件缓存）有效。
+
+		1. block IO 权重:
+
+			默认情况下，所有容器能平等地读写磁盘，可以通过设置 --blkio-weight 参数来改变容器 block IO 的优先级。
+
+			--blkio-weight 与 --cpu-shares 类似，设置的是相对权重值，默认为 500。
+			在下面的例子中，container_A 读写磁盘的带宽是 container_B 的两倍
+
+			docker run -it --name container_A --blkio-weight 600 ubuntu   
+			docker run -it --name container_B --blkio-weight 300 ubuntu
+
+		2. 限制 bps 和 iops:
+
+			bps 是 byte per second，每秒读写的数据量。
+			iops 是 io per second，每秒 IO 的次数。
+
+			可通过以下参数控制容器的 bps 和 iops：
+			--device-read-bps，限制读某个设备的 bps。
+			--device-write-bps，限制写某个设备的 bps。
+			--device-read-iops，限制读某个设备的 iops。
+			--device-write-iops，限制写某个设备的 iops。
+
+			下面这个例子限制容器写 /dev/sda 的速率为 30 MB/s
+				docker run -it --device-write-bps /dev/sda:30MB ubuntu
+
+			通过 dd 测试在容器中写磁盘的速度。因为容器的文件系统是在 host /dev/sda 上的，
+			在容器中写文件相当于对 host /dev/sda 进行写操作。
+			另外，oflag=direct 指定用 direct IO 方式写文件，这样 --device-write-bps 才能生效。
+
+			root@ubuntu:~# docker run -it --device-write-bps /dev/sda:30MB ubuntu
+			root@fdfff2033d:/#
+			root@fdfff2033d:/#time dd if=/dev/zero of=test.out bs=1M count=800 oflag=dirct
+
+			结果表明，bps 25.6 MB/s 没有超过 30 MB/s 的限速。
+
+			作为对比测试，如果不限速，结果如下：
+			root@ubuntu:~# docker run -it  ubuntu
+			root@fdfff2033d:/
+			root@fdfff2033d:/#time dd if=/dev/zero of=test.out bs=1M count=800 oflag=dirct
+
+	5.9 容器的底层实现技术
+
+		cgroup 和 namespace 是最重要的两种技术。cgroup 实现资源限额， namespace 实现资源隔离
+
+		1.cgroup:
+
+			cgroup 全称 Control Group。
+			Linux 操作系统通过 cgroup 可以设置进程使用 CPU、内存 和 IO 资源的限额。
+			相信你已经猜到了：前面我们看到的--cpu-shares、-m、--device-write-bps 实际上就是在配置 cgroup。	
+
+			cgroup 到底长什么样子呢？我们可以在 /sys/fs/cgroup 中找到它。
+			还是用例子来说明，启动一个容器，设置 --cpu-shares=512：
+
+			root@ububtu:~#docker run -it --cpu-shares 512 progrium/stress -c 1
+			查看容器的 ID：
+			在/sys/fs/cgroup/cpu/docker目录中,Linux会为每个容器创建一个cgroup目录，以容器长ID 命名：
+			目录中包含所有与 cpu 相关的 cgroup 配置，文件 cpu.shares 保存的就是 --cpu-shares 的配置，值为 512。
+			同样的/sys/fs/cgroup/memory/docker和/sys/fs/cgroup/blkio/docker中保存的是内存以及Block IO的cgroup配置
+
+		2. namespace:
+
+			在每个容器中，我们都可以看到文件系统，网卡等资源，这些资源看上去是容器自己的。
+			拿网卡来说，每个容器都会认为自己有一块独立的网卡，即使 host 上只有一块物理网卡。
+			这种方式非常好，它使得容器更像一个独立的计算机。
+			
+			Linux 实现这种方式的技术是 namespace。namespace 管理着 host 中全局唯一的资源，
+			并可以让每个容器都觉得只有自己在使用它。换句话说，namespace 实现了容器间资源的隔离。
+
+			Linux 使用了六种 namespace，分别对应六种资源：Mount、UTS、IPC、PID、Network和User下面我们分别讨论。
+
+			a. Mount namespace
+			
+				Mount namespace 让容器看上去拥有整个文件系统。
+
+				容器有自己的 / 目录，可以执行 mount 和 umount 命令。
+				当然我们知道这些操作只在当前容器中生效，不会影响到 host 和其他容器。
+
+			b. UTS namespace
+
+				简单的说，UTS namespace 让容器有自己的 hostname。 
+				默认情况下，容器的 hostname 是它的短ID，可以通过 -h 或 --hostname 参数设置。
+				root@ububtu:~#docker run -h myhost -it ubuntu
+
+			c. IPC namespace
+
+				IPC namespace 让容器拥有自己的共享内存和信号量（semaphore）来实现进程间通信，
+				而不会与 host 和其他容器的 IPC 混在一起。
+
+			d. PID namespace
+
+				我们前面提到过，容器在 host 中以进程的形式运行。例如当前 host 中运行了两个容器：
+				通过 ps axf 可以查看容器进程：
+				所有容器的进程都挂在 dockerd 进程下，同时也可以看到容器自己的子进程。
+				如果我们进入到某个容器，ps 就只能看到自己的进程了：
+				
+				而且进程的 PID 不同于 host 中对应进程的 PID，容器中 PID=1 的进程当然也不是 host 的 init 进程。
+				也就是说：容器拥有自己独立的一套 PID，这就是 PID namespace 提供的功能。
+
+			e. Network namespace
+
+				Network namespace 让容器拥有自己独立的网卡、IP、路由等资源。我们会在后面网络章节详细讨论。
+
+			f. User namespace
+
+				User namespace 让容器能够管理自己的用户，host 不能看到容器中创建的用户。
+
+		小结
+
+			本章首先通过大量实验学习了容器的各种操作以及容器状态之间如何转换，
+			然后讨论了限制容器使用 CPU、内存和 Block IO 的方法，
+			最后学习了实现容器的底层技术：cgroup 和 namespace。
+	
+			下面是容器的常用操作命令：
+
+				create      创建容器  
+				run         运行容器  
+				pause       暂停容器  
+				unpause     取消暂停继续运行容器  
+				stop        发送 SIGTERM 停止容器  
+				kill        发送 SIGKILL 快速停止容器  
+				start       启动容器  
+				restart     重启容器  
+				attach      attach 到容器启动进程的终端  
+				exec        在容器中启动新进程，通常使用 "-it" 参数  
+				logs        显示容器启动进程的控制台输出，用 "-f" 持续打印  
+				rm          从磁盘中删除容器
 
 
 
