@@ -1200,5 +1200,166 @@
 
 	4.9 镜像命名最佳实践：
 
+		我们已经学会构建自己的镜像了。接下来的问题是如何在多个 Docker Host 上使用镜像。
+
+			1. 用相同的 Dockerfile 在其他 host 构建镜像。
+			2. 将镜像上传到公共 Registry（比如 Docker Hub），Host 直接下载使用。
+			3. 搭建私有的 Registry 供本地 Host 使用。
+
+		第一种方法没什么特别的，前面已经讨论很多了。我们将讨论如何使用公共和私有 Registry 分发镜像。
+
+		为镜像命名:
+
+			无论采用何种方式保存和分发镜像，首先都得给镜像命名。
+			当我们执行 docker build 命令时已经为镜像取了个名字，例如前面：
+			docker build -t ubuntu-with-vi-dockerfile
+			这里的 ubuntu-with-vi 就是镜像的名字。通过 dock images 可以查看镜像的信息。
+
+			root@zk-virtual-machine:~# docker images  ubuntu-with-vi-dockerfile
+			REPOSITORY                  TAG                 IMAGE ID            CREATED             SIZE
+			ubuntu-with-vi-dockerfile   latest              de6f4ab21567        40 hours ago        169MB
+
+			这里注意到 ubuntu-with-vi-dockerfile 对应的是 REPOSITORY，而且还有一个叫 latest 的 TAG。
+			
+			实际上一个特定镜像的名字由两部分组成：repository 和 tag。
+			[image name] = [repository]:[tag]
+
+			如果执行 docker build 时没有指定 tag，会使用默认值 latest。其效果相当于：
+			docker build -t ubuntu-with-vi:latest
+			tag 常用于描述镜像的版本信息。
+
+			小心 latest tag
+			千万别被 latest tag 给误导了。latest 其实并没有什么特殊的含义。
+			当没指明镜像 tag 时，Docker 会使用默认值 latest，仅此而已。
+
+			虽然 Docker Hub 上很多 repository 将 latest 作为最新稳定版本的别名，
+			但这只是一种约定，而不是强制规定。
+
+			所以我们在使用镜像时最好还是避免使用latest明确指定某个 tag，比如 httpd:2.3，ubuntu:xenial。
+
+			tag 使用最佳实践：
+
+				借鉴软件版本命名方式能够让用户很好地使用镜像。
+				一个高效的版本命名方案可以让用户清楚地知道当前使用的是哪个镜像，同时还可以保持足够的灵活性。
+				每个 repository 可以有多个 tag，而多个 tag 可能对应的是同一个镜像。
+				下面通过例子为大家介绍 Docker 社区普遍使用的 tag 方案。
+				假设我们现在发布了一个镜像 myimage，版本为 v1.9.1。
+				那么我们可以给镜像打上四个 tag：1.9.1、1.9、1 和 latest。
+
+				我们可以通过 docker tag 命令方便地给镜像打 tag。
+				docker tag myimage-v1.9.1 myimage:1
+				docker tag myimage-v1.9.1 myimage:1.9
+				docker tag myimage-v1.9.1 myimage:1.9.1
+				docker tag myimage-v1.9.1 myimage:latest
+
+				过了一段时间，我们发布了 v1.9.2。这时可以打上 1.9.2 的 tag，
+				并将 1.9、1 和 latest 从 v1.9.1 移到 v1.9.2。
+				
+				命令为：
+				docker tag myimage-v1.9.2 myimage:1
+				docker tag myimage-v1.9.2 myimage:1.9
+				docker tag myimage-v1.9.2 myimage:1.9.2
+				docker tag myimage-v1.9.2 myimage:latest
+				
+				这种 tag 方案使镜像的版本很直观，用户在选择非常灵活：
+
+				myimage:1 始终指向 1 这个分支中最新的镜像。
+				myimage:1.9 始终指向 1.9.x 中最新的镜像。
+				myimage:latest 始终指向所有版本中最新的镜像。
+				如果想使用特定版本，可以选择 myimage:1.9.1、myimage:1.9.2 或 myimage:2.0.0。
+
+				Docker Hub 上很多 repository 都采用这种方案，所以大家一定要熟悉。
+
+	4.10 公用Registry:
+
+		保存和分发镜像的最直接方法就是使用 Docker Hub。
+
+		Docker Hub 是 Docker 公司维护的公共 Registry。
+		用户可以将自己的镜像保存到 Docker Hub 免费的 repository 中。
+		如果不希望别人访问自己的镜像，也可以购买私有 repository。
+
+		除了 Docker Hub，quay.io 是另一个公共 Registry，提供与 Docker Hub 类似的服务。
 		
+		下面介绍如何用 Docker Hub 存取我们的镜像。
+
+			1. 首先得在 Docker Hub 上注册一个账号。
+
+			2. 在 Docker Host 上登录。
+
+				root@zk-virtual-machine:~# docker login -u zhangkun09211916
+				Password: 
+				WARNING! Your password will be stored unencrypted in /root/.docker/config.json.
+				Configure a credential helper to remove this warning. See
+				https://docs.docker.com/engine/reference/commandline/login/#credentials-store
+
+				Login Succeeded
+
+			3. 修改镜像的 repository 使之与 Docker Hub 账号匹配。
+
+				Docker Hub 为了区分不同用户的同名镜像，
+				镜像的 registry 中要包含用户名，完整格式为：[username]/xxx:tag
+				我们通过 docker tag 命令重命名镜像。
+
+				root@zk-virtual-machine:~# docker tag httpd zhangkun09211916/httpd:v1
+				root@zk-virtual-machine:~# docker images zhangkun09211916/httpd:v1
+				REPOSITORY               TAG                 IMAGE ID            CREATED             SIZE
+				zhangkun09211916/httpd   v1                  55a118e2a010        2 weeks ago         132MB
+				root@zk-virtual-machine:~# 
+
+
+				注：Docker 官方自己维护的镜像没有用户名，比如 httpd。
+
+			4. 通过 docker push 将镜像上传到 Docker Hub。
+				
+				Docker 会上传镜像的每一层。
+				因为 cloudman6/httpd:v1 这个镜像实际上跟官方的 httpd 镜像一模一样，
+				Docker Hub 上已经有了全部的镜像层，所以真正上传的数据很少。
+				同样的，如果我们的镜像是基于 base 镜像的，也只有新增加的镜像层会被上传。
+				如果想上传同一 repository 中所有镜像，省略 tag 部分就可以了，
+				例如：
+				 
+				root@zk-virtual-machine:~# docker push zhangkun09211916/httpd:v1
+				The push refers to repository [docker.io/zhangkun09211916/httpd]
+				d8e904686bfd: Mounted from library/httpd 
+				584c122df5a0: Mounted from library/httpd 
+				355bd981febe: Mounted from library/httpd 
+				504b6a6a6fd2: Mounted from library/httpd 
+				237472299760: Mounted from library/httpd 
+				v1: digest: sha256:cd6abe0e1cae37c81a53486f216379c59aae8f9ea790923f23dcf7542853e895 size: 1367
+				root@zk-virtual-machine:~# 
+
+			5. 登录 https://hub.docker.com，在Public Repository 中就可以看到上传的镜像.
+				如果要删除上传的镜像，只能在 Docker Hub 界面上操作。
+
+			6. 这个镜像可被其他 Docker host 下载使用了。 
+				
+				root@zk-virtual-machine:~#docker pull zhangkun09211916/httpd:v1
+
+	4.11 搭建本地 Registry:
+
+		Docker Hub 虽然非常方便，但还是有些限制，比如：
+
+			1. 需要 internet 连接，而且下载和上传速度慢。
+			2. 上传到 Docker Hub 的镜像任何人都能够访问，虽然可以用私有 repository，但不是免费的。
+			3. 安全原因很多组织不允许将镜像放到外网。
+		
+		解决方案就是搭建本地的 Registry。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
