@@ -1904,6 +1904,346 @@
 				logs        显示容器启动进程的控制台输出，用 "-f" 持续打印  
 				rm          从磁盘中删除容器
 
+6、Docker 网络
+
+	我们会首先学习Docker提供的几种原生网络，以及如何创建自定义网络。
+	然后探讨容器之间如何通信，以及容器与外界如何交互。
+
+	Docker 网络从覆盖范围可分为单个 host 上的容器网络和跨多个 host 的网络，本章重点讨论前一种。
+	对于更为复杂的多 host 容器网络，我们会在后面进阶技术章节单独讨论。
+
+	Docker 安装时会自动在 host 上创建三个网络，我们可用 docker network ls 命令查看：
+
+		[root@iz2ze0lvzs717097h32rpcz ~]# docker network ls
+		NETWORK ID          NAME                DRIVER              SCOPE
+		b6b0664a7260        bridge              bridge              local
+		fbefa9342c84        host                host                local
+		7c5a4eaacb63        none                null                local
+
+	1、none 网络:
+
+		故名思议，none 网络就是什么都没有的网络。
+		挂在这个网络下的容器除了lo，没有其他任何网卡。
+		容器创建时，可以通过 --network=none 指定使用 none 网络。
+
+		[root@iz2ze0lvzs717097h32rpcz ~]# docker run -it --network=none busybox
+		/ # ifconfig
+		lo      Link encap:Local Loopback  
+		        inet addr:127.0.0.1  Mask:255.0.0.0
+				UP LOOPBACK RUNNING  MTU:65536  Metric:1
+				RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+				TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+				collisions:0 txqueuelen:1 
+				RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+		/ # 
+		/ # exit
+
+		我们不禁会问，这样一个封闭的网络有什么用呢？
+		其实还真有应用场景。封闭意味着隔离，一些对安全性要求高并且不需要联网的应用可以使用 none 网络。
+		比如某个容器的唯一用途是生成随机密码，就可以放到 none 网络中避免密码被窃取。
+		当然大部分容器是需要网络的，我们接着看 host 网络。
+
+	2、host 网络：
+
+		连接到 host 网络的容器共享 Docker host 的网络栈，容器的网络配置与 host 完全一样。
+		可以通过 --network=host 指定使用 host 网络。
+		
+		[root@iz2ze0lvzs717097h32rpcz ~]# docker run -it --network=host busybox
+		/ # ip l
+		1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue qlen 1
+			link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+		2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast qlen 1000
+			link/ether 00:16:3e:2e:82:b9 brd ff:ff:ff:ff:ff:ff
+		3: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue 
+			link/ether 02:42:86:69:17:1e brd ff:ff:ff:ff:ff:ff
+		/ # hostname
+			iz2ze0lvzs717097h32rpcz
+
+		在容器中可以看到 host 的所有网卡，并且连 hostname 也是 host 的。host 网络的使用场景又是什么呢？
+		直接使用 Docker host 的网络最大的好处就是性能，如果容器对网络传输效率有较高要求，则可以选择 host 网络。
+		当然不便之处就是牺牲一些灵活性，比如要考虑端口冲突问题，Docker host 上已经使用的端口就不能再用了。
+
+		Docker host 的另一个用途是让容器可以直接配置 host 网路。
+		比如某些跨 host 的网络解决方案，其本身也是以容器方式运行的，这些方案需要对网络进行配置，
+		比如管理 iptables，大家将会在后面进阶技术章节看到。
+
+	3、 bridge 网络：
+
+		本节学习应用最广泛也是默认的 bridge 网络。
+
+		brctl 命令详解:
+
+			安装网桥管理工具包：bridge-utile
+			# yum install bridge-utils -y
+			
+			使用brctl命令创建网桥br1
+			# brctl addbr br1
+
+			删除网桥br1
+			# brctl delbr br1
+
+			将eth0端口加入网桥br1 
+			# brctl addif br1 eth0
+
+			删除eth0端口加入网桥br1 
+			# brctl delif br1 eth0
+			
+			查询网桥信息
+			# brctl show
+			# brctl show br1
+
+		Docker 安装时会创建一个 命名为 docker0 的 linux bridge。
+		如果不指定--network，创建的容器默认都会挂到 docker0 上。
+
+		[root@iz2ze0lvzs717097h32rpcz ~]# brctl show                 
+		bridge name     bridge id               STP enabled     interfaces
+		docker0         8000.02428669171e       no
+
+		当前 docker0 上没有任何其他网络设备，我们创建一个容器看看有什么变化。
+		[root@iz2ze0lvzs717097h32rpcz ~]# docker run -d httpd
+		[root@iz2ze0lvzs717097h32rpcz ~]# brctl show         
+		bridge name     bridge id               STP enabled     interfaces
+		docker0         8000.02428669171e       no              vethffb98de
+
+		一个新的网络接口 vethffb98de被挂到了docker0上，vethffb98de就是新创建容器的虚拟网卡。
+
+		让我们通过 docker network inspect bridge 看一下 bridge 网络的配置信息:
+			[root@iz2ze0lvzs717097h32rpcz ~]# docker network inspect bridge
+			[
+				{
+					"Name": "bridge",
+					"Id": "b6b0664a7260f4ad916887a9b1c459788583da3946b9b83106616e471f060fcb",
+					"Created": "2018-11-08T19:40:59.367568543+08:00",
+					"Scope": "local",
+					"Driver": "bridge",
+					"EnableIPv6": false,
+					"IPAM": {
+
+						"Driver": "default",
+						"Options": null,
+						"Config": [
+						{
+
+							"Subnet": "172.18.0.0/16"
+						}
+						]
+						}
+				.....
+			}
+			]
+		原来 bridge 网络配置的 subnet 就是 172.18.0.0/16，并且网关是172.18.0.1
+		这个网关在哪儿呢？大概你已经猜出来了，就是 docker0。
+
+			[root@iz2ze0lvzs717097h32rpcz ~]# ifconfig docker0
+			docker0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+			        inet 172.18.0.1  netmask 255.255.0.0  broadcast 172.18.255.255
+					        ether 02:42:86:69:17:1e  txqueuelen 0  (Ethernet)
+	        RX packets 0  bytes 0 (0.0 B)
+	        RX errors 0  dropped 0  overruns 0  frame 0
+			        TX packets 0  bytes 0 (0.0 B)
+	        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+		容器创建时，docker 会自动从 172.18.0.0/16 中分配一个 IP，这里 16 位的掩码保证有足够多的 IP 可以供容器使用。
+
+		除了 none, host, bridge 这三个自动创建的网络，用户也可以根据业务需要创建 user-defined 网络，
+		
+	4、user-defined 网络:
+
+		除了 none, host, bridge 这三个自动创建的网络，用户也可以根据业务需要创建 user-defined 网络。
+
+		Docker 提供三种 user-defined 网络驱动：bridge, overlay 和 macvlan。
+		overlay 和 macvlan 用于创建跨主机的网络，我们后面有章节单独讨论。
+
+		我们可通过 bridge 驱动创建类似前面默认的 bridge 网络，例如：
+
+		[root@iz2ze0lvzs717097h32rpcz ~]# docker network create --driver bridge my_net
+		8f000ca6b52427ad9c6275ca00732f3b21d7a60a43931d2c72b62499c05242dc
+		[root@iz2ze0lvzs717097h32rpcz ~]# 
+		[root@iz2ze0lvzs717097h32rpcz ~]# brctl show
+		bridge name     bridge id               STP enabled     interfaces
+		br-8f000ca6b524         8000.02429acd9623       no
+		docker0         8000.02428669171e       no              vethffb98de
+
+		新增了一个网桥 br-8f000ca6b524，这里 8f000ca6b524正好新建 bridge 网络 my_net 的短 id。
+		
+		执行 docker network inspect 查看一下 my_net 的配置信息：
+
+		[root@iz2ze0lvzs717097h32rpcz ~]# docker network inspect my_net
+		[
+			{
+
+				"Name": "my_net",
+				"Id": "8f000ca6b52427ad9c6275ca00732f3b21d7a60a43931d2c72b62499c05242dc",
+				"Created": "2018-11-13T17:27:38.894223995+08:00",
+				"Scope": "local",
+				"Driver": "bridge",
+				"EnableIPv6": false,
+				"IPAM": {
+
+							"Driver": "default",
+							"Options": {},
+							"Config": [
+								{
+									"Subnet": "172.19.0.0/16",
+									"Gateway": "172.19.0.1"
+								}
+							]
+						},
+				"Internal": false,
+				"Attachable": false,
+				"Ingress": false,
+				"ConfigFrom": {
+					"Network": ""
+				},
+				"ConfigOnly": false,
+				"Containers": {},
+				"Options": {},
+				"Labels": {}
+		}
+		
+		这里 172.19.0.0/16 是 Docker 自动分配的 IP 网段。
+
+		我们可以自己指定 IP 网段吗？
+		答案是：可以。
+
+		只需在创建网段时指定 --subnet 和 --gateway 参数：
+		
+		[root@iz2ze0lvzs717097h32rpcz ~]# docker network create --driver bridge --subnet 172.22.16.0/24 --gateway 172.22.16.1 my_net2 
+		8e12d35334c681a0509aa553a7bfb6cfa84b60865fc638cbc0e99cd274a09995
+		[root@iz2ze0lvzs717097h32rpcz ~]# 
+		[root@iz2ze0lvzs717097h32rpcz ~]# 
+		[root@iz2ze0lvzs717097h32rpcz ~]# docker network inspect my_net2
+		[
+			{
+
+				"Name": "my_net2",
+				"Id": "8e12d35334c681a0509aa553a7bfb6cfa84b60865fc638cbc0e99cd274a09995",
+				"Created": "2018-11-13T17:36:57.759583113+08:00",
+				"Scope": "local",
+				"Driver": "bridge",
+				"EnableIPv6": false,
+				"IPAM": {
+
+						"Driver": "default",
+						"Options": {},
+						"Config": [
+							{
+
+								"Subnet": "172.22.16.0/24",
+								"Gateway": "172.22.16.1"
+							}
+						]
+					},
+				"Internal": false,
+				"Attachable": false,
+				"Ingress": false,
+				"ConfigFrom": {		"Network": ""},
+				"ConfigOnly": false,
+				"Containers": {},
+				"Options": {},
+				"Labels": {}
+			}
+		]
+	
+		这里我们创建了新的 bridge 网络 my_net2，网段为 172.22.16.0/24，网关为 172.22.16.1。
+		与前面一样，网关在 my_net2 对应的网桥 br-8e12d35334c6 上：
+		[root@iz2ze0lvzs717097h32rpcz ~]# brctl show
+		bridge name     bridge id               STP enabled     interfaces
+		br-8e12d35334c6         8000.024247ad143d       no
+		br-8f000ca6b524         8000.02429acd9623       no
+		docker0         8000.02428669171e       no              vethffb98de
+		[root@iz2ze0lvzs717097h32rpcz ~]# ifconfig br-8e12d35334c6   
+		br-8e12d35334c6: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+			inet 172.22.16.1  netmask 255.255.255.0  broadcast 172.22.16.255
+			ether 02:42:47:ad:14:3d  txqueuelen 0  (Ethernet)
+			RX packets 0  bytes 0 (0.0 B)
+			RX errors 0  dropped 0  overruns 0  frame 0
+			TX packets 0  bytes 0 (0.0 B)
+			TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+	
+		容器要使用新的网络，需要在启动时通过 --network 指定：
+
+		[root@iz2ze0lvzs717097h32rpcz ~]# docker run -it --network=my_net2 busybox
+		/ # 
+		/ # ip a
+		1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue qlen 1
+			link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+			inet 127.0.0.1/8 scope host lo
+			valid_lft forever preferred_lft forever
+		20: eth0@if21: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1500 qdisc noqueue 
+			link/ether 02:42:ac:16:10:02 brd ff:ff:ff:ff:ff:ff
+			inet 172.22.16.2/24 brd 172.22.16.255 scope global eth0
+			valid_lft forever preferred_lft forever
+		
+		容器分配到的 IP 为 172.22.16.2。
+		到目前为止，容器的 IP 都是 docker 自动从 subnet 中分配，我们能否指定一个静态 IP 呢？
+		答案是：可以，通过--ip指定。
+
+		[root@iz2ze0lvzs717097h32rpcz ~]# docker run -it --network=my_net2 --ip 172.22.16.8 busybox
+		/ # ip a
+		1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue qlen 1
+		    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+			inet 127.0.0.1/8 scope host lo
+			valid_lft forever preferred_lft forever
+		22: eth0@if23: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1500 qdisc noqueue 
+			link/ether 02:42:ac:16:10:08 brd ff:ff:ff:ff:ff:ff
+			inet 172.22.16.8/24 brd 172.22.16.255 scope global eth0
+			valid_lft forever preferred_lft forever
+		/ #
+
+		注：只有使用 --subnet 创建的网络才能指定静态 IP。
+
+		my_net 创建时没有指定 --subnet，如果指定静态 IP 报错如下：
+
+		[root@iz2ze0lvzs717097h32rpcz ~]# docker run -it --network=my_net2 --ip 172.18.0.8 busybox     
+		docker: Error response from daemon: Invalid address 172.18.0.8: It does not belong to any of this network subnets.
+		[root@iz2ze0lvzs717097h32rpcz ~]# 
+
+
+	5、	几个容器之间的连通性：
+
+		同一网络中的容器、网关之间都是可以通信的。
+
+		my_net2 与默认 bridge 网络能通信吗？
+		两个网络属于不同的网桥，应该不能通信，我们通过实验验证一下，让 busybox 容器 ping httpd 容器：
+		确实 ping 不通，符合预期,不同的网络如果加上路由应该就可以通信了。
+		确实，如果 host 上对每个网络的都有一条路由，同时操作系统上打开了 ip forwarding，
+		host 就成了一个路由器，挂接在不同网桥上的网络就能够相互通信。
+		下面我们来看看 docker host 满不满足这些条件呢？
+
+		ip r 查看 host 上的路由表：                                              
+		[root@iz2ze0lvzs717097h32rpcz ~]# ip r
+		default via 172.17.223.253 dev eth0 
+		169.254.0.0/16 dev eth0 scope link metric 1002 
+		172.17.208.0/20 dev eth0 proto kernel scope link src 172.17.216.16 
+		172.18.0.0/16 dev docker0 proto kernel scope link src 172.18.0.1 
+		172.19.0.0/16 dev br-8f000ca6b524 proto kernel scope link src 172.19.0.1 
+		172.22.16.0/24 dev br-8e12d35334c6 proto kernel scope link src 172.22.16.1 
+		
+		怎样才能让 busybox 与 httpd 通信呢？
+		答案是：为 httpd 容器添加一块 net_my2 的网卡。这个可以通过docker network connect 命令实现。
+
+		[root@iz2ze0lvzs717097h32rpcz ~]# docker ps 
+		CONTAINER ID        IMAGE               COMMAND              CREATED             STATUS              PORTS               NAMES
+		036ee44facdc        httpd               "httpd-foreground"   30 hours ago        Up 30 hours         80/tcp              unruffled_jennings
+		[root@iz2ze0lvzs717097h32rpcz ~]# docker network coonet my_net2 036ee44facdc
+
+
+	6、容器之间可通过 IP，Docker DNS Server 或 joined 容器三种方式通信。
+
+		1. IP 通信:
+
+			从上一节的例子可以得出这样一个结论：两个容器要能通信，必须要有属于同一个网络的网卡。
+
+			满足这个条件后，容器就可以通过 IP 交互了。
+			具体做法是在容器创建时通过 --network 指定相应的网络，
+			或者通过 docker network connect 将现有容器加入到指定网络。
+			可参考上一节 httpd 和 busybox 的例子，这里不再赘述.
+
+		2. Docker DNS Server:
+
+			
 
 
 
