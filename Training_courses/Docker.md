@@ -2242,21 +2242,345 @@
 			可参考上一节 httpd 和 busybox 的例子，这里不再赘述.
 
 		2. Docker DNS Server:
+			
+			通过 IP 访问容器虽然满足了通信的需求，但还是不够灵活。
+			因为我们在部署应用之前可能无法确定 IP，部署之后再指定要访问的 IP 会比较麻烦。
+			对于这个问题，可以通过 docker 自带的 DNS 服务解决。
+
+			从 Docker 1.10 版本开始，docker daemon 实现了一个内嵌的 DNS server，
+			使容器可以直接通过“容器名”通信。方法很简单，只要在启动时用 --name 为容器命名就可以了。
+
+			下面启动两个容器 bbox1 和 bbox2：
+
+			docker run -it --network=my_net2 --name=bbox1 busybox
+			docker run -it --network=my_net2 --name=bbox2 busybox
+
+			然后，bbox2 就可以直接 ping 到 bbox1 了：
+
+			使用 docker DNS 有个限制：只能在 user-defined 网络中使用。
+			也就是说，默认的 bridge 网络是无法使用 DNS 的。
+			
+			下面验证一下：
+				创建 bbox3 和 bbox4，均连接到 bridge 网络。
+				docker run -it --name=bbox3 busybox
+				docker run -it --name=bbox4 busybox
+				bbox4 无法 ping 到 bbox3。
+
+		3. joined 容器:
+
+			joined 容器是另一种实现容器间通信的方式。
+			joined 容器非常特别，它可以使两个或多个容器共享一个网络栈，
+			共享网卡和配置信息，joined 容器之间可以通过 127.0.0.1 直接通信。
+
+			请看下面的例子：
+
+				先创建一个 httpd 容器，名字为 web1。
+				docker run -d -it --name=web1 httpd
+
+				然后创建 busybox 容器并通过 --network=container:web1 指定 jointed 容器为 web1：
+
+				root@ubuntu:~#docker run -it --network=container:we1 busybox
+				
+			busybox 和 web1 的网卡 mac 地址与 IP 完全一样，它们共享了相同的网络栈。
+			busybox 可以直接用 127.0.0.1 访问 web1 的 http 服务。
+
+			joined 容器非常适合以下场景：
+
+			不同容器中的程序希望通过 loopback 高效快速地通信，比如 web server 与 app server。
+			希望监控其他容器的网络流量，比如运行在独立容器中的网络监控程序。
+
+	7、容器如何与外部世界通信：
+
+		前面我们已经解决了容器间通信的问题，接下来讨论容器如何与外部世界通信。
+		这里涉及两个方向：
+		
+			容器访问外部世界
+
+			外部世界访问容器
+
+		1. 容器访问外部世界：
+
+			在我们当前的实验环境下，docker host 是可以访问外网的。
+
+			[root@iz2ze0lvzs717097h32rpcz ~]# ping -c 3 www.bing.com
+			PING cn-0001.cn-msedge.net (202.89.233.101) 56(84) bytes of data.
+			64 bytes from 202.89.233.101 (202.89.233.101): icmp_seq=1 ttl=118 time=4.29 ms
+			64 bytes from 202.89.233.101 (202.89.233.101): icmp_seq=2 ttl=118 time=4.33 ms
+			64 bytes from 202.89.233.101 (202.89.233.101): icmp_seq=3 ttl=118 time=4.29 ms
+
+			可见，容器默认就能访问外网。
+
+			请注意：这里外网指的是容器网络以外的网络环境，并非特指 internet。
+
+			现象很简单，但更重要的：我们应该理解现象下的本质。
+			在上面的例子中，busybox 位于 docker0 这个私有 bridge 网络中（172.18.0.0/16），
+			当 busybox 从容器向外 ping 时，数据包是怎样到达 bing.com 的呢？
+
+			这里的关键就是 NAT。我们查看一下 docker host 上的 iptables 规则：
+
+			[root@iz2ze0lvzs717097h32rpcz ~]# iptables -t nat -S
+			-P PREROUTING ACCEPT
+			-P INPUT ACCEPT
+			-P OUTPUT ACCEPT
+			-P POSTROUTING ACCEPT
+			-N DOCKER
+			-A PREROUTING -m addrtype --dst-type LOCAL -j DOCKER
+			-A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j DOCKER
+			-A POSTROUTING -s 172.22.16.0/24 ! -o br-8e12d35334c6 -j MASQUERADE
+			-A POSTROUTING -s 172.19.0.0/16 ! -o br-8f000ca6b524 -j MASQUERADE
+			-A POSTROUTING -s 172.18.0.0/16 ! -o docker0 -j MASQUERADE
+			-A DOCKER -i br-8e12d35334c6 -j RETURN
+			-A DOCKER -i br-8f000ca6b524 -j RETURN
+			-A DOCKER -i docker0 -j RETURN
+			[root@iz2ze0lvzs717097h32rpcz ~]# 
+
+			在 NAT 表中，有这么一条规则：
+			 -A POSTROUTING -s 172.18.0.0/16 ! -o docker0 -j MASQUERADE
+
+			其含义是：来自 172.18.0.0/16 网段的包，目标地址是外网（! -o docker0），
+			就把它交给 MASQUERADE 处理。而 MASQUERADE 的处理方式是将包的源地址替换成 host 的地址发送出去，
+			即做了一次网络地址转换（NAT）。
+			
+			下面我们通过 tcpdump 查看地址是如何转换的。先查看 docker host 的路由表：
+
+			[root@iz2ze0lvzs717097h32rpcz ~]# ip r
+			default via 172.17.223.253 dev eth0 
+			169.254.0.0/16 dev eth0 scope link metric 1002 
+			172.17.208.0/20 dev eth0 proto kernel scope link src 172.17.216.16 
+			172.18.0.0/16 dev docker0 proto kernel scope link src 172.18.0.1 
+			172.19.0.0/16 dev br-8f000ca6b524 proto kernel scope link src 172.19.0.1 
+			172.22.16.0/24 dev br-8e12d35334c6 proto kernel scope link src 172.22.16.1 
 
 			
+			默认路由通过 eth0 发出去，所以我们要同时监控 eth0 和 docker0 上的 icmp（ping）数据包。
+			
+			当 busybox ping bing.com 时，tcpdump 输出如下：
+			[root@iz2ze0lvzs717097h32rpcz ~]# docker run -it busybox
+			/ # 
+			/ # ping bing.com
+			PING bing.com (13.107.21.200): 56 data bytes
+			64 bytes from 13.107.21.200: seq=0 ttl=110 time=42.180 ms
+			64 bytes from 13.107.21.200: seq=1 ttl=110 time=42.044 ms
+
+			[root@iz2ze0lvzs717097h32rpcz ~]# tcpdump -i docker0 -n icmp
+			tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+			listening on docker0, link-type EN10MB (Ethernet), capture size 262144 bytes
+			18:19:39.601856 IP 172.18.0.3 > 13.107.21.200: ICMP echo request, id 1536, seq 0, length 64
+			18:19:39.643928 IP 13.107.21.200 > 172.18.0.3: ICMP echo reply, id 1536, seq 0, length 64
+			18:19:40.601955 IP 172.18.0.3 > 13.107.21.200: ICMP echo request, id 1536, seq 1, length 64
+			18:19:40.643868 IP 13.107.21.200 > 172.18.0.3: ICMP echo reply, id 1536, seq 1, length 64
+			18:19:41.602076 IP 172.18.0.3 > 13.107.21.200: ICMP echo request, id 1536, seq 2, length 64
+			
+			docker0 收到 busybox 的 ping 包，源地址为容器 IP 172.18.0.3，这没问题，
+			交给 MASQUERADE 处理。这时，在 eth0 上我们看到了变化：
+
+			ping 包的源地址变成了 eth0 的 IP 13.107.21.200
+			这就是 iptable NAT 规则处理的结果，从而保证数据包能够到达外网。
+
+				a. busybox 发送 ping 包：172.18.0.2 > www.bing.com。
+
+				b. docker0 收到包，发现是发送到外网的，交给 NAT 处理。
+
+				c. NAT 将源地址换成 eth0 的 IP：13.107.21.200 > www.bing.com。
+
+				d. ping 包从 eth0 发送出去，到达 www.bing.com。
+
+				e. 通过 NAT，docker 实现了容器对外网的访问。
+
+		2. 外部世界如何访问容器:
+
+			上节我们学习了容器如何访问外部网络，今天讨论另一个方向：外部网络如何访问到容器？
+
+			答案是：端口映射。
+
+			docker 可将容器对外提供服务的端口映射到 host 的某个端口，外网通过该端口访问容器。
+			容器启动时通过-p参数映射端口：
+
+			[root@iz2ze0lvzs717097h32rpcz ~]# docker run -d -p 80 httpd
+			a84d74383434c5a84e2cb63ea8b7e1dee37d815a6a0ada21785735173a183261
+			[root@iz2ze0lvzs717097h32rpcz ~]# 
+			[root@iz2ze0lvzs717097h32rpcz ~]# docker ps
+
+			CONTAINER ID        IMAGE               COMMAND              CREATED             STATUS              PORTS                   NAMES
+			a84d74383434        httpd               "httpd-foreground"   6 seconds ago       Up 6 seconds        0.0.0.0:32768->80/tcp   thirsty_payne
+			[root@iz2ze0lvzs717097h32rpcz ~]# docker port a84d74383434
+			80/tcp -> 0.0.0.0:32768
+			[root@iz2ze0lvzs717097h32rpcz ~]# 
+
+			容器启动后，可通过 docker ps 或者 docker port 查看到 host 映射的端口。
+			在上面的例子中，httpd 容器的 80 端口被映射到 host 32768 上，
+			这样就可以通过 <host ip>:<32768> 访问容器的 web 服务了。
+
+			[root@iz2ze0lvzs717097h32rpcz ~]# curl 172.17.216.16:32768
+			<html><body><h1>It works!</h1></body></html>
+
+			除了映射动态端口，也可在 -p 中指定映射到 host 某个特定端口，
+			例如可将 80 端口映射到 host 的 8080 端口：
+
+			[root@iz2ze0lvzs717097h32rpcz ~]# docker ps
+			CONTAINER ID        IMAGE               COMMAND              CREATED             STATUS              PORTS                  NAMES
+			0054c78e12ef        httpd               "httpd-foreground"   3 seconds ago       Up 2 seconds        0.0.0.0:8080->80/tcp   stupefied_kepler
+			[root@iz2ze0lvzs717097h32rpcz ~]# 
+			[root@iz2ze0lvzs717097h32rpcz ~]# curl 172.17.216.16:8080
+			<html><body><h1>It works!</h1></body></html>
+			[root@iz2ze0lvzs717097h32rpcz ~]#
+
+			每一个映射的端口，host 都会启动一个 docker-proxy 进程来处理访问容器的流量：
+			[root@iz2ze0lvzs717097h32rpcz ~]# ps -ef|grep docker-proxy
+			root     25325 11442  0 18:36 ?        00:00:00 /usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 8080 -container-ip 172.18.0.2 -container-port 80
 
 
+			以<host ip>:<32768>->80/tcp 为例分析整个过程：
+				1. docker-proxy 监听 host 的32768 端口。
+				2. 当 curl 访问 172.17.216.16:32768 时，docker-proxy 转发给容器 172.18.0.3:80。
+				3. httpd 容器响应请求并返回结果。
+
+	本章小结:
+
+		在这一章我们首先学习了 Docker 的三种网络：none, host 和 bridge 并讨论了它们的不同使用场景；
+		然后我们实践了创建自定义网络；最后详细讨论了如何实现容器与容器之间，容器与外部网络之间的通信。
+
+		本章重点关注的是单个主机内的容器网络，对于跨主机网络通信将在后面章节详细讨论。
 
 
+7、Docker 存储：
 
+	docker为容器提供了两种存放数据的资源：
 
+		1. 由 storage driver 管理的镜像层和容器层。
 
+		2. Data Volume。
 
+	1. storage driver:
 
+		容器由最上面一个可写的容器层，以及若干只读的镜像层组成，容器的数据就存放在这些层中。
+		这样的分层结构最大的特性是 Copy-on-Write：
 
+			a. 新数据会直接存放在最上面的容器层。
 
+			b. 修改现有数据会先从镜像层将数据复制到容器层，修改后的数据直接保存在容器层中，镜像层保持不变。
 
+			c. 如果多个层中有命名相同的文件，用户只能看到最上面那层中的文件。
 
+		分层结构使镜像和容器的创建、共享以及分发变得非常高效，而这些都要归功于 Docker storage driver。
+		正是 storage driver 实现了多层数据的堆叠并为用户提供一个单一的合并之后的统一视图。
+
+		Docker 支持多种 storage driver，有 AUFS、Device Mapper、Btrfs、OverlayFS、VFS 和 ZFS。
+		它们都能实现分层的架构，同时又有各自的特性。
+		对于 Docker 用户来说，具体选择使用哪个 storage driver 是一个难题，因为：
+
+			没有哪个 driver 能够适应所有的场景。
+
+			driver 本身在快速发展和迭代。
+
+			不过 Docker 官方给出了一个简单的答案：
+			优先使用 Linux 发行版默认的 storage driver。
+
+		Docker 安装时会根据当前系统的配置选择默认的 driver。
+		默认 driver 具有最好的稳定性，因为默认 driver 在发行版上经过了严格的测试。
+
+		运行docker info查看 centos 的默认 driver：
+
+			[root@iz2ze0lvzs717097h32rpcz ~]# docker info
+			Containers: 17
+			Running: 1
+			Paused: 0
+			Stopped: 16
+			Images: 4
+			Server Version: 18.06.1-ce
+			Storage Driver: overlay2
+			Backing Filesystem: extfs
+			Supports d_type: true
+			Native Overlay Diff: true
+			Logging Driver: json-file
+			Cgroup Driver: cgroupfs
+			Plugins:
+			Volume: local
+			Network: bridge host macvlan null overlay
+			Log: awslogs fluentd gcplogs gelf journald json-file logentries splunk syslog
+			Swarm: inactive
+			Runtimes: runc
+			Default Runtime: runc
+			Init Binary: docker-init
+			containerd version: 468a545b9edcd5932818eb9de8e72413e616e86e
+			runc version: 69663f0bd4b60df09991c08812a60108003fa340
+			init version: fec3683
+			Security Options:
+			seccomp
+			Profile: default
+			Kernel Version: 3.10.0-693.2.2.el7.x86_64
+			Operating System: CentOS Linux 7 (Core)
+			OSType: linux
+			Architecture: x86_64
+			CPUs: 1
+			Total Memory: 1.796GiB
+			Name: iz2ze0lvzs717097h32rpcz
+			ID: DKQK:IXM3:TUI4:WKLF:TBUW:ZLLW:KM55:GIHT:JCPJ:X5U3:5EMG:DKE3
+			Docker Root Dir: /var/lib/docker
+			Debug Mode (client): false
+			Debug Mode (server): false
+			Registry: https://index.docker.io/v1/
+			Labels:
+			Experimental: false
+			Insecure Registries:
+			127.0.0.0/8
+			Live Restore Enabled: false
+			[root@iz2ze0lvzs717097h32rpcz ~]# 
+	
+		Redhat/CentOS 的默认 driver 是 Device Mapper，SUSE 则是 Btrfs。
+
+		对于某些容器，直接将数据放在由 storage driver 维护的层中是很好的选择，比如那些无状态的应用。
+		无状态意味着容器没有需要持久化的数据，随时可以从镜像直接创建。
+
+		比如 busybox，它是一个工具箱，我们启动 busybox 是为了执行诸如 wget，ping 之类的命令，
+		不需要保存数据供以后使用，使用完直接退出，容器删除时存放在容器层中的工作数据也一起被删除，
+		这没问题，下次再启动新容器即可。
+		
+		但对于另一类应用这种方式就不合适了，它们有持久化数据的需求，
+		容器启动时需要加载已有的数据，容器销毁时希望保留产生的新数据，也就是说，这类容器是有状态的。
+
+		这就要用到 Docker 的另一种存储机制：Data Volume，下一节我们讨论。
+
+	2、Data Volume:
+
+		Data Volume 本质上是 Docker Host 文件系统中的目录或文件，能够直接被mount到容器的文件系统中。
+		Data Volume 有以下特点：
+
+			a. Data Volume 是目录或文件，而非没有格式化的磁盘（块设备）。
+			
+			b. 容器可以读写 volume 中的数据。
+
+			c. volume 数据可以被永久的保存，即使使用它的容器已经销毁。
+
+		好，现在我们有数据层（镜像层和容器层）和 volume 都可以用来存放数据，
+		具体使用的时候要怎样选择呢？考虑下面几个场景：
+
+			a. Database 软件 vs Database 数据
+
+			b. Web 应用 vs 应用产生的日志
+
+			c. 数据分析软件 vs input/output 数据
+
+			d. Apache Server vs 静态 HTML 文件
+
+		相信大家会做出这样的选择：
+
+			前者放在数据层中。因为这部分内容是无状态的，应该作为镜像的一部分。
+
+			后者放在 Data Volume 中。这是需要持久化的数据，并且应该与镜像分开存放。
+
+		还有个大家可能会关心的问题：如何设置 voluem 的容量？
+
+		因为 volume 实际上是 docker host 文件系统的一部分，
+		所以 volume 的容量取决于文件系统当前未使用的空间，目前还没有方法设置 volume 的容量。
+
+		在具体的使用上，docker 提供了两种类型的 volume：bind mount 和 docker managed volume。
+
+			a. bind mount:
+
+				 bind mount 是将 host 上已存在的目录或文件 mount 到容器。
+
+				 例如 docker host 上有目录 $HOME/htdocs：
 
 
 
