@@ -1144,16 +1144,80 @@ ORM简介：
 
 		diango(查)<--->ORM(转换为特定数据库的selete语句，从数据库中返回数据集再转换为python中的列表)--> Mysql
 
+
 使用MySql 数据库：
 
+
+	1、在虚拟环境中安装mysql包:
+
+		pip install mysql-python
+
+		pip install mysqlclient
+
+		这里一定要注意mysqlclient版本和Django版本的兼容性，在
 	
+		pthon3 manage.py makemigrateions 时报：
 
+			raise MigrationSchemaMissing("Unable to create the django_migrations table (%s)" % exc)
+			django.db.migrations.exceptions.MigrationSchemaMissing: 
+			Unable to create the django_migrations table ((1064, 
+			"You have an error in your SQL syntax; check the manual that corresponds to your 
+			MySQL server version for the right syntax to use near '(6) NOT NULL)' at line 1"))
 
+	2、在mysql中创建数据库
 
+		create databases test2 charset=utf8
 
+	3、打开settings.py文件，修改DATABASES项
 
+		DATABASES = {
 
+			'default': {
 
+				'ENGINE': 'django.db.backends.mysql',
+				'NAME': 'test2',
+				'USER': '用户名',
+				'PASSWORD': '密码',
+				'HOST': '数据库服务器ip，本地可以使用localhost',
+				'PORT': '端口，默认为3306',
+			}
+		}
+
+	4、执行命令，生成迁移文件，生成表
+
+		python manage.py makemigrations
+		python manage.py migrate
+		
+	5、使用数据库生成模型类
+	
+		 inspectdb 是Django 附带的一个实用程序，它可以通过现有的数据库来创建模型
+		 运行以下命令来查看输出:
+
+		 $python manage.py inspectdb
+		
+
+		 使用标准Unix输出重定向将其另存为文件：
+		 $python manage.py inspectdb > booktest/models.py
+
+		此功能用作快捷方式，而不是确定的模型生成。
+
+	6、数据库中生成的表：
+
+		auth_group
+		auth_group_permissions
+		auth_permission
+		auth_user
+		auth_user_groups
+		auth_user_user_permissions
+		booktest_bookinfo
+		booktest_heroinfo
+		django_admin_log
+		django_content_type
+		django_migrations
+		django_session
+		
+
+	manage.py inspectdb 的内容是：
 
 
 定义模型：
