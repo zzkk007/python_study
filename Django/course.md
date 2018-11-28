@@ -2824,4 +2824,81 @@ HttpResponse对象:
 		{% endblock block_name %}
 
 
+	三层继承结构:
+
+		三层继承结构使代码得到最大程度的复用，并且使得添加内容更加简单
+		
+		1、创建根级模板:
+
+			名称为"base.html"
+			存放整个站点共有的内容
+
+			<!DOCTYPE html>
+			<heml>
+			<head>
+				<title>{%block title%}{%endblock%} 水果超市</title>
+			
+			</head>
+
+			<body>
+			top ----{{logo}}
+			<hr/>
+			{%block left%}{%endblock%}
+			{%block content%}{%endblock%}
+			<hr/>
+			bottom
+			</body>
+			</heml>
+
+		2、创建分支模版:
+			
+			继承自base.html
+			名为"base_*html"
+			定义特定分支共有的内容
+		
+			定义base_goods.html
+
+			{%extends 'temtest/base.html'%}
+			{%block title%}商品{%endblock%}
+			{%block left%}
+			<h1>goods left</h1>
+			{%endblock%}
+
+			定义base_user.html
+			{%extends 'temtest/base.html'%}
+			{%block title%}用户中心{%endblock%}
+			{%block left%}
+			<font color='blue'>user left</font>
+			{%endblock%}
+
+			定义index.html，继承自base.html，不需要写left块
+			{%extends 'temtest/base.html'%}
+			{%block content%}
+			首页内容
+			{%endblock content%}
+		
+		3、为具体页面创建模板，继承自分支模板：
+
+			定义商品列表页goodslist.html
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	
