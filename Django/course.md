@@ -2880,7 +2880,42 @@ HttpResponse对象:
 		3、为具体页面创建模板，继承自分支模板：
 
 			定义商品列表页goodslist.html
-
+			
+			{%extends 'temtest/base_goods.html'%}
+			{%block content%}
+			商品正文列表
+			{%endblock content%}
+		
+			定义用户密码页userpwd.html
+			{%extends 'temtest/base_user.html'%}
+			{%block content%}
+			用户密码修改
+			{%endblock content%}
+			
+		4、视图调用具体页面，并传递模板中需要的数据：
+			
+			首页视图index
+			logo='welcome to itcast'
+			def index(request):
+			    return render(request, 'temtest/index.html', {'logo': logo})
+			商品列表视图goodslist
+			def goodslist(request):
+			    return render(request, 'temtest/goodslist.html', {'logo': logo})
+			用户密码视图userpwd
+			def userpwd(request):
+			    return render(request, 'temtest/userpwd.html', {'logo': logo})
+		5、配置url：
+		
+			from django.conf.urls import url
+			from . import views
+			urlpatterns = [
+			    url(r'^$', views.index, name='index'),
+			    url(r'^list/$', views.goodslist, name='list'),
+			    url(r'^pwd/$', views.userpwd, name='pwd'),
+			]
+		
+			
+			
 
 
 
