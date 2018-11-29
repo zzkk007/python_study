@@ -2914,15 +2914,177 @@ HttpResponse对象:
 			    url(r'^pwd/$', views.userpwd, name='pwd'),
 			]
 		
+
+HTML转义:	
+
+	Django 对字符串进行自动HTML转义，如在模板中输出如下值:
+
+	视图代码：
+
+		def index(request):
+			return render(request,'temtest/index2.html',{'t1':<h1>hello</h1>})
+
+	模板代码：
+
+		{{t1}}
+
+	显示效果如下图：
+		<h1>hello</h1>
+
+	1、会被自动转义的字符：
+
+		html转义，就是将包含的html标签输出，而不被解释执行，原因是当显示用户提交字符串时，
+		可能包含一些攻击性的代码，如js脚本
+		
+		Django会将如下字符自动转义：
+
+			< 会转换为&lt;
+
+			> 会转换为&gt;
+
+			' (单引号) 会转换为&#39; '
 			
+			" (双引号)会转换为 &quot; "
 			
+			& 会转换为 &amp;
+
+		当显示不被信任的变量时使用escape过滤器，一般省略，因为Django自动转义
+
+			{{t1|escape}}
+	
+	2、关闭转义:
+
+		对于变量使用safe过滤器
+			
+		{{data|safe }}
+		
+		对于代码块使用autoescape标签
+		{% autoescape off %}
+		{{body }}
+		{% endautoescape %}
+		 标签autoescape接受on或者off参数
+		 自动转义标签在base模板中关闭，在child模板中也是关闭的
+		
+	3、字符串字面值：
+
+		手动转义:
+		
+		{{ data|default:"<b>123</b>" }}
+		
+		应写为:
+
+		{{data|default:"&lt;b&gt;123&lt;/b&gt;" }}
 
 
+CSRF:
+
+	全称Cross Site Request Forgery，跨站请求伪造
+
+	某些恶意网站上包含链接、表单按钮或者JavaScript，它们会利用登录过的用户在浏览器中的认证信息试图在
+	你的网站上完成某些操作，这就是跨站攻击
+	演示csrf如下
+	创建视图csrf1用于展示表单，csrf2用于接收post请求
+
+	def csrf1(request):
+		return render(request,'booktest/csrf1.html')
+	
+	def csrf2(request):
+		uname=request.POST['uname']
+		return render(request,'booktest/csrf2.html',{'uname':uname})
+
+	配置url:
+
+		url(r'^csrf1/$', views.csrf1),
+		url(r'^csrf2/$', views.csrf2),
 
 
+	创建模板csrf1.html用于展示表单
+
+		<html>
+		<head>
+		<title>Title</title>
+		</head>
+		<body>
+			<form method="post" action="/crsf2/">
+			<input name="uname"><br>
+			<input type="submit" value="提交"/>
+			</form>
+		</body>
+		</html>
+
+	创建模板csrf2用于展示接收的结果
+		<html>
+		<head>
+	    <title>Title</title>
+		</head>
+		<body>
+			{{uname }}
+		</body>
+		</html>
+
+	在浏览器中访问,报错：
+
+	将settings.py中的中间件代码'django.middleware.csrf.CsrfViewMiddleware'注释
+	查看csrf1的源代码，复制。
+
+	防csrf的使用：
+
+		在django的模板中，提供了防止跨站攻击的方法，使用步骤如下：
+		step1：在settings.py中启用'django.middleware.csrf.CsrfViewMiddleware'中间件，此项在创建项目时，默认被启用
+		step2：在csrf1.html中添加标签
+		
+			<form>
+			{% csrf_token %}
+			...
+			</form>
+		
+		step3：测试刚才的两个请求，发现跨站的请求被拒绝了。
 
 
+	取消保护：
 
+		如果某些视图不需要保护，可以使用装饰器csrf_exempt，模板中也不需要写标签，修改csrf2的视图如下
+		from django.views.decorators.csrf import csrf_exempt
+
+		@csrf_exempt
+		def csrf2(request):
+			uname=request.POST['uname']
+			return render(request,'booktest/csrf2.html',{'uname':uname})
+
+		运行上面的两个请求，发现都可以请求
+
+	保护原理：
+
+		加入标签后，可以查看源代码，发现多了如下代码
+		<input type='hidden' name='csrfmiddlewaretoken' value='nGjAB3Md9ZSb4NmG1sXDolPmh3bR2g59' />
+		在浏览器的调试工具中，通过network标签可以查看cookie信息
+		本站中自动添加了cookie信息，如下图
+
+		查看跨站的信息，并没有cookie信息，即使加入上面的隐藏域代码，发现又可以访问了
+		结论：django的csrf不是完全的安全
+		当提交请求时，中间件'django.middleware.csrf.CsrfViewMiddleware'会对提交的cookie及隐藏域的内容进行验证，
+		如果失败则返回403错误
+
+验证码:
+
+	在用户注册、登录页面，为了防止暴力请求，可以加入验证码功能，如果验证码错误，则不需要继续处理，
+	可以减轻一些服务器的压力
+	使用验证码也是一种有效的防止crsf的方法
+
+	验证码视图:
+
+		新建viewsUtil.py，定义函数verifycode
+		此段代码用到了PIL中的Image、ImageDraw、ImageFont模块，需要先安装Pillow（3.4.1）包，
+			详细文档参考http://pillow.readthedocs.io/en/3.4.x/
+		
+		Image表示画布对象
+		ImageDraw表示画笔对象
+		ImageFont表示字体对象，ubuntu的字体路径为“/usr/share/fonts/truetype/freefont”
+	
+
+	代码如下：
+
+		
 
 
 
