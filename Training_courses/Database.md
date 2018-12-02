@@ -685,21 +685,104 @@ mysql日期时间函数:
 "----------------------------------------------------------------------------------------------------------"
 视图：
 
-	1、视图的特点：
+	视图的特点：
+
+	视图的列可以来自不同的表，是表的抽象和在逻辑意义上建立的新关系。
+	视图是由基本表（实表）产生的表（虚表）
+	视图的建立和删除不影响基本表
+	对视图内容的更新（添加、删除、修改）直接影响基本表。
+	当视图来自多个基本表时，不允许添加和删除数据。
+
+	创建视图：
 	
+		create view view_name  AS 查询语句
+		
+		视图的功能实际上就是封装了复杂的查询语句。
+		
+	查看视图：
 	
+		show tables  不仅会显示表的名字，还会显示视图的名字。
+		
+	删除视图：
+		DROP view view_name
+		
+	修改视图：
+	
+		ALTER　view viewname as 查询语句
+		
+"----------------------------------------------------"
 
-
-
-
-
-
-
-
-
-
-
-
+触发器：
+	
+		触发器（TRIGGER）是MySQL的数据对象之一，该对象和
+		编程语言中的函数非常类似，都需要声明、执行等。
+		
+		但是触发器的执行不是由程序调用，也不是手工启动，而是
+		有事件来触发、激活从而实现执行。
+		
+	1、创建触发器：
+	
+		在MySQL中创建触发器通过SQL语句，CREATE TRIGGER来实现，
+		其语法：
+			
+				CREATE TRIGGER trigger_name
+				trigger_time
+				trigger_event 
+				ON table_name
+				FOR EACH ROW
+				trigger_stmt 
+				
+				trigger_name：标识触发器名称，用户自行指定；
+				trigger_time：标识触发时机，取值为 BEFORE 或 AFTER；
+				trigger_event：标识触发事件，取值为 INSERT、UPDATE 或 DELETE；
+				tbl_name：标识建立触发器的表名，即在哪张表上建立触发器；
+				trigger_stmt：触发器程序体，可以是一句SQL语句，或者用 BEGIN 和 END 包含的多条语句。
+		
+		由此可见，可以建立6种触发器，即：BEFORE INSERT、BEFORE UPDATE、BEFORE DELETE、AFTER INSERT、AFTER UPDATE、AFTER DELETE。
+		另外有一个限制是不能同时在一个表上建立2个相同类型的触发器，
+		因此在一个表上最多建立6个触发器。		
+					
+		例子：
+		
+			CREATE TRIGGER tri_diarytime
+			BEFORE INSERT
+			ON t_dept FOR EACH ROW
+				INSERT INTO t_diary VALUES(NULL,'t_dept',now())
+			创建一个触发器tri_diarytime,当向部分表中插入任意
+			一条记录时，就会在插入操作之前向表t_diary中插入当前时间。
+		
+		创建包含多执行语句的触发器：
+		
+			create trigger trigger_name
+				BEFORE|AFTER trigger_EVENT
+					ON TABLE_NAME FOR EACH ROW
+						BEGIN
+						trigger_stmt
+						END
+			在BEGIN END 两个关键字之间是要执行的多个执行语句的内容，
+			执行语句用分号隔开。
+			在MySQL软件中，一般情况下";"符号作为语句的结束符号，可是
+			在创建触发器的时候，需要用到";"符号作为执行的结束符号。
+			为了解决这个问题，可以使用关键字DELMITER语句，例如：
+			"DELIMITER$$",可以实现将结束语句设置成"$$"	
+			
+			DELIMITER $$
+			CREATE TRIGGER tri_diarytime2
+				AFTER INSERT
+					ON t_dept FOR　EACH ROW
+						BEGIN
+							INSERT INTO t_diary VALUES(NULL,'t_dept',new());
+							INSERT INTO t_diary VALUES(NULL,'t_dept',new());
+						END
+						$$
+				DELIMITER;
+				
+		查看触发器：
+			SHOW TRIGGERS ;
+			
+		删除触发器：
+			DROP TRIGGER grigger_name
+			
 
 "-----------------------------------------------------------------------------------------------"
 
