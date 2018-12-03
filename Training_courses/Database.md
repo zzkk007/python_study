@@ -125,9 +125,6 @@
 		5.FOREIGN key :设置外键约束。
 
 
-
-
-
 "-----------------------------------------------------------------------------------"
 
 数据库系统-->数据库(show dadtabases)---->use 库名(切换数据库)--->show tables(一个库中的所有表)。
@@ -239,122 +236,386 @@
 
 对数据进行操作：
 
-	1、消除重复行
-		在select后面列前使用distinct可以消除重复行
-		select distinct gender from students;
+	1、条件查询：条件查询需要用到where语句，where必须放到from语句表的后面。
 
-	2、模糊查询：
-		like 
-		%表示任意多个任意字符
-		_表示一个任意字符
+		运算符	         说明
+		=	             等于
+		<>或!=	         不等于
+		<	             小于
+		<=	             小于等于
+		>	             大于
+		>=	             大于等于
+		between … and …. 两个值之间,等同于 >= and <=
+		is null	         为null（is not null 不为空）
+		and	             并且
+		or	             或者
+		in	             包含，相当于多个or（not in不在这个范围中）
+		not	             not可以取非，主要用在is 或in中
+		like	         like称为模糊查询，支持%或下划线匹配
+					   	 %匹配任意个字符
+						 下划线，一个下划线只匹配一个字符
 
-		select * from students where sanme like 'huang%'
-		select * from students where sanme lien 'huang_'
+
+		消除重复行
+			在select后面列前使用distinct可以消除重复行
+			select distinct gender from students;
+
+		模糊查询：
+			like 
+			%表示任意多个任意字符
+			_表示一个任意字符
+
+			select * from students where sanme like 'huang%'
+			select * from students where sanme lien 'huang_'
 		
 
-	3、范围查询
+		范围查询
 
-		in 表示在一个非连续的范围内
-
+			in 表示在一个非连续的范围内
 			查询编号是1或3或8的学生
 			select * from student where id in(1,3,8);
 		
-		between ...and...表示在一个连续的范围内
+			between ...and...表示在一个连续的范围内,它是包含最大值和最小值的
 			
 			查询学生是3至8的学生
 			select * from student where id between 3 and 8;
 
-	4、空判断
-
-		注意：null 与' '是不同的
-		判断is null
-		查询没有填写地址的学生
+		空判断
+			Null为空，但不是空串，为null可以设置这个字段不填值，如果查询为null的字段，采用is null
+			因为null类型比较特殊，必须使用 is来比较。
+			
+			注意：null 与' '是不同的
+			判断is null
+			查询没有填写地址的学生
 	
-		select *from students where hometown is null;
+			select *from students where hometown is null;
 
-		判非空is not null
+			判非空is not null
 
-		select * from students where hometown is not null;
+			select * from students where hometown is not null;
 
-	5、优先级
+		优先级
 
-		小括号，not，比较运算符，逻辑运算符
-		and比or先运算，如果同时出现并希望先算or，需要结合()使用
+			小括号，not，比较运算符，逻辑运算符
+			and比or先运算，如果同时出现并希望先算or，需要结合()使用
 
-聚合：为了快速得到统计数据，提供了5个聚合函数
+	2、排序数据:
+
+		单一字段排序:
 		
-	1、count( *)表示计算总行数，括号中写星与列名，结果是相同的
-		select count( *) from students;
+			排序采用order by子句，order by后面跟上排序字段，排序字段可以放多个，多个采用逗号间隔，
+			order by默认采用升序，如果存在where子句那么order by必须放到where语句的后面。
 
-	2、max(列)表示求此列的最大值
-		select max(id) from student where gender = 0;
+			如果包含where语句order by必须放到where后面，如果没有where语句order by放到表的后面。
+			以下写法是错误的：
+			select * from emp order by sal where job='MANAGER';
+			
+		手动指定排序顺序：
+			
+			手动指定按照薪水由小到大排序
+			select * from emp order by sal asc;
 
-	3、min(列)表示求此列的最小值
-		select min(id) from student where isdelete = 0;
+			手动指定按照薪水由大到小排序
+			select * from emp order by sal desc;
 
-	4、sum(列)表示求此列的和
-		select sum(id) from student where gender =1;
-	
-	5、avg(列)求此列的平均值
-		select avg(id) from students where isdelete=0 and gender=0;	
+		多个字段排序：
 
-
-关系：
-	
-	如下三张表：
-	学生表:students、       成绩表:scores、           科目表:subjects
+			按照job和薪水倒序
+			select * from emp order by job desc, sal desc;
 		
-		id                    id                            id          
+
+	3、数据处理函数/单行处理函数：
+
+		Lower		转换小写
+		upper		转换大写
+		substr		取子串（substr(被截取的字符串,起始下标,截取的长度)）
+		length		取长度
+		trim		去空格
+		str_to_date	将字符串转换成日期
+		date_format	格式化日期
+		format		设置千分位
+		round		四舍五入
+		rand()		生成随机数
+		Ifnull		可以将null转换成一个具体值
+		now()		获得当前时间
+
+			日期格式的说明
+			%Y：代表4位的年份
+			%y：代表2位的年份
+			 
+			%m：代表月, 格式为(01……12)  
+			%c：代表月, 格式为(1……12)
+	 
+			%H：代表小时,格式为(00……23)  
+			%h： 代表小时,格式为(01……12)  
+	  
+			%i： 代表分钟, 格式为(00……59) 
+
+			%r：代表 时间,格式为12 小时(hh:mm:ss [AP]M)  
+			%T：代表 时间,格式为24 小时(hh:mm:ss) 
+
+			%S：代表 秒,格式为(00……59)  
+			%s：代表 秒,格式为(00……59) 
+
+
+	4、聚合：为了快速得到统计数据，提供了5个聚合函数
 		
-		sname                 stuid (学生)                 stitle
+		1、count( *)表示计算总行数，括号中写星与列名，结果是相同的
+			select count( *) from students;
 
-		...                   subid (科目)                  ...
+		2、max(列)表示求此列的最大值
+			select max(id) from student where gender = 0;
 
-							  score (成绩)
+		3、min(列)表示求此列的最小值
+			select min(id) from student where isdelete = 0;
 
-	成绩表中，学生列应该存储什么信息？
-
-	答：学生列的数据不是在这里新建的，而应该从学生表引用过来，关系也是一条数据。
-		根据范式要求应该存储学生的编号，而不是学生的姓名等其他信息。
-		同理，科目表也是关系表，引用科目表中的数据。
-
-
-		create table scores(
-				id int primary key auto_increment,
-				stuid int,
-				subid int,
-				score decimal(5,2),
-				foreign key(stuid) references students(id) on delete cascade,
-				foreign key(subid) references subjects(id)  on delete cascade
-				);
-
-	问：查询每个学生每个科目的分数?
-	分析：学生姓名来源于students表，科目名称来源于subjects，分数来源于scores表，
-		  怎么将3个表放到一起查询，并将结果显示在同一个结果集中呢？
-	答：当查询结果来源于多张表时，需要使用连接查询
-	关键：找到表间的关系，当前的关系是
-	students表的id---scores表的stuid
-	subjects表的id---scores表的subid
-
-	select student.sname,subject.stitle,scores.score from scores 
-	inner join students on score.stuid = students.id
-	inner join subjects on score.subid = subjects.id
-
-	结论：当需要对有关系的多张表进行查询时，需要使用连接join
+		4、sum(列)表示求此列的和
+			select sum(id) from student where gender =1;
 	
+		5、avg(列)求此列的平均值
+			select avg(id) from students where isdelete=0 and gender=0;	
 
-连接查询:
 
-	连接查询分类如下：
-	表A inner join 表B: 表A与表B匹配的行会出现在结果中
+	5、分组查询：
 
-	表A left join 表B: 表A与表B匹配的行会出现在结果中，外加表A中独有的数据，未对应的数据使用null填充。
+		分组查询主要涉及到两个子句，分别是：group by和having
 
-	表A right join 表B: 表A与表B匹配的行会出现在结果中，外加表B独有的数据，为对应的数据使用null填充。
+		在SQL语句中若有group by 语句，那么在select语句后面只能跟分组函数+参与分组的字段。
+		如果想对分组数据再进行过滤需要使用having子句
+		
+		取得每个岗位的平均工资大于2000
+		select job, avg(sal) from emp group by job having avg(sal) >2000;
 
-	在查询或条件中推荐使用“表名.列名”的语法
-	如果多个表中列名不重复可以省略“表名.”部分
-	如果表的名称太长，可以在表名后面使用' as 简写名'或' 简写名'，为表起个临时的简写名称
+		分组函数的执行顺序：
+		根据条件查询数据
+		分组
+		采用having过滤，取得正确的数据
+
+
+	6、select语句总结：
+
+		一个完整的select语句格式如下
+		
+		select 字段
+		from 表名
+		where …….
+		group by ……..
+		having …….(就是为了过滤分组后的数据而存在的—不可以单独的出现)
+		order by ……..
+		
+		以上语句的执行顺序
+			首先执行where语句过滤原始数据
+			执行group by进行分组
+			执行having对分组数据进行操作
+			执行select选出数据
+			执行order by排序
+
+		原则：能在where中过滤的数据，尽量在where中过滤，效率较高。having的过滤是专门对分组之后的数据进行过滤的。
+
+	7、连接查询：
+
+		
+		连接查询：也可以叫跨表查询，需要关联多个表进行查询
+
+		连接分类：
+			
+			内链接
+			
+				表1  inner join  表2  on  关联条件
+				做连接查询的时候一定要写上关联条件
+				inner 可以省略
+			
+			外连接
+				
+				左外连接
+				表1  left  outer  join  表2  on  关联条件
+				做连接查询的时候一定要写上关联条件
+				outer  可以省略
+			
+				右外连接
+				表1  right  outer  join  表2  on  关联条件
+				做连接查询的时候一定要写上关联条件
+				outer  可以省略
+			
+				左外连接（左连接）和右外连接（右连接）的区别：
+				左连接以左面的表为准和右边的表比较，和左表相等的不相等都会显示出来，
+				右表符合条件的显示,不符合条件的不显示
+				
+				右连接恰恰相反，以上左连接和右连接也可以加入outer关键字，但一般不建议这样写法。
+
+		
+		下文将使用两个数据库表 Table_A 和 Table_B 来进行示例讲解，其结构与数据分别如下：
+
+		mysql> SELECT * FROM Table_A ORDER BY PK ASC;
+			+----+---------+
+			| PK | Value   |
+			+----+---------+
+			|  1 | both ab |
+			|  2 | only a  |
+			+----+---------+
+			2 rows in set (0.00 sec)
+
+		mysql> SELECT * from Table_B ORDER BY PK ASC;
+			+----+---------+
+			| PK | Value   |
+			+----+---------+
+			|  1 | both ab |
+			|  3 | only b  |
+			+----+---------+
+			2 rows in set (0.00 sec)
+
+			其中 PK 为 1 的记录在 Table_A 和 Table_B 中都有，2 为 Table_A 特有，3 为 Table_B 特有。
+
+
+			INNER JOIN:
+
+				INNER JOIN 一般被译作内连接。内连接查询能将左表（表 A）和右表（表 B）中能关联起来的数据连接后返回。
+
+				示例查询：
+
+				SELECT A.PK AS A_PK, B.PK AS B_PK,
+					   A.Value AS A_Value, B.Value AS B_Value
+					   FROM Table_A A
+					   INNER JOIN Table_B B
+						ON A.PK = B.PK;
+
+				查询结果：
+
+				+------+------+---------+---------+
+				| A_PK | B_PK | A_Value | B_Value |
+				+------+------+---------+---------+
+				|    1 |    1 | both ab | both ab |
+				+------+------+---------+---------+
+				1 row in set (0.00 sec)
+
+			LEFT JOIN:
+
+				LEFT JOIN 一般被译作左连接，也写作 LEFT OUTER JOIN。左连接查询会返回左表（表 A）中所有记录，
+				不管右表（表 B）中有没有关联的数据。在右表中找到的关联数据列也会被一起返回。
+			
+				示例查询：
+
+				SELECT A.PK AS A_PK, B.PK AS B_PK,
+				       A.Value AS A_Value, B.Value AS B_Value
+					   FROM Table_A A
+					   LEFT JOIN Table_B B
+					   ON A.PK = B.PK;
+
+				查询结果：
+
+				+------+------+---------+---------+
+				| A_PK | B_PK | A_Value | B_Value |
+				+------+------+---------+---------+
+				|    1 |    1 | both ab | both ba |
+				|    2 | NULL | only a  | NULL    |
+				+------+------+---------+---------+
+				2 rows in set (0.00 sec)
+
+
+			RIGHT JOIN:
+
+				RIGHT JOIN 一般被译作右连接，也写作 RIGHT OUTER JOIN。
+				右连接查询会返回右表（表 B）中所有记录，不管左表（表 A）中有没有关联的数据。
+				在左表中找到的关联数据列也会被一起返回。
+
+				示例查询：
+
+				SELECT A.PK AS A_PK, B.PK AS B_PK,
+				       A.Value AS A_Value, B.Value AS B_Value
+					   FROM Table_A A
+					   RIGHT JOIN Table_B B
+					   ON A.PK = B.PK;
+				
+				查询结果：
+
+					   +------+------+---------+---------+
+					   | A_PK | B_PK | A_Value | B_Value |
+					   +------+------+---------+---------+
+					   |    1 |    1 | both ab | both ba |
+					   | NULL |    3 | NULL    | only b  |
+					   +------+------+---------+---------+
+					   2 rows in set (0.00 sec)
+
+
+			FULL OUTER JOIN:
+
+				FULL OUTER JOIN 一般被译作外连接、全连接，实际查询语句中可以写作 FULL OUTER JOIN 或 FULL JOIN。
+				外连接查询能返回左右表里的所有记录，其中左右表里能关联起来的记录被连接后返回。
+
+
+				示例查询：
+
+				SELECT A.PK AS A_PK, B.PK AS B_PK,
+				       A.Value AS A_Value, B.Value AS B_Value
+					   FROM Table_A A
+					   FULL OUTER JOIN Table_B B
+					   ON A.PK = B.PK;
+
+				注：我当前示例使用的 MySQL 不支持 FULL OUTER JOIN。
+
+				应当返回的结果（使用 UNION 模拟）：
+
+				mysql> SELECT * 
+				    -> FROM Table_A
+					-> LEFT JOIN Table_B 
+					-> ON Table_A.PK = Table_B.PK
+					-> UNION ALL
+					-> SELECT *
+					-> FROM Table_A
+					-> RIGHT JOIN Table_B 
+					-> ON Table_A.PK = Table_B.PK
+					-> WHERE Table_A.PK IS NULL;
+					
+					+------+---------+------+---------+
+					| PK   | Value   | PK   | Value   |
+					+------+---------+------+---------+
+					|    1 | both ab |    1 | both ba |
+					|    2 | only a  | NULL | NULL    |
+					| NULL | NULL    |    3 | only b  |
+					+------+---------+------+---------+
+					3 rows in set (0.00 sec)
+
+	8、子查询：
+
+		子查询就是嵌套的select语句，可以理解为子查询是一张表
+
+		在where语句中使用子查询，也就是在where语句中加入select语句
+		
+			查询员工编号包含管理者编号的
+			select empno, ename from emp where empno in(select mgr from emp where mgr is not null);
+	
+		在from语句中使用子查询，可以将该子查询看做一张表
+
+			select a.deptno,a.avg_sal,g.grade from (select deptno,avg(sal) avg_sal from emp group by deptno ) a 
+			join salgrade g on a.avg_sal between g.losal and hisal;
+
+	9、union：
+
+		union可以合并集合（相加）
+
+		查询job包含MANAGER和包含SALESMAN的员工
+		select * from emp where job in('MANAGER', 'SALESMAN');
+		
+		采用union来合并
+		select * from emp where job='MANAGER'
+		union
+		select * from emp where job='SALESMAN'
+		
+
+	10、limit 的使用：
+
+		mySql提供了limit ，主要用于提取前几条或者中间某几行数据
+		
+			select * from table limit m,n
+			其中m是指记录开始的index，从0开始，表示第一条记录
+			n是指从第m+1条开始，取n条。
+
+			select * from tablename limit 2,4
+			即取出第3条至第6条，4条记录
+
+		从第二条开始取两条数据
+			select * from emp  limit 1,2;
+
 
 
 外键：
@@ -545,39 +806,6 @@ mysql日期时间函数:
 
 		select now()
 
-视图：
-
-	对于复杂的查询，在多次使用后，维护是一件非常麻烦的事情
-	解决：定义视图
-	视图本质上是对查询的一个封装
-	定义视图
-		
-		create view stuscore as 
-		select students.*,scores.score from scores
-		inner join students on scores.stuid=students.id;
-
-	视图的用途就是查询：
-
-		select * from stuscore;
-
-
-事务：
-
-	当一个业务逻辑需要多个sql完成时，如果其中某条sql语句出错，则希望整个操作都回退
-	使用事务可以完成退回的功能，包证业务逻辑的正确性
-	
-	事务四大特征(简称ACID)
-		原子性(Atomicity):事务中的全部操作在数据库中是不可分割的，要么全部完成，要么均不执行
-		一致性(Consistency)：几个并行执行的事务，其执行结果必须与按某一顺序串行执行的结果相一致
-		隔离性(Isolation)：事务的执行不受其他事务的干扰，事务执行的中间结果对其他事务必须是透明的
-		持久性(Durability)：对于任意已提交事务，系统必须保证该事务对数据库的改变不被丢失，即使数据库出现故障
-
-	要求：表的类型必须是innodb或bdb类型，才可以对此表使用事务
-
-	事务语句
-	开启 begin;
-	提交 commit;
-	回滚 rollback;
 	
 "---------------------------------------------------------------------------------------------------------------"
 
