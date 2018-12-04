@@ -514,11 +514,165 @@
 	    print(getOneCount(0))
 
 
-以上就是我面试过程中所被问到的问题，算法题还是比较少的，也只有2家公司要求写算法，
-数据结构似乎被问到的不是特别多，就问到了一个B+树的结构。数据库问到的是索引相关的优化。
+18、使用递归把一个十进制数转换成二进制数：
 
-"=================================================================="
-"=================================================================="
+	def binary2(num):
+
+		if num == 0:
+			return '0'
+		else:
+			return binary(num//2) + str(num%2)
+	
+	if __name__ == "__main__":
+		
+		num = int(input("请输入一个十进制的数字:"))
+		print(binary2(num))
+
+19、使用递归把一个十进制数转换成64进制数：
+
+	def binary64(num,base):
+	
+		Keycode = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$"
+
+		if num == 0:
+			return '0'
+		else:
+			m = num%base
+			return binary64(num//base,base) + Keycode[m]
+	
+	if __name__ == "__main__":
+		num = int(input("请输入一个十进制的数字:"))
+		base = int(input("请输入一个base的数字:"))
+		print(binary64(num,base))
+
+20、使用递归计算阶乘N!=n*(n-1)*(n-2)...*1:
+
+	def factorial(n):
+
+		if n == 1:
+			return 1
+		else:
+			return n*factorial(n-1)
+	
+	if __name__ == "__main__":
+		num = int(input("请输入一个十进制的数字:"))
+		print(factorial(num))
+
+21、使用递归计算高斯求和n+(n-1)+(n-2)+...+1
+	
+	def gauss(num):
+		if num == 1:
+			return 1
+		else:
+			return num + gauss(num-1)
+
+	if __name__ == "__main__":
+		num = int(input("请输入一个十进制的数字:"))
+		print(gauss(num))
+
+22、使用递归求斐波纳契: 0、1、1、2、3、5、8、13:
+
+	def Fibonacci_sequence(num):
+
+		if num <= 1:
+			return num
+		else:
+			return (Fibonacci_sequence(num-1) +  Fibonacci_sequence(num-2))
+
+	if __name__ == "__main__":
+		nterms = int(input("您要输出几项? "))
+		list1 = []
+		for i in range(nterms):
+			list1.append(Fibonacci_sequence(i))
+		print(list1)			
+
+23、使用递归求两个数的最大公约数：
+
+	def gcd1(n,m):
+		if m > n:
+			n,m = m,n
+		hcf = 1
+		for i in range(1,m+1):
+			if((n%i == 0) and (m%i==0)):
+				hcf = i
+		return hcf
+
+
+	def gcd(n,m):
+		if m > n:
+			n,m = m,n
+
+		if n % m == 0:
+			return m
+		else:
+			return (gcd(m,n%m))
+
+	if __name__ == '__main__':
+		n = int(input("please large number:"))
+		m = int(input("please litter number:"))
+
+		print(gcd(n,m))
+		print("-------------")
+		print(gcd1(n,m))
+
+24、求递归求两个数的最小公倍数：
+
+	def lcm(n,m,c):
+		if m > n:
+			n,m = m,n
+		
+		if n*c %m == 0:
+			return n*c
+		else:
+			return lcm(n,m,c+1)
+	if __name__ == '__main__':
+		n = int(input("please input a number:"))
+		m = int(input("please input another number:"))
+		print(lcm(n,m,1))
+
+25、求递归求一个字符串是不是回文数：
+
+	def huiwen(str):
+		if len(str)<=1:
+			return True
+		elif str[0] != str[-1]:
+			reutrn False
+		else:
+			return huiwen(str[1:-1])
+			
+	if __name__ == '__main__':
+		str1 = input("please input a string:")
+		print(huiwen(str1))
+
+26、递归函数求汉若塔：
+
+	def move(n,a,buffer,c):
+		if(n == 1):
+			print(a,"-->",c)
+			return
+		move(n-1,a,c,buffer)
+		move(1,a,buffer,c)
+		move(n-1,buffer,a,c)
+	if __name__ == '__main__':
+	  move(3,"a","b","c")
+
+27、递归函数求杨辉三角(python3)：
+	
+	def yang(i,j):
+		if j == 0 or j == i:
+			return 1
+		else:
+			return yang(i-1,j) + yang(i-1,j-1)
+	if __name__ == '__main__':
+		for i in range(0,10):
+			print()
+			for n in range(0,10-i):
+				print(" ",end="")
+			for j in range(0,i):
+				print(yang(i,j),"",end="")
+
+
+"================================================================="
 
 
 
