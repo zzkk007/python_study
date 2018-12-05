@@ -2922,4 +2922,155 @@ scikit-learn	      机器学习库
 
 
 
+"==================================================================="
+
+psutil:
+
+	1、psutil 是一个跨平台库，能够轻松实现获取系统运行的进程和系统利用率（包括CPU、内存、磁盘、网络等）信息。
+		它主要用来做系统监控，性能分析，进程管理。它实现了同等命令行工具提供的功能，
+		如ps、top、lsof、netstat、ifconfig、who、df、kill、free、nice、ionice、iostat、
+		iotop、uptime、pidof、tty、taskset、pmap等。目前支持32位和64位的Linux、Windows、
+		OS X、FreeBSD和Sun Solaris等操作系统.
+
+	2、获取系统基本信息的使用：
+
+		cup 信息:
+
+			使用cpu_times方法获取cpu的完整信息：
+
+				psutil.cpu_times()
+
+			获取单个数据，如用户的cpu时或io等待时间，
+		
+				psutil.cpu_times().user
+
+				psutil.cpu_times().iowait
+	
+			 获取cpu逻辑和物理个数，默认logical值为True
+				
+				#CPU逻辑个数
+				psutil.cpu_count()
+
+				#CPU物理个数
+				psutil.cpu_count(logical=False)
+
+		内存信息:
+
+			内存信息的获取主要使用virtual_memory方法。swap使用就用swap_memory方法。
+
+			>>>mem = psutil.virtual_memory()
+
+			>>>svmem(total=4018601984, available=1066205184, percent=73.5, used=3904004096, free=114597888, 
+					active=3302174720, inactive=426078208, buffers=156520448, cached=795086848)
+
+			>>> mem.total
+			4018601984
+			>>> mem.used
+			3904004096
+			>>> mem.free
+			114597888
+			>>> print(mem.total/1024/1024)
+			3832.4375
+
+			其中percent表示实际已经使用的内存占比，即（1047543808-717537280）/1047543808*100% 。
+			available表示还可以使用的内存。
+
+		磁盘信息:
+
+			磁盘信息主要有两部分，一个是磁盘的利用率，一个是io，
+			他们分别可以通过disk_usage和disk_io_counters方法获取。
+
+			如下先获取分区信息，然后看下根分区的使用情况:
+
+				>>> psutil.disk_partitions()
+				[sdiskpart(device='/dev/mapper/root', mountpoint='/', fstype='ext4', 
+				opts='rw,errors=remount-ro'), sdiskpart(device='/dev/sda1', 
+				mountpoint='/boot', fstype='ext2', opts='rw')]
+		
+				>>> psutil.disk_usage('/')
+					sdiskusage(total=42273669120, used=17241096192, free=22885195776, percent=40.8)
+			
+			默认disk_io_counters方法获取的是硬盘总的io数和读写信息，
+			如果需要获取单个分区的io和读写信息加上"perdisk=True"参数。
+			
+				>>> psutil.disk_io_counters()
+					sdiskio(read_count=638190, write_count=77080153, read_bytes=16037795840, 
+					write_bytes=1628871606272, read_time=2307367, write_time=1777841305)
+				>>> psutil.disk_io_counters(perdisk=True)
+					{'vdb1': sdiskio(read_count=312, write_count=0, read_bytes=1238016, write_bytes=0, 
+							read_time=95, write_time=0), 'vda1': sdiskio(read_count=637878, 
+								write_count=77080257, read_bytes=16036557824,
+								write_bytes=1628873314304, read_time=2307272, write_time=1777841879)}
+			
+		网络信息：
+
+			 网络io和磁盘io使用方法差不多，主要使用net_io_counters方法，如果需要获取单个网卡的io信息，
+			 加上pernic=True参数。
+
+			 #获取网络总的io情况
+			 >>> psutil.net_io_counters()
+				snetio(bytes_sent=525490132009, bytes_recv=409145642892, packets_sent=948527563, 
+						packets_recv=778182181, errin=0, errout=0, dropin=0, dropout=0)
+			
+			#获取网卡的io情况
+			>>> psutil.net_io_counters(pernic=True)
+				{'lo': snetio(bytes_sent=56524704027, bytes_recv=56524704027, packets_sent=33602236,
+				  packets_recv=33602236, errin=0, errout=0, dropin=0, dropout=0), 
+				  'eth0': snetio(bytes_sent=468966480940, bytes_recv=352622081327, 
+				  packets_sent=914930488, packets_recv=744583332, errin=0, errout=0, dropin=0, dropout=0)}
+		
+		其他系统信息：
+
+			获取开机时间:
+
+				##以linux时间格式返回，可以使用时间戳转换
+				>>> psutil.boot_time()    
+					1496647567.0
+
+				#转换成自然时间格式
+				>>> psutil.boot_time()
+					1496647567.0
+				>>> datetime.datetime.fromtimestamp(psutil.boot_time ()).strftime("%Y-%m-%d %H: %M: %S")
+					'2017-06-05 15: 26: 07'
+			
+			查看系统全部进程:
+
+				psutil.pids()
+
+			查看单个进程:
+
+				p = psutil.Process(16031)
+				p.name()      #进程名
+				p.exe()         #进程的bin路径
+				p.cwd()        #进程的工作目录绝对路径
+				p.status()     #进程状态
+				p.create_time()  #进程创建时间
+				p.uids()      #进程uid信息
+				p.gids()      #进程的gid信息
+				p.cpu_times()    #进程的cpu时间信息,包括user,system两个cpu信息
+				p.cpu_affinity()  #get进程cpu亲和度,如果要设置cpu亲和度,将cpu号作为参考就好
+				p.memory_percent()  #进程内存利用率
+				p.memory_info()    #进程内存rss,vms信息
+				p.io_counters()    #进程的IO信息,包括读写IO数字及参数
+				p.connectios()    #返回进程列表
+				p.num_threads()  #进程开启的线程数
+				听过psutil的Popen方法启动应用程序，可以跟踪程序的相关信息
+				from subprocess import PIPE
+				p = psutil.Popen(["/usr/bin/python", "-c", "print('hello')"],stdout=PIPE)
+				p.name()
+				p.username()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
