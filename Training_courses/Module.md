@@ -3274,13 +3274,163 @@ autopep8:
 			'print( 123 )\n'
 
 
+"-------------------------------------------------------------------------------"
+
+Pylint:
+
+	1、Pylint 是什么:
+
+		Pylint 是一个Python代码分析工具，它分析Python代码中的错误，查找不符合代码
+		风格标准(Pylint默认的代码风格是PEP8)和潜在的问题的代码。
+
+		Pylint 是一个Python工具，除了平常代码分析工具的作用之外，它提供了
+		更多的功能：如检查一行代码的长度，变量名是否符合命名标准，
+		一个声明过的接口是否被真正的实现等等。
+
+		Pylint 的一个很大的好处是它的高可配置性，高可定制性，并且可以很容易写小插件来添加功能。
+
+		如果运行两次 Pylint，它会同时显示出当前和上次的运行结果，从而可以看出代码质量是否得到了改进。
+
+		目前在 eclipse 的 pydev 插件中也集成了 Pylint。
+
+	2、Pylint 具体介绍:
+
+
+		Pylint 的安装:
+
+			Pylint 可以用于所有高于或者等于 2.2 的 Python 版本。
+			需要logilab-astng（version >= 0.14和logilab-common(version >= 0.13)的包
+
+		Pylint 在 Linux 上的安装:
+
+			a. 在 Linux 上，首先安装 Python 的包（高于版本 2.2），并在环境变量 $PATH 中添加 Python 可执行文件的路径。
+
+			b. 下载 Pylint、logilab-astng (version >= 0.14) 和 logilab-common (version >= 0.13) 的包 ,
+				使用 tar zxvf *.tar.gz解压缩这些包。
+
+			c. 依次进入 logilab-astng、logilab-common 和 Pylint 解开的文件夹中，
+			   运行命令 Python setup.py install来安装。
+
+			d. 安装完成后，就可以通过 pylint [options] module_or_package来调用 Pylint 了。
+
+
+	3、Pylint 的调用:
+
+		Pylint 的调用命令:
+			pylint [options] module_or_package
+
+		使用 Pylint 对一个模块 module.py 进行代码检查：
+
+			a. 进入这个模块所在的文件夹，运行 pylint [options] module.py
+			   这种调用方式是一直可以工作的，因为当前的工作目录会被自动加入 Python 的路径中。
+
+			b.  不进入模块所在的文件夹，运行 pylint [options] directory/module.py
+				这种调用方式当如下条件满足的时候是可以工作的：directory 是个 Python 包 
+				( 比如包含一个 __init__.py 文件 )，或者 directory 被加入了 Python 的路径中。
+
+		使用 Pylint 对一个包 pakage 进行代码检查：
+
+			a. 进入这个包所在文件夹，运行 pylint [options] pakage。
+			   这种调用方式是一直可以工作的，因为当前的工作目录会被自动加入 Python 的路径中。
+
+			b. 不进入包所在的文件夹，运行 pylint [options] directory/ pakage。
+				这种情况下当如下条件满足的时候是可以工作的：directory 被加入了 Python 的路径中。
+				比如在 Linux 上，export PYTHONPATH=$PYTHONPATH: directory。
+		
+		
+	4、Pylint 的常用命令行参数:
+
+		a. -h,--help:
+
+			显示所有帮助信息。
+
+		b. --generate-rcfile:
+
+			可以使用 pylint --generate-rcfile 来生成一个配置文件示例。
+			可以使用重定向把这个配置文件保存下来用做以后使用。也可以在前面加上其它选项，
+			使这些选项的值被包含在这个产生的配置文件里。
+			如：pylint --persistent=n --generate-rcfile > pylint.conf，
+			查看 pylint.conf，可以看到 persistent=no，而不再是其默认值 yes。	
+		
+		c. --rcfile=<file> :
+		
+			指定一个配置文件。把使用的配置放在配置文件中，
+			这样不仅规范了自己代码，也可以方便地和别人共享这些规范。
+
+		d. -i <y_or_n>, --include-ids=<y_or_n> :
+
+			在输出中包含 message 的 id, 然后通过 pylint --help-msg=<msg-id>
+			来查看这个错误的详细信息，这样可以具体地定位错误。
+
+		e. -r <y_or_n>, --reports=<y_or_n> :
+
+			默认是 y, 表示 Pylint 的输出中除了包含源代码分析部分，也包含报告部分。
+
+		f. --files-output=<y_or_n> :
+
+			将每个 module /package 的 message 输出到一个以 pylint_module/package. [txt|html] 命名的文件中，
+			如果有 report 的话，输出到名为 pylint_global.[txt|html] 的文件中。
+			默认是输出到屏幕上不输出到文件里。
+
+		g. -f <format>, --output-format=<format> :
+
+			设置输出格式。可以选择的格式有 text, parseable, colorized, msvs (visual studio) 和 html, 
+			默认的输出格式是 text。
+
+		h. --disable-msg=<msg ids>
+	
+			禁止指定 id 的 message. 比如说输出中包含了 W0402 这个 warning 的 message,
+			如果不希望它在输出中出现，可以使用 --disable-msg= W0402
+	
+	5、Pylint 的输出:
+
+		Pylint的默认输出格式是原始文本（raw text）格式 ，
+		可以通过 -f <format>，--output-format=<format> 来指定别的输出格式如html等等。
+		在Pylint的输出中有如下两个部分：源代码分析部分和报告部分。
+
+		源代码分析部分：
+
+			对于每一个 Python 模块，Pylint 的结果中首先显示一些"*"字符 , 
+			后面紧跟模块的名字，然后是一系列的 message, message 的格式如下：
+
+			a. MESSAGE_TYPE: LINE_NUM:[OBJECT:] MESSAGE:
+			
+				MESSAGE_TYPE 有如下几种：
+
+				(C) 惯例。违反了编码风格标准
+				(R) 重构。写得非常糟糕的代码。
+				(W) 警告。某些 Python 特定的问题。
+				(E) 错误。很可能是代码中的错误。
+				(F) 致命错误。阻止 Pylint 进一步运行的错误。
+
+			b. Pylint 中的 utils 模块的输出结果:
+
+				************* Module utils 
+				C: 88:Message: Missing docstring 
+				R: 88:Message: Too few public methods (0/2) 
+				C:183:MessagesHandlerMixIn._cat_ids: Missing docstring 
+				R:183:MessagesHandlerMixIn._cat_ids: Method could be a function 
+				R:282:MessagesHandlerMixIn.list_messages: Too many branches (14/12)
+
+		报告部分：
+
+			在源代码分析结束后面，会有一系列的报告，每个报告关注于项目的某些方面，
+			如每种类别的 message 的数目，模块的依赖关系等等。具体来说，报告中会包含如下的方面：
+
+
+			检查的 module 的个数。
+			
+			对于每个 module, 错误和警告在其中所占的百分比。比如有两个 module A 和 B,
+			如果一共检查出来 4 个错误，1 个错误是在 A 中，3 个错误是在 B 中，
+			那么 A 的错误的百分比是 25%, B 的错误的百分比是 75%。
+			
+			错误，警告的总数量。
+
+
+	6、使用 Pylint 分析 Python 代码的具体示例:
+
+		
 
 
 
-
-
-
-
-
-
-
+	
