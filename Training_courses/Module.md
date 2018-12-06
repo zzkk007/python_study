@@ -3427,9 +3427,136 @@ Pylint:
 			那么 A 的错误的百分比是 25%, B 的错误的百分比是 75%。
 			
 			错误，警告的总数量。
+	
+	6、使用 Pylint 分析 Python 代码的具体示例：
+
+		[root@iz2ze0lvzs717097h32rpcz ~]# pylint binary_2ststem.py
+
+		源码：
+
+			1 #!/bin/python
+			2 # _*_coding:UTF-8_*_
+			3 
+			4 
+			5 def binary(n):
+			6     if n == 0:
+			7         return '0'
+			8     else:
+			9         return binary(n // 2) + str(n % 2)
+			10 
+			11 
+			12 num = int(input("请输入一个十进制的数字:"))
+			13 
+			14 bin_num = binary(num)
+			15 
+			16 print(bin_num)
 
 
+		 Pylint 的分析结果
+
+			************* Module binary_2ststem
+			 C: 16, 0: Unnecessary parens after u'print' keyword (superfluous-parens)
+			 C:  1, 0: Missing module docstring (missing-docstring)
+			 C:  5, 0: Invalid argument name "n" (invalid-name)
+			 C:  5, 0: Missing function docstring (missing-docstring)
+			 C: 12, 0: Invalid constant name "num" (invalid-name)
+			 C: 14, 0: Invalid constant name "bin_num" (invalid-name)
+
+		 Report 部分:
+
+			Report
+			======
+			7 statements analysed.
+
+			Statistics by type
+			------------------
+
+			+---------+-------+-----------+-----------+------------+---------+
+			|type     |number |old number |difference |%documented |%badname |
+			+=========+=======+===========+===========+============+=========+
+			|module   |1      |NC         |NC         |0.00        |0.00     |
+			+---------+-------+-----------+-----------+------------+---------+
+			|class    |0      |NC         |NC         |0           |0        |
+			+---------+-------+-----------+-----------+------------+---------+
+			|method   |0      |NC         |NC         |0           |0        |
+			+---------+-------+-----------+-----------+------------+---------+
+			|function |1      |NC         |NC         |0.00        |0.00     |
+			+---------+-------+-----------+-----------+------------+---------+
 
 
+			Raw metrics
+			-----------
+			+----------+-------+------+---------+-----------+
+			|type      |number |%     |previous |difference |
+			+==========+=======+======+=========+===========+
+			|code      |8      |47.06 |NC       |NC         |
+			+----------+-------+------+---------+-----------+
+			|docstring |0      |0.00  |NC       |NC         |
+			+----------+-------+------+---------+-----------+
+			|comment   |2      |11.76 |NC       |NC         |
+			+----------+-------+------+---------+-----------+
+			|empty     |7      |41.18 |NC       |NC         |
+			+----------+-------+------+---------+-----------+
 
+			Duplication
+			-----------
+
+			+-------------------------+------+---------+-----------+
+			|                         |now   |previous |difference |
+			+=========================+======+=========+===========+
+			|nb duplicated lines      |0     |NC       |NC         |
+			+-------------------------+------+---------+-----------+
+			|percent duplicated lines |0.000 |NC       |NC         |
+			+-------------------------+------+---------+-----------+
+
+			Messages by category
+			--------------------
+
+			+-----------+-------+---------+-----------+
+			|type       |number |previous |difference |
+			+===========+=======+=========+===========+
+			|convention |6      |NC       |NC         |
+			+-----------+-------+---------+-----------+
+			|refactor   |0      |NC       |NC         |
+			+-----------+-------+---------+-----------+
+			|warning    |0      |NC       |NC         |
+			+-----------+-------+---------+-----------+
+			|error      |0      |NC       |NC         |
+			+-----------+-------+---------+-----------+
+
+			Messages
+			--------
+			+-------------------+------------+
+			|message id         |occurrences |
+			+===================+============+
+			|invalid-name       |3           |
+			+-------------------+------------+
+			|missing-docstring  |2           |
+			+-------------------+------------+
+			|superfluous-parens |1           |
+			+-------------------+------------+
+
+			Global evaluation
+			-----------------
+			Your code has been rated at 1.43/10
+
+
+		b. 因为输出结果太长，所以先不让输出报告部分，先根据源代码分析部分来找出代码中的问题。
+			使用选项"--reports=n"
+
+			[root@iz2ze0lvzs717097h32rpcz ~]# pylint --reports=n binary_2ststem.py 
+			No config file found, using default configuration
+			************* Module binary_2ststem
+			C: 16, 0: Unnecessary parens after u'print' keyword (superfluous-parens)
+			C:  1, 0: Missing module docstring (missing-docstring)
+			C:  5, 0: Invalid argument name "n" (invalid-name)
+			C:  5, 0: Missing function docstring (missing-docstring)
+			C: 12, 0: Invalid constant name "num" (invalid-name)
+			C: 14, 0: Invalid constant name "bin_num" (invalid-name)
+		
+		c. 根据提示去修改源码中的错误：
+
+			
+			
+		
 	
