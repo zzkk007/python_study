@@ -3293,6 +3293,7 @@ Pylint:
 
 		目前在 eclipse 的 pydev 插件中也集成了 Pylint。
 
+
 	2、Pylint 具体介绍:
 
 
@@ -3303,16 +3304,17 @@ Pylint:
 
 		Pylint 在 Linux 上的安装:
 
-			a. 在 Linux 上，首先安装 Python 的包（高于版本 2.2），并在环境变量 $PATH 中添加 Python 可执行文件的路径。
+			Debian:	sudo apt-get install pylint 
+			Ubuntu: sudo apt-get install pylint
+			centos: sudo yum install pylint
 
-			b. 下载 Pylint、logilab-astng (version >= 0.14) 和 logilab-common (version >= 0.13) 的包 ,
-				使用 tar zxvf *.tar.gz解压缩这些包。
+			Pylint can be simply installed by running:
 
-			c. 依次进入 logilab-astng、logilab-common 和 Pylint 解开的文件夹中，
-			   运行命令 Python setup.py install来安装。
+				pip install pylint
 
-			d. 安装完成后，就可以通过 pylint [options] module_or_package来调用 Pylint 了。
+			If you are using Python 3.6+, upgrade to get full support for your version:
 
+				pip install pylint --upgrade
 
 	3、Pylint 的调用:
 
@@ -3427,9 +3429,6 @@ Pylint:
 			错误，警告的总数量。
 
 
-	6、使用 Pylint 分析 Python 代码的具体示例:
-
-		
 
 
 
