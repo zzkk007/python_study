@@ -3061,7 +3061,217 @@ psutil:
 				p.username()
 
 
+"-------------------------------------------------------------------------"
 
+monkey patch(猴子补丁):
+	
+	 定义:
+	      
+		猴子补丁（monkey patching）
+	    在运行时动态修改模块、类或函数，通常是添加功能或修正缺陷。猴子补丁在代码运行时
+		（内存中）发挥作用，不会修改源码，因此只对当前运行的程序实例有效。
+		因为猴子补丁破坏了封装，而且容易导致程序与补丁代码的实现细节紧密耦合，
+		所以被视为临时的变通方案，不是集成代码的推荐方式。
+	
+		猴子补丁的名声不太好。如果滥用，会导致系统难以理解和维护。补丁通常与目标紧密耦合，
+		因此很脆弱。另一个问题是，打了猴子补丁的两个库可能相互牵绊，因为第二个库可能撤销
+		了第一个库的补丁。不过猴子补丁也有它的作用，例如可以在运行时让类实现协议。
+		适配器设计模式通过实现全新的类解决这种问题。为 Python 打猴子补丁不难，但是有些局限。
+		与 Ruby 和 JavaScript 不同， Python 不允许为内置类型打猴子补丁。
+		其实这是优点，因为这样可以确保 str 对象的方法始终是那些。
+		这一局限能减少外部库打的补丁有冲突的概率。
+
+
+		mokney patch 指的是在运行时动态的替换，一般是在startup的时候。
+
+		用过gevent就会知道,会在最开头的地方gevent.monkey.patch_all();
+		把标准库中的thread/socket等给替换掉.这样我们在后面使用socket的时候可以跟平常一样使用,
+		无需修改任何代码,但是它变成非阻塞的了.
+	
+		很多地方用的import json,后来发现ujson比自带json快了N倍,于是问题来了,
+		难道几十个文件要一个个把import json改成import ujson as json吗?
+		其实只需要在进程startup的地方monkey patch就行了.是影响整个进程空间的.
+		同一进程空间中一个module只会被运行一次.
+
+		代码如下：
+
+			main.py
+
+				import json
+				import ujson
+				def monkey_patch_json():
+					json.__name__ = 'ujson'
+					json.dumps = ujson.dumps
+					json.loads = ujson.loads
+
+				monkey_patch_json()
+				print 'main.py',json.__name__
+				import sub
+
+			sub.py
+				import json
+				print 'sub.py',json.__name__
+
+		运行main.py,可以看到都是输出'ujson',说明后面的json被patch了的。
+
+		最后,注意不能单纯的json = ujson来替换.
+
+		执行main.py 的结果是：
+	
+			'main.py', 'ujson'
+			'sub.py', 'ujson'
+		很神奇，所有的json都变成了ujson.
+
+"-----------------------------------------------------------------------"
+
+autopep8:
+
+	autopep8 会根据PEP 8样式文档来格式化Python代码。它使用pep8来决定代码
+	的哪部分需要被格式化。autopep8可以修复pep8汇报的大部分格式问题。
+
+	PEP8是Python Enhancement Proposal的缩写，翻译过来就是python增强建议书。
+	是python 的一个官方样式指导，它规定了一些比较好的编码方式，比如用4个空格代替缩进等等。
+
+	1、安装：from pip:
+
+		$ pip insall --upgrade autopep8
+
+	2、依赖：
+		
+		autopep8 requires pycodestyle.
+
+	3、autopep8修复了pycodestyle报告的下列问题:
+
+		E101  -  Reindent所有线路。
+		E11  - 修复缩进。
+		E121  - 将缩进修复为四的倍数。
+		E122  - 为缺口缩进添加缺少的缩进。
+		E123  - 对齐闭合支架以匹配开口支架。
+		E124  - 对齐闭合支架以匹配视觉压痕。
+		E125  - 缩进以区分线与下一逻辑线。
+		E126  - 修复过度缩进的悬挂压痕。
+		E127  - 修复视觉缩进。
+		E128  - 修复视觉缩进。
+		E129  - 修复视觉缩进。
+		E131  - 修复未对齐延续线的悬挂缩进。
+		E133  - 修复关闭括号的缺失缩进。
+		E20  - 删除无关的空格。
+		E211  - 删除无关的空格。
+		E22  - 修复关键字周围的无关空白。
+		E224  - 删除操作员周围的无关空格。
+		E225  - 修复操作员周围缺少的空白。
+		E226  - 修复算术运算符周围缺少的空格。
+		E227  - 修复按位/移位运算符周围缺少的空格。
+		E228  - 修复模运算符周围缺少的空格。
+		E231  - 添加缺少的空格。
+		E241  - 修复关键字周围的无关空白。
+		E242  - 删除操作员周围的无关空格。
+		E251  - 删除参数'='符号周围的空格。
+		E252  - 参数等于缺少空格。
+		E26  - 在内联注释的注释哈希后修复间距。
+		E265  - 修复块注释的注释哈希后的间距。
+		E266  - 为块注释修复了太多前导'＃'。
+		E27  - 修复关键字周围的无关空白。
+		E301  - 添加缺少的空白行。
+		E302  - 添加缺少的2个空行。
+		E303  - 删除多余的空白行。
+		E304  - 删除功能装饰器后面的空白行。
+		E305  - 功能或课程结束后预计有2个空白行。
+		E306  - 嵌套定义之前预计有1个空行。
+		E401  - 将进口分开。
+		E402  - 修复模块级别导入不在文件顶部
+		E501  - 尝试使线条适合--max-line-length字符。
+		E502  - 删除换行符的无关逃逸。
+		E701  - 将冒号分隔的复合语句放在单独的行上。
+		E70  - 将分号分隔的复合语句放在单独的行上。
+		E711  - 修复与无比较。
+		E712  - 修复与布尔值的比较。
+		E713  - 使用'not in'进行会员资格测试。
+		E714  - 对对象标识使用'is not'测试。
+		E721  - 使用“isinstance（）”而不是直接比较类型。
+		E722  - 修复裸露除外。
+		E731  - 使用时不使用def指定lambda表达式。
+		W291  - 删除尾随空格。
+		W292  - 在文件末尾添加一个换行符。
+		W293  - 删除空白行上的尾随空格。
+		W391  - 删除尾随空白行。
+		W503  - 在二元运算符之前修复换行符。
+		W504  - 修复二元运算符后的换行符。
+		W601  - 使用“in”而不是“has_key（）”。
+		W602  - 修复不推荐的提出异常的形式。
+		W603  - 使用“！=”代替“<>”
+		W604  - 使用“repr（）”而不是反引号。
+		W605  - 修复无效的转义序列'x'。
+		W690  - 修复各种已弃用的代码（通过lib2to3）。
+
+	4、autopep8还修复了pycodestyle找不到的一些问题。
+
+		更正已弃用或非惯用的Python代码（通过lib2to3）。使用它可以使Python 2.7代码与Python 3更兼容。
+		（如果W690启用，则会触发此代码。）
+
+		标准化具有混合行结尾的文件。
+		在类docstring和它的第一个方法声明之间加一个空行。（启用E301。）
+		删除函数声明及其docstring之间的空行。（启用E303。）
+
+	5、具体用法：
+
+		1、使用 autopep8 更改一个文件。
+
+			假设文件名是 test.py,对之个文件执行autopep8命令：
+
+			/usr/local/Python-2.7.14/bin/autopep8 --in-place --aggressive --aggressive test.py
+
+			备注： 
+				
+				--in-place： 以更改后的文件直接替代源文件。
+				--aggressive --aggressive : 以 aggressive 等级2 来更改源文件。
+
+		2、aggressive 等级
+			
+			默认情况下，autopep8只修复空格问题，所以，默认情况下，autopep8不会修复 E711 和 E712 ，
+			也不会修复弃用的代码 W6。
+			为了应用这些更加 aggressive 的修复，使用 --aggressive 选项：
+
+			autopep8 --aggressive test.py
+			
+			使用多个 --aggressive 可以增加 aggressiveness 等级。
+
+			比如， E712 需要 aggressiveness 等级2.
+
+			autopep8 --aggressive  --aggressive test.py
+
+
+		3、选择修复部分规范
+
+			只修复一部分规范，使用 --select 选项。
+
+			比如，修复多种缩进问题：
+
+			$ autopep8 --select=E1,W1 test.py
+
+			仅仅修复弃用代码问题：
+
+			$ autopep8 --aggressive --select=W6 test.py
+
+
+		4、显示详细的过程信息
+
+			$ autopep8 -v test.py
+
+
+		5、以模块的方式使用
+			
+			>>> import autopep8
+			>>> autopep8.fix_code('x=       123\n')
+			'x = 123\n'
+
+		6、以模块的方式使用，且带有条件
+
+			>>> import autopep8
+			>>> autopep8.fix_code('x.has_key(y)\n', options={'aggressive': 1})
+			'y in x\n'
+			>>> autopep8.fix_code('print( 123 )\n', options={'ignore': ['E']})
+			'print( 123 )\n'
 
 
 
