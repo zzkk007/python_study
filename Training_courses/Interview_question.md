@@ -674,6 +674,231 @@
 
 "================================================================="
 
+1、列表a = [1,2,3,4,5,6,7,8,9], a[5:0:-2]值是多少？
+
+	[6,4,2]
+
+	从index=5 到index=0,每隔1位取一个值。
+
+
+2、存在数组a = [1,2,3,[4,5,6]]进行如下计算，a,b,c,d的值各是多少？
+
+	b = a
+
+	c = copy.copy(a)
+
+	d = copy.deepcopy(a)
+
+	a.append(5)
+
+	a[3].append(7)
+
+
+	
+	a --> [1, 2, 3, [4, 5, 6, 7], 5]
+
+	b --> [1, 2, 3, [4, 5, 6, 7], 5]
+
+	c --> [1, 2, 3, [4, 5, 6, 7]]
+
+	d --> [1, 2, 3, [4, 5, 6]]
+
+
+3、1 and [""] or "False"
+
+	['']
+
+	and :逻辑与，只有当1 为真时，才是计算[""]
+
+	or : 逻辑或，只有当[""]为假时，才会执行"False"
+	
+	[""] 的结果为真。
+
+	python中，真和假的概念是每个对象的固有属性，
+	每个对象不是真就是假：
+
+		数字如果非零，则为真
+		其他对象如果非空，则为真。
+
+		对象       值
+
+		""         False
+		
+		[]         False
+
+		{}         False
+
+		0.0        False
+
+		None       False
+
+
+		[""]       True
+
+
+4、实现一个带参数的装饰器deco:
+	
+	@deco(debug = True)
+	def func(a, b):
+		pass
+
+	
+	def deco(debug):
+		""""""
+		def decorate(func):
+
+			def wrapper(a, b):
+				return func(a, b)
+
+			return wrapper
+		return decorate
+
+	初看起来，这种实现看上去很复杂，但是核心思想很简单。 
+	最外层的函数 deco() 接受参数并将它们作用在内部的装饰器函数上面。 
+	内层的函数 decorate() 接受一个函数作为参数，然后在函数上面放置一个包装器。
+	这里的关键点是包装器是可以使用传递给deco() 的参数的。
+
+
+	例子:
+
+		#!/bin/python
+		#_*_coding:UTF-8_*_
+
+
+		def deco(debug):
+
+			def decorator(func):
+
+				def wrapper(a, b):
+					print("%d---->%d")%(a, b)
+					return func(a, b)	
+				return wrapper							
+			return decorator
+												
+		@deco(debug = True)
+		def func(a, b):
+			print("a + b = %d")%(a + b)
+			
+			
+		if __name__ == '__main__':
+				
+			func(1, 2)
+	
+5、使用上下文管理器实现open 函数
+
+	with open('some_file', 'w') as opened_file:
+		opened_file.write('Hola!')
+
+6、定义一个自己的dict类Storage,使其元素支持属性(点)访问
+
+	class Storage(dict):
+		
+		"""
+		A Storage object is like a dictionary except 'obj.foo' can be used
+		in addition to 'obj['foo']'
+
+		>>> o = storage(a=1)
+		>>> o.a
+			1
+		>>> o['a']
+			1
+		>>> o.a = 2
+		>>> o['a']
+			2
+		>>> del o.a
+		>>> o.a
+		Traceback (most recent call last):
+			...
+		AttributeError: 'a'
+
+		"""
+		
+		def __getattr__(self,key):
+			try:
+				return self[key]
+			except KeyError, k:
+				raise AttributeError, k
+		
+		def __setattr__(self,key,value):
+			self[key] = value
+
+		def __delattr__(self,key):
+			try:
+				del self[key]
+			except KeyError, k:
+				raise AttributeError, k
+
+		def __repr__(self):
+			return '<Storage ' + dict.__repr__(self) + '>'
+
+
+7、请写出常见的python的web应用部署方式，格式：webContainer + appContainer + app
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+8、考虑下面情况，将得到什么结果？并解释为什么？
+
+	print "hello! %s" % u"中国"
+		
+	print "hello ! %s" % "中国"
+
+	print u"hello ! %s" % "中国"
+
+9、用正则匹配一下ip地址:
+
+	localhost is 127.0.0.1
+
+
+
+10、一个列表中的元素有正有负，在该数组中找出一个连续的子数组，要求该连续子数组
+	中各元素的和最大，这个连续子数组便被称作最大连续子数组，然后返回该和值即可。
+	比如，数组[2, 4, -7, 5, 2, -4, 3] 的最大连续子数组为[5, 2, -1, 2],最大连续
+	子数组的和是5 + 2 - 1 + 2 = 8
+
+
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"================================================================="
 
 
 
