@@ -435,6 +435,11 @@
 			安装：
 				Plugin 'Yggdroot/indentLine'
 			
+				设置：
+
+					let g:indentLine_char='┆'
+					let g:indentLine_enabled = 1
+
 			python是靠代码缩进来判断代码块的，缩进指示线还是很方便的。
 
 		9、vim-autopep8:
