@@ -736,9 +736,124 @@
         operator_mapper = {'+': op.add, '-': op.sub, '*': op.mil, '/': op.truediv}
         return operator_mapper[operator](left_operand, right_operand)
              
-      
-        
+"""访问tuple的数据项时，可以用 namedtuple 代替 index 的方式访问"""
+
+    # bad 
     
+    rows = [('lily', 20, 2000), ('lucy', 19, 2500)]
+    for row in rows:
+        print('{1} age is {2}, salary is {3} ').format(row[0], row[1], row[2])
+        
+    # good
+    
+    from collections import namedtuple
+    Employee = namedtuple('Employee', 'name, age, salary')
+    for row in rows:
+        employee = Employee._make(row)
+        print('{1} age is {2}, salary is {3} ').format(employee.name, employee.age, employee.salary)
+        
+ """用 isinstance 来判断对象的类型 """
+ 
+    因为在python中定义变量时，不用像其他静态语言，如java, 要指定其变量数据类型。
+    但这并不意味着python中没有数据类型，每个对象有不同的数据类型，一个变量只有
+    在运行的时候根据引用的对象，才会确定其数据类型。
+    比如，下面代码计算一个对象的长度值，如果是序列数据类型（str, list, dcit, set）
+    直接调用len方法，如果是True, False, None 则返回1， 如果是数值的，则返回int值。
+    
+    # bad
+    
+    def get_size(some_object):
+        try:
+            return len(some_object)
+        except TypeError:
+            if some_object in (True, False, None):
+                return 1
+        else:
+            return int(some_object)
+            
+    # good
+    
+    def get_size(some_object):
+        if isinstance(some_object,(list, dict, str, tuple)):
+            return len(some_object)
+        elif isinstance(some_object, (bool, type(None))):
+            return 1
+        elif isinstance(some_object, (int, float)):
+            return int(some_object)
+
+"""用 with 管理操作资源的上下文环境"""
+    
+    在一个比较典型的场景中， 如数据库操作， 我们操作connection 时一般要正常
+    关闭连接，而不管是正常退出还是异常退出。如下：
+    
+    # bad
+  
+    class Connection(object):
+    def execute(self, sql):
+        raise Exception('ohoh, exception!')
+        
+    def close(self):
+        print('closed the Connection')
+        
+    try:
+        conn = Connection() 
+        conn.execute('select *from t_users')    
+    finally:
+        conn.close()
+        
+    # good
+    
+    class Connection(object):
+    def execute(self, sql):
+        raise Exception('ohoh, exception!')
+    def close(self):
+        print('closed the Connection')
+    def __enter__(self):
+        return self
+    def __exit__(self, errorType, errorValue, error):
+        self.close()
+    
+    with Connection() as conn:
+        conn.excute('select *from t_users') 
+        
+        
+"""使用 generator 返回耗费内存的对象"""       
+
+    # bad
+    
+    def f():
+        # ...
+        return biglist
+    
+    # good
+    
+    def f():
+        # ...
+        for i in biglist:
+            yield i
+            
+            
+ "---------------------------------------------"   
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                   
+   
 
             
     
