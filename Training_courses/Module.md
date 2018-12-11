@@ -3762,21 +3762,160 @@ Python定时任务:
                     seconds (int)         间隔多少秒
                     start_date (datetime 或 str)  开始日期
                     end_date (datetime 或 str)    结束日期
+                    timezone (datetime.tzinfo 或str) 区
+		    
+		    interval 触发器使用示例如下：
+		    
+		    	import datetime
+			from apscheduler.schedulers.background import BackgroundScheduler
 
-                    timezone (datetime.tzinfo 或str)
-                    时区
-           
+			def job_func(text):
+			    print(datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3])
+
+			scheduler = BackgroundScheduler()
+			# 每隔两分钟执行一次 job_func 方法
+			scheduler .add_job(job_func, 'interval', minutes=2)
+			# 在 2017-12-13 14:00:01 ~ 2017-12-13 14:00:10 之间, 每隔两分钟执行一次 job_func 方法
+			scheduler .add_job(job_func, 'interval', minutes=2, start_date='2017-12-13 14:00:01' , 
+					  end_date='2017-12-13 14:00:10') 
+
+			scheduler.start()
+			
+		3、cron 触发器
+		
+			在特定时间周期性地触发，和Linux crontab格式兼容。它是功能最强大的触发器。
+			我们先了解 cron 参数：
+			
+			参数说明
+
+			year (int 或 str)年，4位数字
+			month (int 或 str)月 (范围1-12)
+			day (int 或 str)日 (范围1-31
+			week (int 或 str)周 (范围1-53)
+			day_of_week (int 或 str)周内第几天或者星期几 (范围0-6 或者 mon,tue,wed,thu,fri,sat,sun)
+			hour (int 或 str)时 (范围0-23)
+			minute (int 或 str)分 (范围0-59)
+			second (int 或 str)秒 (范围0-59)
+			start_date (datetime 或 str)最早开始日期(包含)
+			end_date (datetime 或 str)最晚结束时间(包含)
+			timezone (datetime.tzinfo 或str)指定时区
+
+		    cron 触发器使用示例如下：
+		    	
+			import datetime
+			from apscheduler.schedulers.background import BackgroundScheduler
+
+			def job_func(text):
+			    print("当前时间：", datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3])
+
+			scheduler = BackgroundScheduler()
+			# 在每年 1-3、7-9 月份中的每个星期一、二中的 00:00, 01:00, 02:00 和 03:00 执行 job_func 任务
+			scheduler .add_job(job_func, 'cron', month='1-3,7-9',day='0, tue', hour='0-3')
+
+			scheduler.start()
             
             job stores: 任务持久化仓库，默认保存任务在内存中，也可将任务保存都各种数据库中，
                         任务中的数据序列化后保存到持久化数据库，从数据库加载后又反序列化。
+			
+			该组件是对调度任务的管理。
+			
+			添加 job 
+			
+				两种添加方法，其中一种上述代码用到的 add_job()， 另一种则是scheduled_job()修饰器来修饰函数。
+				这个两种办法的区别是：第一种方法返回一个 apscheduler.job.Job 的实例，可以用来改变或者移除 job。
+				第二种方法只适用于应用运行期间不会改变的 job。
+			
+				第二种添加任务方式的例子：
+			
+				import datetime
+				from apscheduler.schedulers.background import BackgroundScheduler
+
+				@scheduler.scheduled_job(job_func, 'interval', minutes=2)
+				def job_func(text):
+				    print(datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3])
+
+				scheduler = BackgroundScheduler()
+				scheduler.start()
+			移除 job
+			
+				移除 job 也有两种方法：remove_job() 和 job.remove()。
+				remove_job() 是根据 job 的 id 来移除，所以要在 job 创建的时候指定一个 id。
+				job.remove() 则是对 job 执行 remove 方法即可
+			
+				scheduler.add_job(job_func, 'interval', minutes=2, id='job_one')
+				scheduler.remove_job(job_one)
+
+				job = add_job(job_func, 'interval', minutes=2, id='job_one')
+				job.remvoe()
+			
+			获取 job 列表
+			
+				通过 scheduler.get_jobs() 方法能够获取当前调度器中的所有 job 的列表
+			
+			修改 job
+				
+				如果你因计划改变要对 job 进行修改，可以使用Job.modify() 或者 modify_job()方法来修改 job 的属性。
+				但是值得注意的是，job 的 id 是无法被修改的。
+			
+				scheduler.add_job(job_func, 'interval', minutes=2, id='job_one')
+				scheduler.start()
+				# 将触发时间间隔修改成 5分钟
+				scheduler.modify_job('job_one', minutes=5)
+
+				job = scheduler.add_job(job_func, 'interval', minutes=2)
+				# 将触发时间间隔修改成 5分钟
+				job.modify(minutes=5)
+			
+			关闭 job
+			
+				默认情况下调度器会等待所有正在运行的作业完成后，关闭所有的调度器和作业存储。如果你不想等待，
+				可以将 wait 选项设置为 False。
+				
+				scheduler.shutdown()
+				scheduler.shutdown(wait=false)
+			
             
             executors: 负责处理作业的运行，它们通常通过在作业中提交指定的可调用对象到一个线程或者进城池来进行。
                        当作业完成时，执行器将会通知调度器。
                 
-                    
-            
-            
-            
+                    	执行器顾名思义是执行调度任务的模块。最常用的 executor 有两种：ProcessPoolExecutor 和 ThreadPoolExecutor
+			
+			下面是显式设置 job store(使用mongo存储)和 executor 的代码的示例。
+				
+				from pymongo import MongoClient
+				from apscheduler.schedulers.blocking import BlockingScheduler
+				from apscheduler.jobstores.mongodb import MongoDBJobStore
+				from apscheduler.jobstores.memory import MemoryJobStore
+				from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
+
+
+				def my_job():
+				    print 'hello world'
+				host = '127.0.0.1'
+				port = 27017
+				client = MongoClient(host, port)
+
+				jobstores = {
+				    'mongo': MongoDBJobStore(collection='job', database='test', client=client),
+				    'default': MemoryJobStore()
+				}
+				executors = {
+				    'default': ThreadPoolExecutor(10),
+				    'processpool': ProcessPoolExecutor(3)
+				}
+				job_defaults = {
+				    'coalesce': False,
+				    'max_instances': 3
+				}
+				scheduler = BlockingScheduler(jobstores=jobstores, executors=executors, job_defaults=job_defaults)
+				scheduler.add_job(my_job, 'interval', seconds=5)
+
+				try:
+				    scheduler.start()
+				except SystemExit:
+				    client.close()
+
+          
 "---------------------------------------------------------------------------"
             
            
