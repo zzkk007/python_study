@@ -687,6 +687,45 @@
     
     for operator in (op.add, op.sub, op.mul, op.div):
         print_table(operator)
+        
+        
+    # operator模块:
+        
+        operator模块是python中内置的操作符函数接口, 它定义了一些算术和比较内置操作的
+        函数，operator模块是用c实现的，所以执行起来比Python代码快。
+        
+        比较操作符:
+            
+           from operator import *
+            a = 1
+            b = 5
+            for func in (lt, le, eq, ne, ge, gt):
+                print func(a,b)
+                
+            lt  <
+            le  <=
+            eq  ==
+            ne  !=
+            ge  >=
+            gt  >
+       
+        算术操作:
+            add   +
+            sub   -
+            mul   *
+            div   /
+            floordiv  整除除法
+            pow   指数
+            truediv(a,b) 浮点数除法
+                               
+        位操作： 
+            
+            and_  按位与
+            or_(c,d) 按位或
+            xor(c,d) 异或
+            invert 取反
+            lshift(c,d) 左移位
+            rshift(d,c) 右移位
                    
 """防御式编程 EAFP vs LBYL"""
 
@@ -751,8 +790,40 @@
     for row in rows:
         employee = Employee._make(row)
         print('{1} age is {2}, salary is {3} ').format(employee.name, employee.age, employee.salary)
+    
+    # collections.nametuple:
         
- """用 isinstance 来判断对象的类型 """
+        namedtuple是继承自tuple的子类。
+        namedtuple创建一个和tuple类似的对象，而且对象拥有可访问的属性。
+        
+        看下面列子:
+        
+            form collections import namedtuple
+           
+            # 定义一个namedtuple类型 User, 并包含name, sex 和 age 属性
+            User = namedtuple('User',['name', 'sex', 'age'])
+            
+            # 创建一个User 对象
+            user = User(name = 'kongxx', 'male', 21)
+            
+            # 也可以通过一个list创建一个User对象，这里注意需要使用"_make"方法
+            user = User._make(['kongxx', 'male', 21])
+         
+            # 获取用户的属性
+            print(user.name)
+            print(user.sex)
+            print(user.age)
+
+            # 修改对象属性，注意要使用"_replace"方法
+            user = user._replace(age=22)
+            print(user)
+            # User(name='user1', sex='male', age=21)
+
+            # 将User对象转换成字典，注意要使用"_asdict"
+            print(user._asdict())
+            # OrderedDict([('name', 'kongxx'), ('sex', 'male'), ('age', 22)])
+
+"""用 isinstance 来判断对象的类型 """
  
     因为在python中定义变量时，不用像其他静态语言，如java, 要指定其变量数据类型。
     但这并不意味着python中没有数据类型，每个对象有不同的数据类型，一个变量只有
@@ -833,8 +904,9 @@
             yield i
             
             
- "---------------------------------------------"   
-            
+ "------------------------------------------------------------------------"   
+ 
+    
 
 
 
