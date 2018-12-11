@@ -3555,8 +3555,228 @@ Pylint:
 			C: 14, 0: Invalid constant name "bin_num" (invalid-name)
 		
 		c. 根据提示去修改源码中的错误：
+			
+"--------------------------------------------------------------------------------"
 
+Python定时任务:
+
+    1、第一种办法是最近简单有暴力，写一个死循环，使用 sleep() 函数
+    
+        import time
+
+        from datetime import datetime
+        
+        def timedTask():
+            while True:
+                pass
+                time.sleep(10)        
+        
+        if __name__ == '__main__':
+            timedTask()
+
+    2、Python 标准库 threading 中有一个 Timer 类。它会新启动
+        一个线程来执行定时任务，所以它是非阻塞，如果需要关心线程安全
+        可以选用threading.Timer 模块。
+        
+        from datetime import datetime
+        from threading import Timer
+        import time
+       
+        def timedTask():
+            # 第一个参数：延迟多长时间执行任务（单位：秒）
+            # 第二个参数：要执行的任务，即函数
+            # 第三个参数：调用函数的参数（tuple）
+            
+            Timer(10, task(), ()).start()
+        
+        def task():
+            
+            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        
+        if __name__ == '__main__':
+            timedTask()
+            while True:
+                print(time.time())
+                time.sleep(4)
+    
+    3、 第三种方式是使用标准库中 sched 模块。 sched 是事件调度器，
+        它通过 scheduler 类来调度事件，从而达到定时执行任务的效果。
+        
+        sched库使用起来也是非常简单。
+ 
+        a. 首先构造一个sched.scheduler类:
+            
+           它接受两个参数：timefunc 和 delayfunc。
+           timefunc 应该返回一个数字，代表当前时间，
+           delayfunc 函数接受一个参数，用于暂停运行的时间单元。            
+    
+            一般使用默认参数就行，即传入这两个参数 time.time 和 time.sleep.
+            当然，你也可以自己实现时间暂停的函数。
 			
-			
+		b. 添加调度任务:
 		
+		   enter(delay, priority, action, argument=(), kwargs={}) 
+		   
+		   该函数可以延迟一定时间执行任务。
+		   delay 表示延迟多长时间执行任务，单位是秒。
+		   priority为优先级，越小优先级越大。
+		   两个任务指定相同的延迟时间，优先级大的任务会向被执行。
+		   action 即需要执行的函数，argument 和 kwargs 分别是函数的位置和关键字参数。
+		   
+		   
+		   scheduler.enterabs(time, priority, action, argument=(), kwargs={})
+           添加一项任务，但这个任务会在 time 这时刻执行。因此，time 是绝对时间.
+           其他参数用法与 enter() 中的参数用法是一致。
+		    
+		c. 把任务执行起来
+		    
+		   调用 scheduler.run() 函数就完事了。
+		   
+		    
+		d. 例子：
+		    
+		    from datetime import datetime
+		    import sched
+		    import time
+		    
+		    # 每个 10 秒打印当前时间。
+		    def timedTask():
+		        # 初始化 sched 模块的 scheduler 类 
+		        sched.scheduler(time.time, time.sleep)
+		        
+		        #增加调度任务
+		        scheduler.enter(10, 1 , task)
+		    
+		    # 定时任务
+		    
+		    def task():
+		        print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+		           
+		    if __name__ == '__main__':
+		        timedTask()
+		       
+		 值得注意的是： scheduler 中的每个调度任务只会工作一次，
+		 不会无限循环被调用。如果想重复执行同一任务， 需要重复添加调度任务即可。
 	
+    4、  我们了解到有三种办法能实现定时任务，但是都无法做到循环执行定时任务。
+        因此，需要一个能够担当此重任的库。它就是APScheduler。
+        
+        a. 简介:
+        
+            APScheduler的全称是Advanced Python Scheduler。它是一个轻量级的 Python 定时任务调度框架。
+            APScheduler 支持三种调度任务：固定时间间隔，固定时间点（日期）, Linux 下的 Crontab 命令。
+            同时，它还支持异步执行、后台执行调度任务。
+
+        b. 安装：
+        
+            使用 pip 包管理工具安装 APScheduler 是最方便快捷的。
+            
+            pip install APScheduler
+            
+        c. 使用步骤：
+        
+            APScheduler 使用起来还算是比较简单。运行一个调度任务只需要以下三部曲
+            
+                新建一个 schedulers (调度器)
+                添加一个调度任务(job stores)
+                运行调度任务
+                
+            下面是执行每 2 秒报时的简单示例代码：  
+                 
+                import datetime
+                import time
+                from apscheduler.schedulers.background import BackgroundScheduler
+                
+                def timedTask():
+                    print(datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3])
+                
+                if __name__ == '__main__':
+                    # 创建后台执行的 schedulers
+                    scheduler = BackgroundScheduler()  
+                    # 添加调度任务
+                    # 调度方法为 timedTask，触发器选择 interval(间隔性)，间隔时长为 2 秒
+                    scheduler.add_job(timedTask, 'interval', seconds=2)
+                    # 启动调度任务
+                    scheduler.start()
+                    
+                    while True:
+                        print(time.time())
+                        time.sleep(5)
+        d、基础组件:
+        
+            APScheduler 有四种组件，分别是：调度器(scheduler), 作业器(job store), 
+            触发器（trigger）, 执行器（executor）
+            
+            scheduler: 属于控制器角色，它配置作业存储器和执行器可以在调度器中完成，例如添加、修改和移除作业。
+                
+                APScheduler 非常好用的原因。它提供 7 种调度器，能够满足我们各种场景的需要。
+                例如：后台执行某个操作，异步执行操作等。调度器分别是：
+                
+                1、BlockingScheduler : 调度器在当前进程的主线程中运行，也就是会阻塞当前线程。
+                2、BackgroundScheduler : 调度器在后台线程中运行，不会阻塞当前线程。
+                3、AsyncIOScheduler : 结合 asyncio 模块（一个异步框架）一起使用。
+                4、GeventScheduler : 程序中使用 gevent（高性能的Python并发框架）作为IO模型，和 GeventExecutor 配合使用。
+                5、TornadoScheduler : 程序中使用 Tornado（一个web框架）的IO模型，用 ioloop.add_timeout 完成定时唤醒。
+                6、TwistedScheduler : 配合 TwistedExecutor，用 reactor.callLater 完成定时唤醒。
+                7、QtScheduler : 你的应用是一个 Qt 应用，需使用QTimer完成定时唤醒。
+      
+            triggers: 描述调度任务被触发的条件。不过触发器完全是无状态的。
+                
+                APScheduler 有三种内建的 trigger:
+                
+                1、date 触发器
+                   date 是最基本的一种调度，作业任务只会执行一次。
+                   它表示特定的时间点触发。它的参数如下：
+                   
+                    参数	                                 说明
+                    run_date (datetime 或 str)	        作业的运行日期或时间
+                    timezone (datetime.tzinfo 或 str)	指定时区
+                   
+                date 触发器使用示例如下：
+                    from datetime import datetime
+                    from datetime import date
+                    from apscheduler.schedulers.background import BackgroundScheduler
+                    
+                    def job_func(text):
+                        print(text)
+                    
+                    scheduler = BackgroundScheduler()
+                    # 在 2017-12-13 时刻运行一次 job_func 方法
+                    scheduler .add_job(job_func, 'date', run_date=date(2017, 12, 13), args=['text'])
+                    # 在 2017-12-13 14:00:00 时刻运行一次 job_func 方法
+                    scheduler .add_job(job_func, 'date', run_date=datetime(2017, 12, 13, 14, 0, 0), args=['text'])
+                    # 在 2017-12-13 14:00:01 时刻运行一次 job_func 方法
+                    scheduler .add_job(job_func, 'date', run_date='2017-12-13 14:00:01', args=['text'])
+                    
+                    scheduler.start()
+                
+                2、interval 触发器固定时间间隔触发。interval 间隔调度，
+                    参数如下：
+                   
+                    参数                 说明
+
+                    weeks (int)           间隔几周
+                    days (int)            间隔几天
+                    hours (int)           间隔几小时
+                    minutes (int)         间隔几分钟
+                    seconds (int)         间隔多少秒
+                    start_date (datetime 或 str)  开始日期
+                    end_date (datetime 或 str)    结束日期
+
+                    timezone (datetime.tzinfo 或str)
+                    时区
+           
+            
+            job stores: 任务持久化仓库，默认保存任务在内存中，也可将任务保存都各种数据库中，
+                        任务中的数据序列化后保存到持久化数据库，从数据库加载后又反序列化。
+            
+            executors: 负责处理作业的运行，它们通常通过在作业中提交指定的可调用对象到一个线程或者进城池来进行。
+                       当作业完成时，执行器将会通知调度器。
+                
+                    
+            
+            
+            
+"---------------------------------------------------------------------------"
+            
+           
