@@ -584,9 +584,194 @@
     {user['name']: user['email'] for user in user_list if 'email' in user}
 
 
+"""条件判断时，避免直接和True、False、None 进行比较（==）"""
 
+    # bad
     
+    if == []:
+        pass
+     
+    # good
+    
+    if 1:
+        pass
+        
+    # bad
+    
+    if something == None:
+    
+    # good, None 是单例对象
+    
+    if something is None:
+    
+"""使用 enumerate 代表 for 循环中的 index 变量访问"""
+
+    # bad
+    
+    my_container = ['lily', 'lucy', 'tom']
+    
+    index = 0
+    
+    for element in my_container:
+        print '{} {}'.format(index,element)
+        index += 1
+        
+    # good
+    
+    for index, element in enumerate(my_container):
+        print "%d %s" % (index, element)
+        
+""避免使用可变（mutable）变量作为函数参数的默认初始化值""""
+
+    # bad
+    
+    def function(l = []):
+        l.append(1)
+        return l
+        
+    print(function())
+    print(function())
+    print(function())
+    
+    # print
+    
+    [1]
+    [1, 1]
+    [1, 1, 1]
+    
+    #good, 使用None作为可变对象的占位符
+    
+    def function(l = None):
+        if l is None:
+            l = []
+        l.append()
+        return l
+        
+"""一切皆对象"""
+    
+    # bad
+    
+    def print_addition_table():
+        for x in range(1, 3):
+            for y in range(1, 3):
+                print(str(x + y) + '\n')
                 
+    def print_subtraction_table():
+        for x in range(1, 3):
+            for y in range(1, 3):
+                print(str(x - y) + '\n')
+                
+    def print_multiplication_table():
+        for x in range(1, 3):
+            for y in range(1, 3):
+                print(str(x * y) + '\n')
+
+    def print_division_table():
+        for x in range(1, 3):
+            for y in range(1, 3):
+                print(str(x / y) + '\n')
+    
+    print_additon_table()
+    print_subtraction_table()
+    print_multiplication_table()
+    print_division_table()
+    
+    # good, python 一切皆是对象，可以函数作为参数，类似技巧可以简化代码
+    
+    import operator as op
+    
+    def print_table(operator):
+        for x in range(1, 3):
+            for y in range(1, 3):
+                print(str(operator(x, y)) + '\n')
+    
+    for operator in (op.add, op.sub, op.mul, op.div):
+        print_table(operator)
+                   
+"""防御式编程 EAFP vs LBYL"""
+
+    EAFP : easier to ask forgiveness than permission
+    EAFP : 可以理解成一切按正常的逻辑编码，不用管可能出现错误，等出了错误再说。
+    
+    LBYL : look before you leap
+    LBYL : 就是尽可能每写一行代码，都要提前考虑下当前的前置条件是否成立。
+    
+    # LBYL
+    def getPersonInfo(person):
+        if person == None:
+            print("person must be not null")
+        pirnt(person.info)
+
+    # EAFP
+    
+    def getPersonInfo(person):
+        try:
+            print(person.info)
+        except NameErrorL
+            print("person must be not null!")
+    
+    其实用EAFP风格的代码最大的好处是代码逻辑清晰，
+    而LBYL会导致本来两句话说清楚的事，往往因为穿插了很多条件检查的语句使代码逻辑变得混乱。
+    Python社区更提倡EAFP形式的。另外还有一个原因，在高并发场景下， 
+    if条件如果是个表达式，会造成一致性问题，这个时候必须用EAFP形式。
+    
+"""用dict 对象完成 switch...case... 的功能"""
+
+    # bad
+    
+    def apply_operation(left_operand, right_operand, operator):
+        if operator == '+':
+            return left_operand + right_operand
+        elif operator == '-':
+            return left_operand - right_operand
+        elif operator == '*':
+            return left_operand * right_operand
+        elif operator == '/':
+            return left_operand / right_operand
+    
+    # good
+    
+    def apply_operation(left_operand, right_operand, operator):
+        import operator as op
+        operator_mapper = {'+': op.add, '-': op.sub, '*': op.mil, '/': op.truediv}
+        return operator_mapper[operator](left_operand, right_operand)
+             
+      
+        
+    
+
+            
+    
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+        
+        
+    
+     
+
+
+
+            
 "-------------------------------------------"
 
     
+
