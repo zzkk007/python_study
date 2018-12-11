@@ -488,4 +488,105 @@
 			git集成插件，可以在vim中运行git命令，https://github.com/tpope/vim-fugitive。
 
 			Plugin 'tpope/vim-fugitive'	
+    
+    
 "--------------------------------------------"
+
+            第五章  Write Idiom Python 
+    
+"""Python 支持链式比较"""
+
+    # bad
+    a = 5
+    
+    if a > 1 and a < 7:
+        pass
+    # good
+    
+    if 1 < a < 7:
+        pass
+    
+
+"""Python 交换变量"""
+
+    # bad
+    
+    x = 10
+    y = 5
+    temp = x
+    x = y
+    y = temp
+    
+    # good
+    x = 10
+    y = 5
+    x, y = y, 5
+
+"""Python 中替代三目运算符"""
+
+    # bad
+    
+    a = 10
+    b = 5
+    if a > b:
+        c = a
+    else:
+        c = b
+    
+    # good
+    
+    c = a if a > b else b
+
+
+"""拼接字符列表时，用join方法实现"""
+
+
+"""格式化字符时多使用format函数"""
+
+    # bad
+
+    name = "tony"
+    age = 100
+    
+    str = "my name : " + name + "my age :" + str(age)
+    
+    str1 = "my name : %s my age :%d" % (name, age)
+    
+    # good
+    
+    str2 = "my name :{} my age:{}".format(name, age)
+
+"""使用列表或者字典comprehension"""
+
+    # bad
+    
+    mylist = range(20)
+    odd_list = []
+    for e in mylist:
+        if e % 2 == 1:
+            odd_list.append(e)
+    
+    # good
+    
+    ood_list = [e for e in mylist if e % 2 == 1]
+
+    # bad
+    
+    user_list = [{'name': 'lucy', 'email': "lucy@tom.com"}, {'name': "lily", 'email': 'llily@tom.com'}]
+    user_email = {}
+    for user in user_list:
+        if 'email' in user:
+            user_email[user['name']] = user['email']
+            # {'lucy': 'lucy@tom.com', 'lily': 'llily@tom.com'}
+    
+    # good
+    
+    {user['name']: user['email'] for user in user_list if 'email' in user}
+
+
+
+    
+                
+"-------------------------------------------"
+
+    
