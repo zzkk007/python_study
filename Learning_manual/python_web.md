@@ -1497,7 +1497,10 @@
         4
     
     29、最大和最小的几个列表元素：
-    
+        
+        xrange() 函数用法与 range 完全相同，所不同的是生成的不是一个数组，而是一个生成器。
+        
+        
         >>> import random
         >>> import heapq
         >>> a = [random.randint(0, 100) for __ in xrange(100)]
@@ -1508,6 +1511,19 @@
         24, 97, 50, 59, 70, 21, 36, 3, 77, 0, 52, 77, 13, 16, 47, 18, 65, 54, 90, 31, 
         49, 6, 81, 99, 57, 5, 22, 94, 83, 48, 72, 56, 86, 26, 1, 40, 62, 18, 11]
         
+        这个模块(build-in)实现了一个堆的数据结构，完美的解决了Top-K问题(前几名问题)，
+        以后解决Top-K问题的时候，直接把这个模块拿来用就可以了
+        注意，默认的heap是一个小顶堆！
+        
+        heapq.heappush(heap, item) 把item添加到heap中（heap是一个列表）
+        heapq.heappop(heap) 把堆顶元素弹出，返回的就是堆顶
+        heapq.heappushpop(heap, item) 先把item加入到堆中，然后再pop，比heappush()再heappop()要快得多
+        heapq.heapreplace(heap, item) 先pop，然后再把item加入到堆中，比heappop()再heappush()要快得多
+        heapq.heapify(x) 将列表x进行堆调整，默认的是小顶堆
+        heapq.merge(*iterables) 将多个列表合并，并进行堆调整，返回的是合并后的列表的迭代器
+        heapq.nlargest(n, iterable, key=None) 返回最大的n个元素（Top-K问题）
+        heapq.nsmallest(n, iterable, key=None) 返回最小的n个元素（Top-K问题）
+
         >>> heapq.nsmallest(5, a) 
         [0, 1, 2, 2, 2]
         >>> 
