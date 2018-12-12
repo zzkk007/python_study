@@ -1670,13 +1670,351 @@
     Python是一门解释性的，面向对象的，并具有动态语义的高级编程语言。
     它高级的内置数据结构，结合其动态类型和动态绑定的特性，使得它在快速应用程序开发。
     
-    1、
- 
+    1、在函数参数中乱用表达式作为默认值:
         
+        Python 允许给某个参数设置默认值以使该参数成为一个可选参数。
+        尽管这是这门语言很棒的一个功能，但是这当这个默认值是可变对象（mutable）时，那就有些麻烦了。
+        
+        >>> def foo(bar = []):
+            bar.append("baz")
+            return bar
+            
+        >>> foo()
+        ["baz"]
+        >>> foo()
+        ["baz", "baz"]
+        >>> foor()
+        ["baz", "baz", "baz"]
+        
+        
+        >>> def foo(bar = None):
+            if bar is None:
+                bar = []
+            bar.append('baz')
+            return bar
+        
+        >>> foo()
+        ["baz"] 
+        >>> foo()
+        ["baz"]
+        
+    2、不正确的使用类变量
+    
+        看下面的例子：
+        
+        >>> class A(object):
+            x = 1
+        
+        >>> class B(A):
+            pass
+            
+        >>> class C(A)
+        
+        >>>print A.x, B.x, C.x
+        1 1 1
+        
+        看起来没有问题。 
+        
+        >>> B.x = 2
+        >>> print A.x, B.x, C.x
+        1 2 1
+        >>> A.x = 3
+        >>> 
+        >>> print A.x, B.x, C.x
+        3 2 3
+        
+        在python里，类的变量通常在内部被当做字典来处理并遵循通常所说的方法解析顺序。
+        因此在上面的代码中，因为属性x在类C中找不到，因此它会往上去它的基类中查找。
+        换句话说，C没有它自己独立于A的属性x。因此对C.x的引用实际上是对A.x的引用。
+    
+    3、 在异常处理时错误的使用参数
+    
+        >>> try:
+        ...     l = ['a', 'b']
+        ...     int(l[2])
+        ... except ValueError, IndexError:
+        ...     pass
+        ... 
+        Traceback (most recent call last):
+          File "<stdin>", line 3, in <module>
+        IndexError: list index out of range
+        
+        这里的问题在于except语句不会像这样去接受一系列的异常。
+        并且，在Python 2.x里面，语法except Exception, e是用来将异常和这个可选的参数绑定起来（即这里的e），
+        以用来在后面查看的。因此，在上面的代码中，IndexError异常不会被except语句捕捉到；
+        而最终ValueError这个异常被绑定在了一个叫做IndexError的参数上。
+        
+        在except语句中捕捉多个异常的正确做法是将所有想要捕捉的异常放在一个元组（tuple）里并作为第一个参数给except语句。
+        并且，为移植性考虑，使用as关键字，因为Python 2和Python 3都支持这样的语法，例如：
+        
+        >>> try:
+        ...     l = ['a', 'b']
+        ...     int(l[2])
+        ... except (ValueError, IndexError) as e:
+        ...     pass
+        ... 
+        >>> 
+    
+    4、误解Python作用域的规则:
+    
+        Python 的作用域解析是基于LEGB(Local(本地), Enclosing(封闭), Clobal(全局)， Built-in(内置))
+        的规则进行操作的。这看起来很直观，但是一些细微之处很容易出错。
+        
+        >>> x = 10
+        >>> def foo():
+                x += 1
+                print x
+        >>> foo()
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+          File "<stdin>", line 2, in foo
+        UnboundLocalError: local variable 'x' referenced before assignment
+        
+       
+        # 闭包的问题 
+        >>> def func():
+        ...     x = 10
+        ...     def foo():
+        ...             x += 1
+        ...             print(x)
+        ... 
+        >>> foo()
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+          File "<stdin>", line 2, in foo
+        UnboundLocalError: local variable 'x' referenced before assignment
+        
+        
+        
+        这是因为，在一个作用域里面给一个变量赋值的时候，
+        Python自动认为这个变量是这个作用域的本地变量，并屏蔽作用域外的同名的变量。       
+    
+    5、 在遍历列表的同时又在修改这个列表:
+        
+        >>> odd = lambda x : bool(x % 2)
+        >>> numbers = [n for n in range(10)]
+        >>> for i in range(len(numbers)):
+        ...     if odd(numbers[i]):
+        ...         del numbers[i]  # 这不对的：在遍历列表时删掉列表的元素。
+        ...
+        Traceback (most recent call last):
+              File "<stdin>", line 2, in <module>
+        IndexError: list index out of range
+        
+        遍历一个列表或者数组的同时又删除里面的元素，对任何有经验的软件开发人员来说这是个很明显的错误。
+        但是像上面的例子那样明显的错误，即使有经验的程序员也可能不经意间在更加复杂的程序中不小心犯错。
 
+        所幸，Python集成了一些优雅的编程范式，如果使用得当，可以写出相当简化和精简的代码。
+        一个附加的好处是更简单的代码更不容易遇到这种“不小心在遍历列表时删掉列表元素”的bug。
+        例如列表推导式（list comprehensions）就提供了这样的范式。
+        再者，列表推导式在避免这样的问题上特别有用，接下来这个对上面的代码的重新实现就相当完美：
+      
+        >>> odd = lambda x : bool(x % 2)
+        >>> numbers = [n for n in range(10)]
+        >>> numbers[:] = [n for n in numbers if not odd(n)]  # 啊，这多优美
+        >>> numbers
+        [0, 2, 4, 6, 8] 
+    
+    6、搞不清楚在闭包（closures）中Python是怎样绑定变量的:
+    
+       >>> def create_multipliers():
+        ...     return [lambda x : j * x for j in range(5)]
+        ... 
+        >>> for multiplier in create_multipliers():
+        ...     print multiplier(2)
+        ... 
+        8
+        8
+        8
+        8
+        8      
+        
+        这是由于Python的后期绑定（late binding）机制导致的，
+        这是指在闭包中使用的变量的值，是在内层函数被调用的时候
+        查找的，因此在上面的代码中，当任一返回函数被调用的时候
+        i 的值是在它被调用时的周围作用域查找（那时候，循环已经结束了
+        所以，i 已经被赋予了它最终的值 4）
+       
+        解决的办法比较巧妙：
 
+        >>> def create_multipliers():
+        ...     return [lambda x, i=i : i * x for i in range(5)]
+        ...
+        >>> for multiplier in create_multipliers():
+        ...     print multiplier(2)
+        ...
+        0
+        2
+        4
+        6
+        8 
+        
+        这下对了！这里利用了默认参数去产生匿名函数以达到期望的效果。
+        有人会说这很优美，有人会说这很微妙，也有人会觉得反感。
+        但是如果你是一名Python程序员，重要的是能理解任何的情况。     
+    
+    7、循环加载模块:
+    
+        假设你有两个文件，a.py和b.py，在这两个文件中互相加载对方，例如：
+        
+        在a.py中:
 
+            import b
+            def f():
+                return b.x
+            print f() 
+        
+        在b.py中:
+            import a
+            x = 1
+            def g():
+                print a.f()
+        
+        首先，我们试着加载a.py：
+        >>> import a
+        1
+        
+        没有问题。也许让人吃惊，毕竟有个感觉应该是问题的循环加载在这儿。
+        事实上在Python中仅仅是表面上的出现循环加载并不是什么问题。
+        如果一个模块以及被加载了，Python不会傻到再去重新加载一遍。
+        但是，当每个模块都想要互相访问定义在对方里的函数或者变量时，问题就来了。 
+        
+        让我们再回到之前的例子，当我们加载a.py时，它再加载b.py不会有问题，因为在加载b.py时，
+        它并不需要访问a.py的任何东西，而在b.py中唯一的引用就是调用a.f()。
+        但是这个调用是在函数g()中完成的，并且a.py或者b.py中没有人调用g()，所以这会儿心情还是美丽的。  
+     
+        但是当我们试图加载b.py时（之前没有加载a.py），会发生什么呢：
+        
+        >>> import b
+        Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+              File "b.py", line 1, in <module>
+            import a
+              File "a.py", line 6, in <module>
+            print f()
+              File "a.py", line 4, in f
+            return b.x
+        AttributeError: 'module' object has no attribute 'x'
+        
+        解决的方案可以做一点细微的改动。改一下b.py，使得它在g()里面加载a.py：
+        x = 1
+        def g():
+            import a	# 只有当g()被调用的时候才加载
+            print a.f()
+            
+        这会儿当我们加载b.py的时候，一切安好：
+        >>> import b
+        >>> b.g()
+        1	# 第一次输出，因为模块a在最后调用了‘print f()’
+        1	# 第二次输出，这是我们调用g()
+    
+    
+    8、与Python标准库模块命名冲突:
+        
+        Python的一个优秀的地方在于它提供了丰富的库模块。
+        但是这样的结果是，如果你不下意识的避免，很容易你会遇到你自己的模块的名字与
+        某个随Python附带的标准库的名字冲突的情况 
+    
+    9、不能区分Python 2和Python 3:
+    
+        看下面这个文件foo.py：
 
+        import sys
+         
+        def bar(i):
+            if i == 1:
+                raise KeyError(1)
+            if i == 2:
+                raise ValueError(2)
+         
+        def bad():
+            e = None
+            try:
+                bar(int(sys.argv[1]))
+            except KeyError as e:
+                print('key error')
+            except ValueError as e:
+                print('value error')
+            print(e) 
+        bad() 
+        
+        在Python 2里，运行起来没有问题：
+        $ python foo.py 1
+        key error
+        1
+        $ python foo.py 2
+        value error
+        2
+        
+        但是如果拿到Python 3         
+        $ python3 foo.py 1
+        key error
+        Traceback (most recent call last):
+          File &quot;foo.py&quot;, line 19, in &lt;module&gt;
+            bad()
+          File &quot;foo.py&quot;, line 17, in bad
+            print(e)
+        UnboundLocalError: local variable
+        
+        "问题"在于，在Python 3里，在except块的作用域以外，异常对象（exception object）是不能被访问的。
+        (原因在于，如果不这样的话，Python会在内存的堆栈里保持一个引用链直到Python的垃圾处理
+        将这些引用从内存中清除掉。)
+        
+        避免这样的问题可以这样做：保持在execpt块作用域以外对异常对象的引用，这样是可以访问的。
+        import sys
+         
+        def bar(i):
+            if i == 1:
+                raise KeyError(1)
+            if i == 2:
+                raise ValueError(2)
+         
+        def good():
+            exception = None
+            try:
+                bar(int(sys.argv[1]))
+            except KeyError as e:
+                exception = e
+                print('key error')
+            except ValueError as e:
+                exception = e
+                print('value error')
+            print(exception)
+         
+        good()
+    
+    
+    10、错误的使用__del__方法：
+   
+        假设有一个文件mod.py中这样使用：
+        
+        import foo
+        class Bar(object):
+                ...
+            def __del__(self):
+                foo.cleanup(self.myhandle)         
+        
+        然后试图在another_mod.py里这样：
+        import mod
+        mybar = mod.Bar()
+        那么你会得到一个恶心的AttributeError异常。
+        
+        这是因为（参考这里），当解释器关闭时，模块所有的全局变量会被置为空（None）。
+        结果便如上例所示，当__del__被调用时，名字foo已经被置为空了。
+        
+        使用atexit.register()可以解决这个问题。
+        如此，当你的程序结束的时候（退出的时候），你的注册的处理程序会在解释器关闭之前处理。
+        
+        import foo
+        import atexit
+         
+        def cleanup(handle):
+            foo.cleanup(handle)
+         
+        class Bar(object):
+            def __init__(self):
+                ...
+                atexit.register(cleanup, self.myhandle)
 
 
 
