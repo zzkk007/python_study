@@ -1116,6 +1116,304 @@
     12、在列表中用压缩器和迭代器滑动取值窗口
     
         >>> def n_grams(a, n):
+                z = [iter(a[i:]) for i in range(n)]
+                return zip(*z)
+        
+        >>> a[0:]
+        [1, 2, 3, 4, 5, 6]
+        >>> a[1:]
+        [2, 3, 4, 5, 6]
+        >>> a[2:]
+        [3, 4, 5, 6]
+        >>> a[3:]
+        [4, 5, 6]
+    
+        >>> a = [1, 2, 3, 4, 5, 6]
+        >>> n_grams(a, 3)
+        [(1, 2, 3), (2, 3, 4), (3, 4, 5), (4, 5, 6)]
+        
+        >>> n_grams(a, 2)
+        [(1, 2), (2, 3), (3, 4), (4, 5), (5, 6)]
+        
+        >>> n_grams(a, 4)
+        [(1, 2, 3, 4), (2, 3, 4, 5), (3, 4, 5, 6)]
+        
+        
+    13、用压缩器反转字典:
+    
+        >>> m = {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+        >>> m.items()
+        [('a', 1), ('c', 3), ('b', 2), ('d', 4)]
+        >>> m.keys()
+        ['a', 'c', 'b', 'd']
+        >>> m.values()
+        [1, 3, 2, 4]
+        
+        >>> zip(m.values(), m.keys())
+        [(1, 'a'), (3, 'c'), (2, 'b'), (4, 'd')]
+        >>> dict(zip(m.values(), m.keys()))
+        {1: 'a', 2: 'b', 3: 'c', 4: 'd'}
+    
+    14、列表展开:
+    
+        >>> a = [[1, 2], [3, 4], [5, 6]]
+        >>> import itertools
+        >>> list(itertools.chain.from_iterable(a))
+        
+        >>> sum(a, [])
+        [1, 2, 3, 4, 5, 6]
+        
+        
+        >>> [l for l in a]
+        [[1, 2], [3, 4], [5, 6]]
+        >>> [x for l in a for x in l]
+        [1, 2, 3, 4, 5, 6]
+        
+        >>> a = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
+        >>> [x for l1 in a for l2 in l1 for x in l2]
+        [1, 2, 3, 4, 5, 6, 7, 8]
+        
+        >>> a = [1, 2, [3, 4], [[5, 6], [7, 8]]]
+        >>> flatten = lambda x: [y for l in x for y in flatten(l)] if type(x) is list else [x]
+        >>> flatten(a)
+        [1, 2, 3, 4, 5, 6, 7, 8]
+    
+    15、生成器表达式:
+        
+        >>> g = (x ** 2 for x in range(10))
+        >>> next(g)
+        0
+        >>> next(g)
+        1
+        >>> next(g)
+        4
+        >>> next(g)
+        9
+        
+        >>> sum(x ** 3 for x in range(10))
+        2025
+        >>> sum(x ** 3 for x in xrange(10) if x % 3 == 1)
+        408
+    
+    16、字典推导:
+        
+        >>> m = {x: x ** 2 for x in range(5)}
+        >>> m
+        {0: 0, 1: 1, 2: 4, 3: 9, 4: 16}
+        
+        >>> m = {x: 'A' + str(x) for x in range(10)}
+        {0: 'A0', 1: 'A1', 2: 'A2', 3: 'A3', 4: 'A4', 5: 'A5', 6: 'A6', 7: 'A7', 8: 'A8', 9: 'A9'}
+        
+    17、用字典推导反转字典:
+    
+        >>> m = {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+        >>> {v: k for k, v in m.items()}
+        {1: 'a', 2: 'b', 3: 'c', 4: 'd'}
+        
+    18、命名元组:
+        
+        import collections
+        >>> Point = collections.namedtuple('Point', ['x', 'y'])
+        >>> p = Point(x = 1.0, y = 2.0)
+        >>> p.x
+        1.0
+        >>> p.y
+        2.0
+        
+    19、继承命名元组:
+        
+        >>> class Point(collections.namedtuple('PointBase', ['x', 'y'])):
+            __slots__ = ()
+            def __add__(self, other):
+                return Point(x = self.x + other.x , y = self.y + other.y)
+        
+        >>> p = Point(x = 1.0, y = 2.0)
+        >>> q = Point(x = 2.0, y = 3.0)
+        >>> p + q
+        PointBase(x=3.0, y=5.0)
+        
+        
+    20、操作集合：
+        
+        >>> A = {1, 2, 3, 3}
+        >>> A
+        set([1, 2, 3, 4])
+        
+        >>> B = {3, 4, 5, 6, 7}
+        >>> B
+        set([3, 4, 5, 6, 7])
+        
+        >>> A = {1, 2, 3, 4}
+
+        >>> A | B
+        set([1, 2, 3, 4, 5, 6, 7])
+        >>> 
+        >>> A & B
+        set([3, 4])
+        >>> 
+        >>> A - B
+        set([1, 2])
+        >>> 
+        >>> B - A
+        set([5, 6, 7])
+        >>> 
+        >>> A ^ B
+        set([1, 2, 5, 6, 7])
+        >>> 
+        >>> 
+        >>> (A ^ B) == ((A - B) | (B - A))
+        True
+    
+    
+    21、操作多重集合:
+        
+        >>> A = collections.Counter([1, 2, 2])
+        >>> B = collections.Counter([2, 2, 3])
+        >>> 
+        >>> A
+        Counter({2: 2, 1: 1})
+        >>> B
+        Counter({2: 2, 3: 1})
+        >>> 
+        >>> A | B
+        Counter({2: 2, 1: 1, 3: 1})
+        >>> 
+        >>> A & B
+        Counter({2: 2})
+        >>> 
+        >>> 
+        >>> A + B
+        Counter({2: 4, 1: 1, 3: 1})
+        >>> A - B
+        Counter({1: 1})
+    
+    22、 统计在可迭代器中最常出现的元素:
+        
+        collections模块自Python 2.4版本开始被引入，包含了dict、set、list、tuple以外的一些特殊的容器类型，
+        分别是：
+            OrderedDict类：排序字典，是字典的子类。引入自2.7。
+            namedtuple()函数：命名元组，是一个工厂函数。引入自2.6。
+            Counter类：为hashable对象计数，是字典的子类。引入自2.7。
+            deque：双向队列。引入自2.4。
+            defaultdict：使用工厂函数创建字典，使不用考虑缺失的字典键。引入自2.5。
+        
+            Counter类的目的是用来跟踪值出现的次数。它是一个无序的容器类型，以字典的键值对形式存储，
+            其中元素作为key，其计数作为value。计数值可以是任意的Interger（包括0和负数）。
+            
+            Counter类的创建:
+                >>> c = Counter()  # 创建一个空的Counter类
+                >>> c = Counter('gallahad')  # 从一个可iterable对象（list、tuple、dict、字符串等）创建
+                >>> c = Counter({'a': 4, 'b': 2})  # 从一个字典对象创建
+                >>> c = Counter(a=4, b=2)  # 从一组键值对创建
+            
+            计数值的访问与缺失的键:
+                当所访问的键不存在时，返回0，而不是KeyError；否则返回它的计数。    
+                    >>> c = Counter("abcdefgab")
+                    >>> c["a"]
+                    2
+                    >>> c["c"]
+                    1
+                    >>> c["h"]
+                    0
+
+        >>> A = collections.Counter([1, 1, 2, 2, 3, 3, 3, 3, 4, 5, 6, 7])
+        >>> A
+        Counter({3: 4, 1: 2, 2: 2, 4: 1, 5: 1, 6: 1, 7: 1})
+        >>> A.most_common(1)
+        [(3, 4)]
+        >>> A.most_common(3)
+        [(3, 4), (1, 2), (2, 2)]        
+    
+    23、两端都可操作的队列:
+    
+        >>> Q = collections.deque()
+        >>> Q.append(1)
+        >>> Q.append(1)
+        >>> Q
+        deque([1])    
+        >>> Q.appendleft(2)
+        >>> Q
+        deque([2, 1])
+        >>> 
+        >>> Q.extend([3, 4])
+        >>> Q
+        deque([2, 1, 3, 4])
+        >>> 
+        >>> Q.extendleft([5, 6])
+        >>> Q
+        deque([6, 5, 2, 1, 3, 4])
+        >>> 
+        >>> Q.pop()
+        4
+        >>> Q.popleft()
+        6
+        >>> 
+        >>> Q.popleft()
+        5
+        
+        # rotate(n), 向左移动n位
+        >>> Q
+        deque([3, 2, 1])
+        >>> Q.rotate(2)
+        >>> Q
+        deque([2, 1, 3])
+        >>> Q.rotate(1)
+        >>> Q
+        deque([3, 2, 1])
+        >>> Q.rotate(2)
+        >>> Q
+        deque([2, 1, 3])
+          
+        # - 往右移动
+        >>> Q.rotate(-3)
+        >>> Q
+        deque([2, 1, 3])
+        >>> Q.rotate(-1)
+        >>> Q
+        deque([1, 3, 2])
+    
+    24、有最大长度的双端队列:
+    
+        >>> last_three = collections.deque(maxlen = 3)
+        >>> for i in range(10):
+        ...     last_three.append(i)
+        ...     print ', '.join(str(x) for x in last_three)
+        ... 
+        0
+        0, 1
+        0, 1, 2
+        1, 2, 3
+        2, 3, 4
+        3, 4, 5
+        4, 5, 6
+        5, 6, 7
+        6, 7, 8
+        7, 8, 9
+    
+    25、可排序词典:
+    
+          
+        
+    
+    
+        
+    
+   
+        
+        
+        
+       
+        
+    
+            
+        
+           
+            
+          
+        
+           
+            
+        
          
          
           
