@@ -1392,40 +1392,268 @@
     
     25、可排序词典:
     
-          
+        >>> m = dict((str(x),x) for x in range(10))
+        {'1': 1, '0': 0, '3': 3, '2': 2, '5': 5, '4': 4, '7': 7, '6': 6, '9': 9, '8': 8}
+        >>> print ', '.join(m.keys())
+        1, 0, 3, 2, 5, 4, 7, 6, 9, 8
+        >>> m = collections.OrderedDict((str(x), x) for x in range(10))
+        >>> m
+        OrderedDict([('0', 0), ('1', 1), ('2', 2), ('3', 3), ('4', 4), ('5', 5), ('6', 6), ('7', 7), ('8', 8), ('9', 9)])
+        >>> 
+        >>> print ', '.join(m.keys())
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+        >>> 
+        >>> m = collections.OrderedDict((str(x), x) for x in range(10, 0, -1))
+        >>> m
+        OrderedDict([('10', 10), ('9', 9), ('8', 8), ('7', 7), ('6', 6), ('5', 5), ('4', 4), ('3', 3), ('2', 2), ('1', 1)])
+        >>> print ', '.join(m.keys())                               
+        10, 9, 8, 7, 6, 5, 4, 3, 2, 1
         
-    
-    
-        
-    
-   
-        
-        
-        
-       
-        
-    
-            
-        
-           
-            
-          
-        
-           
-            
-        
-         
-         
-          
-        
-            
-        
-    
-           
-     
+    26、默认词典：
 
+        >>> m = dict()
+        >>> m['a']
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+        KeyError: 'a'
+        >>> 
+        >>> m = collections.defaultdict(int)
+        >>> m['a']
+        0
+        >>> m['b']
+        0
+        >>> 
+        >>> m = collections.defaultdict(str)
+        >>> m['a']
+        ''
+        >>> 
+        >>> m['b'] += 'a'
+        >>> 
+        >>> m['a']
+        ''
+        >>> 
+        >>> m['b']
+        'a'
+        >>> 
+        >>> m = collections.defaultdict(lambda: '[default value]') 
+        >>> m['a']
+        '[default value]'
+        >>> 
+        >>> m['b']
+        '[default value]'
+    
+    27、默认字典的简单树状表达:
+    
+        >>> import json
+        >>> tree = lambda: collections.defaultdict(tree)
+        >>> root = tree()
+        >>> root['menu']['id'] = 'file'
+        >>> root['menu']['value'] = 'File'
+        >>> root['menu']['menuitems']['new']['value'] = 'New'
+        >>> root['menu']['menuitems']['new']['onclick'] = 'new();'
+        >>> root['menu']['menuitems']['open']['value'] = 'Open'
+        >>> root['menu']['menuitems']['open']['onclick'] = 'open();'
+        >>> root['menu']['menuitems']['close']['value'] = 'Close'
+        >>> root['menu']['menuitems']['close']['onclick'] = 'close();'
+        >>> print json.dumps(root, sort_keys=True, indent=4, separators=(',', ': '))
+        {
+            "menu": {
+                "id": "file",
+                "menuitems": {
+                    "close": {
+                        "onclick": "close();",
+                        "value": "Close"
+                    },
+                    "new": {
+                        "onclick": "new();",
+                        "value": "New"
+                    },
+                    "open": {
+                        "onclick": "open();",
+                        "value": "Open"
+                    }
+                },
+                "value": "File"
+            }
+        }           
+    
+    28、对象到唯一计数的映射:
+    
+        >>> import itertools, collections
+        >>> value_to_numeric_map = collections.defaultdict(itertools.count().next)
+        >>> value_to_numeric_map['a'] 
+        0
+        >>> value_to_numeric_map['b']
+        1
+        >>> value_to_numeric_map['c']
+        2
+        >>> value_to_numeric_map['d']
+        3
+        >>> value_to_numeric_map['e']
+        4
+        >>> value_to_numeric_map['h']
+        5
+        >>> value_to_numeric_map['e']
+        4
+    
+    29、最大和最小的几个列表元素：
+    
+        >>> import random
+        >>> import heapq
+        >>> a = [random.randint(0, 100) for __ in xrange(100)]
+        >>> a
+        [20, 66, 47, 33, 86, 100, 99, 35, 3, 55, 44, 47, 49, 81, 42, 100, 70, 47, 52, 51, 
+        5, 15, 33, 63, 78, 97, 7, 19, 69, 53, 65, 18, 16, 95, 86, 2, 79, 26, 33, 25, 18, 
+        2, 20, 26, 84, 48, 72, 15, 18, 93, 21, 11, 40, 2, 82, 79, 28, 41, 60, 44, 23, 
+        24, 97, 50, 59, 70, 21, 36, 3, 77, 0, 52, 77, 13, 16, 47, 18, 65, 54, 90, 31, 
+        49, 6, 81, 99, 57, 5, 22, 94, 83, 48, 72, 56, 86, 26, 1, 40, 62, 18, 11]
+        
+        >>> heapq.nsmallest(5, a) 
+        [0, 1, 2, 2, 2]
+        >>> 
+        >>> 
+        >>> heapq.nlargest(5, a)
+        [100, 100, 99, 99, 97]
+        
+    30、 两个列表的笛卡尔积:
+    
+        >>> import itertools
+        >>> for p in itertools.product([1, 2, 3], [4, 5]):
+        ...     print(p)
+        ... 
+        (1, 4)
+        (1, 5)
+        (2, 4)
+        (2, 5)
+        (3, 4)
+        (3, 5)
+        >>> 
+        >>> for p in itertools.product([0, 1], repeat=4):
+        ...     print ''.join(str(x) for x in p)
+        ... 
+        0000
+        0001
+        0010
+        0011
+        0100
+        0101
+        0110
+        0111
+        1000
+        1001
+        1010
+        1011
+        1100
+        1101
+        1110
+        1111
+    
+    31、列表组合和列表元素替代组合:
+    
+        >>> for c in itertools.combinations([1, 2, 3, 4, 5], 2):
+        ...     print ''.join(str(x) for x in c)
+        ... 
+        123
+        124
+        125
+        134
+        135
+        145
+        234
+        235
+        245
+        345
+    
+        >>> for c in itertools.combinations_with_replacement([1, 2, 3], 2):
+        ...     print ''.join(str(x) for x in c)
+        ...
+        11
+        12
+        13
+        22
+        23
+        33
+    
+    32、列表元素排列组合:
+        
+        >>> for p in itertools.permutations([1, 2, 3, 4]):
+        ...     print ''.join(str(x) for x in p)
+        ... 
+        1234
+        1243
+        1324
+        1342
+        1423
+        1432
+        2134
+        2143
+        2314
+        2341
+        2413
+        2431
+        3124
+        3142
+        3214
+        3241
+        3412
+        3421
+        4123
+        4132
+        4213
+        4231
+        4312
+        4321
+        >>>   
+    
+    33、可链接迭代器:
 
-
+        >>> a = [1, 2, 3, 4]
+        >>> for p in itertools.chain(itertools.combinations(a, 2), itertools.combinations(a, 3)):
+        ...     print p
+        ...
+        (1, 2)
+        (1, 3)
+        (1, 4)
+        (2, 3)
+        (2, 4)
+        (3, 4)
+        (1, 2, 3)
+        (1, 2, 4)
+        (1, 3, 4)
+        (2, 3, 4)
+        >>> for subset in itertools.chain.from_iterable(itertools.combinations(a, n) for n in range(len(a) + 1))
+        ...     print subset
+        ...
+        ()
+        (1,)
+        (2,)
+        (3,)
+        (4,)
+        (1, 2)
+        (1, 3)
+        (1, 4)
+        (2, 3)
+        (2, 4)
+        (3, 4)
+        (1, 2, 3)
+        (1, 2, 4)
+        (1, 3, 4)
+        (2, 3, 4)
+        (1, 2, 3, 4)                  
+    
+    34、根据文件指定列类聚：
+        
+        >>> import itertools
+        >>> with open('contactlenses.csv', 'r') as infile:
+        ...     data = [line.strip().split(',') for line in infile]
+        ...
+        >>> data = data[1:]
+        >>> def print_data(rows):
+        ...     print '\n'.join('\t'.join('{: <16}'.format(s) for s in row) for row in rows)
+        ...
+        
+ 
+        
 
 
 
