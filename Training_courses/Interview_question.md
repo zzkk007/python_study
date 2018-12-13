@@ -521,12 +521,14 @@
 		if num == 0:
 			return '0'
 		else:
+	        # return binary(num >> 1) + str( num & 1)
 			return binary(num//2) + str(num%2)
 	
 	if __name__ == "__main__":
 		
 		num = int(input("请输入一个十进制的数字:"))
 		print(binary2(num))
+		
 
 19、使用递归把一个十进制数转换成64进制数：
 
