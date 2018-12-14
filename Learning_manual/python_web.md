@@ -2016,20 +2016,330 @@
                 ...
                 atexit.register(cleanup, self.myhandle)
 
-         
 "---------------------------------------------------------------------------"
 
-                    第 五 章 用 Python 实现设计模式
+                    第 六 章 用 Python 实现基本的数据结构和算法 
+
+""" ADT（Abstract Data Type）抽象数据类型，定义数据和其操作"""
     
-"---------------------------------------------------------------------------"
+    什么是抽象数据类型:
+    
+        抽象数据类型(ADT)的含义是指一个数学模型以及定义在此数学模型上的一组操作。
+        即把数据类型和数据类型上的运算捆在一起，进行封装。
+        引入抽象数据类型的目的是把数据类型的表示和数据类型上运算的实现与
+        这些数据类型和运算在程序中的引用隔开，使它们相互独立。
+        
+        最常用的数据运算有五种：
+            插入
+            删除
+            修改
+            查找
+            排序
+         
+    下边代码是一个简单的示例，如果实现一个简单的 Bag 类，先定义具有的操作
+    然后我们再用类的 magic method 来实现这些方法，迭代器的实现：
+               
+        class Bag(object):
+        
+            """
+            constructor  构造函数
+            size
+            contains
+            append
+            remove
+            iter
+            """
+        
+            def __init__(self):
+                self._items = list()
+        
+            def __le__(self):
+                return len(self._items)
+        
+            def __contains__(self, item):
+        
+                return item in self._items
+        
+            def add(self, item):
+                self._items.append(item)
+        
+            def remove(self, item):
+                assert item in self._items, 'item must in the bag'
+                return self._items.remove(item)
+        
+            def __iter__(self):
+                return _BagIterator(self._items)
+        
+        class _BagIterator(object):
+        
+            """
+                注意这里实现了迭代器类
+            """
+        
+            def __init__(self, seq):
+                self._bag_items = seq
+                self._cur_item = 0
+        
+            def __iter__(self):
+                return self
+        
+            def __next__(self):
+                if self._cur_item < len(self._bag_items):
+                    item = self._bag_items[self._cur_item]
+                    self._cur_item +=  1
+                    return item
+                else:
+                    raise StopIteration
+        
+        if __name__ == '__main__':
+        
+            b = Bag()
+            b.add(1)
+            b.add(2)
+            b.add(3)
+            b.add(4)
+            b.add(5)
+        
+            # for 使用 __iter__ 构建，用 __next__ 迭代
+        
+            for i in b:
+                print(i)
+        
+            # for 语句等价于
+            """   
+                i = b.__iter__()
+                while True:
+                    try:
+                        item = i.__next__()
+                        print(item)
+                    except StopIteration:
+                        break
+            """
 
-   
-   
-   
-   
-   
-   
-   
+""" array VS list"""
+
+    array : 
+        
+        定长， 操作有限
+        
+        python 3.5 中引入了 array 类， 可以用 import array 直接导入。    
+    
+    list :
+        
+        会预先分配内存，操作丰富，但是耗费内存。
+        
+        扩充的两种策略:
+            每次扩充增加固定数目的存储位置，如每次扩充增加10个元素位置，这种策略可称为线性增长。
+            特点：节省空间，但是扩充操作频繁，操作次数多。
+        
+            每次扩充容量加倍，如每次扩充增加一倍存储空间。
+            特点：减少了扩充操作的执行次数，但可能会浪费空间资源。以空间换时间，推荐的方式。
+                
+        list.append: 如果之前没有分配够内存，会重新开辟新区域，然后复制之前的数据，复杂度退化 O(1)
+        list.insert: 会移动被插入区域后所有元素,O(n)
+        list.pop: pop不同位置需要的复杂度不同pop()是O(1)复杂度,pop(0)首位O(n)复杂度
+        list[]: slice操作copy数据（预留空间）到另一个list
+        
+    来实现一个array的ADT:   
+     
+     """
+     模块ctypes是Python内建的用于调用动态链接库函数的功能模块，
+     一定程度上可以用于Python与其他语言的混合编程。
+     由于编写动态链接库，使用C/C++是最常见的方式，
+     故ctypes最常用于Python与C/C++混合编程之中。
+     
+     魔方方法： __getitem__, __setitem__
+     
+        class DictDemo:
+            def __init__(self,key,value):
+                self.dict = {}
+                self.dict[key] = value
+            def __getitem__(self,key):
+                return self.dict[key]
+            def __setitem__(self,key,value):
+                self.dict[key] = value
+        
+        dictDemo = DictDemo('key0','value0')
+        print(dictDemo['key0']) #value0
+        dictDemo['key1'] = 'value1'
+        print(dictDemo['key1']) #value1
+     
+     上面的对象就相当于自己创建了一个内建类型相似的字典，当实例中有类似字典的操作的时候
+     
+     实例dictDemo["key0"]就类似上面的的操作，
+     则会自动调用类中定义的方法__getitem__，输出在该方法返回的值
+    
+     再看看dictDemo["key1"] = "value1"，就是字典的操作，
+     会自动调用类中定义的方法__setitem__，来设置相应的值
+        
+     """
+        import ctypes
+
+        class Array(object):
+        
+            def __init__(self, size):
+                assert size > 0, 'array size must be > 0 '
+        
+                self._size = size
+                PyArrayType = ctypes.py_object * size
+                self._elements = PyArrayType()
+                self.clear(None)
+        
+            def __len__(self):
+                return self._size
+        
+            def __getitem__(self, index):
+        
+                assert index >= 0 and index < len(self), 'out of range'
+                return  self._elements[index]
+        
+            def __setitem__(self, index, value):
+        
+                assert index >= 0 and index < len(self), 'out of range'
+                self._elements[index] = value
+        
+            def clear(self, value):
+                """ 设置每个元素为 value"""
+        
+                for i in range(len(self)):
+                    self._elements[i] = value
+        
+            def __iter__(self):
+                return _ArrayIterator(self._elements)
+        
+        class _ArrayIterator(object):
+        
+            def __init__(self, items):
+        
+                self._items = items
+                self._idx = 0
+        
+            def __iter__(self):
+                return self
+        
+            def __next__(self):
+                if self._idx < len(self._items):
+                    val = self._items[self._idx]
+                    self._idx += 1
+                    return val
+                else:
+                    raise StopIteration
+        
+        if __name__ == '__main__':
+        
+            a = Array(10)
+            a[0] = 1
+            a[1] = 2
+            a[2] = 3
+            a[3] = 4
+            a[4] = 5
+            a[5] = 6
+        
+            print(a[5])
+        
+            for i in a:
+                print(i)
+            
+            """
+                结果如下：
+                
+                6
+                1
+                2
+                3
+                4
+                5
+                6
+                None
+                None
+                None
+                None
+               
+            """                   
+    
+    Two-Demensional Arrays (二维数组):
+    
+        class Aarray2D(object):
+
+    """
+        要实现的方法
+        Array2D(nrows, ncols) : constructor
+
+        numRows()
+        numCols()
+        clear(value)
+        getitem(i, j)
+        setitem(i, j, value)
+        
+        @property成为属性函数，可以对属性赋值时做必要的检查，并保证代码的清晰短小，
+        主要有2个作用：
+            将方法转换为只读
+            重新实现一个属性的设置和读取方法,可做边界判定
+
+        """
+        def __init__(self, numrows, numclos):
+            self._the_rows = Array(numrows)
+    
+            for i in range(numrows):
+                self._the_rows[i] = Array(numclos)
+    
+        @property
+        def numRows(self):
+            return len(self._the_rows)
+    
+        @property
+        def numCols(self):
+            return len(self._the_rows[0])
+    
+        def clear(self, value):
+            for row in self._the_rows:
+                row.clear(value)
+    
+        def __getitem__(self, ndx_tuple):
+            assert len(ndx_tuple) == 2
+            
+            row, col = ndx_tuple[0], ndx_tuple[1]
+            assert (row >= 0 and row < self.numRows and col >= 0 and col < self.numCols)
+    
+        def __setitem__(self, ndx_tuple, value):
+    
+            assert len(ndx_tuple) == 2
+            row , col = ndx_tuple[0], ndx_tuple[1]
+            assert (row >= 0 and row < self.numRows and col>= 0 and col < self.numCols)
+    
+            the_1d_array = self._the_rows[row]
+            the_1d_array[col] = value
+        
+ 
+ """Sets and Maps"""           
+        
+            
+        
+        
+               
+       
+    
+    
+    
+    
+
+
+
+
+
+
+
+"---------------------------------------------------------------------------"   
+
+
+
+
+
+
+
+
+
+
    
    
    
