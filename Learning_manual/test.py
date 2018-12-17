@@ -198,8 +198,3 @@ class Map(object):
             yield
 
 if __name__ == '__main__':
-
-     Map1 = Map()
-     Map1.add(1, 2)
-
-     print(Map1.valueOf(1))
