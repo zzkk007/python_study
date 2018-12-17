@@ -2480,12 +2480,95 @@
             setC = setA.union(setB)
         
             setC.print()
+    
+    2、Maps or Dict: 键值对,python内部采用hash实现:
+    
+        映射是存储数据记录集的一个容器，存储的每条记录都与一个唯一 key 关联。
+        
+        Map ADT:
+        
+            Map(): 创建一个空映射。
+            length(): 返回映像中的 key/value 对个数。
+            contains(key): 判断该 key 是否在映射中
+            add(key, value); 若该键值对未存在于映射中，添加; 若已存在即更新该 key 对应的值;添加后返回 True，更新后返回 False。
+            remove(key): 删除键值对，不存在时抛出异常。
+            valueOf(key): 返回该 key 关联的数据记录。
+            iterator(): 返回迭代器用于遍历映射中的键。
+        
+        基于 List 的实现:
             
-        
-        
+        两种实现方法： 
+            1. 分别用一个 List 存储 key，另一个 List 存储 value，并维护这两个 List 的关联性。 
+            2. 只用一个 List 来存储 key/value 对。
+            
+        下面的实现代码使用了方法 2：
+         
+            # Implementation of Map ADT using a single list.
+            class _MapEntry:
+                def __init__(self, key, val):
+                    self.key = key
+                    self.value = val
+            
+            class Map:
+                def __init__(self):
+                    self._entryList = list()
+            
+                def __len__(self):
+                    return len(self._entryList)
+            
+                # Helper method used to find the index position of a category. If the
+                # key is not found, None is returned.
+                def _findPosition(self, key):
+                    for e, ndx in enumerate(self._entryList):
+                        if e.key == key:
+                            return ndx
+                    return None
+            
+                def __contains__(self, key):
+                    ndx = self._findPosition(key)
+                    return ndx is not None
+            
+                # Adds a new entry to the map if the key does exist. Otherwise, the
+                # new value replaces the current value associated with the key.
+                def add(self, key, val):
+                    ndx = self._findPosition(self, key)
+                    if ndx is not None:
+                        self._entryList[ndx].value = val
+                        return False
+                    else:
+                        self._entryList.append(_MapEntry( key, val) )
+                        return True
+            
+                def valueOf(self, key):
+                    ndx = self._findPosition(self, key)
+                    assert ndx is not None, "Invalid map key."
+                    return self._entryList[ndx].value
+            
+                def remove(self, key):
+                    ndx = self._findPosition(self, key)
+                    assert ndx is not None, "Invalid map key."
+                    self._entryList.pop(ndx)
+            
+                def keyArray(self):
+                    keys = list()
+                    for e in self._entryList:
+                        keys.append(e.key)
+                    return keys
+            
+                def __iter__(self):
+                    return _MapGenerator(self._entryList)
+            
+                __setitem__ = add
+                __getitem__ = valueOf
+            
+            def _MapGenerator(entryList):
+                for e in entryList:
+                    yield e   
+                          
+            
+            
+               
            
-     
-            
         
         
                
