@@ -2317,6 +2317,172 @@
     
     1、set ADT:
     
+    A set is a container that stores a collection of unique values over
+    a given comparable domain in which the stored values have no particular ordering.
+    
+    内置函数 set()
+    
+        set() 函数创建一个无序不重复元素集，可以进行关系测试，删除重复数据，
+        还可以计算交集、差集、并集等。
+        
+        set 语法：
+            class set([iterable])
+        参数说明：
+            iterable ---可迭代对象
+        返回值：  
+            返回新的集合对象      
+        
+        set 中常用的一些方法：
+        
+            1、创建集合，要创建一个集合对象，向内置的set函数传递一个序列或其他的可迭代的对象：
+
+                x = set('abcde')
+                y = set('bdxyz')
+            
+                print(x)
+                    set(['a', 'c', 'b', 'e', 'd'])
+        
+            2、集合添加的方法，分别是 add 和 update 删除 remove
+            
+                add方法：要把传入的元素作为一个整体添加到集合中
+	
+                x.add('python')
+                    set(['a', 'c', 'b', 'e', 'd', 'python'])
+                
+                update方法：把要传入的元素拆开，作为一个个体传入到集合中：
+                
+                    x.update('xyz')
+                        set(['a', 'c', 'b', 'e', 'd', 'python', 'y', 'x', 'z'])
+                
+                删除方法：remove()
+                
+                    x.remove('python')
+                        set(['a', 'c', 'b', 'e', 'd', 'y', 'x', 'z'])
+            
+            3、 集合通过表达式操作符支持一般的数学集合运算。
+                   注意，不能在一般序列上应用这些表达式，必须通过序列创建集合后才能使用。
+                
+                   python 符号          含义
+                
+                      -                差集      x - y		set(['a', 'c', 'e'])
+                
+                      &                交集      x & y      set(['y', 'x', 'b', 'd', 'z'])
+                        
+                      |                并集      x | y      set(['a', 'c', 'b', 'e', 'd', 'y', 'x', 'z'])
+                
+                   in,not in            成员关系 'a' in x    True
+                
+                     ==,!=           等于，不等于  x!=y      True
+                
+                     >,<              大于，小于   x>y       True         
+        
+        
+        下面的类中，不能实现迭代。
+        
+        class Set(object):
+        """
+            使用 list 实现 set ADT
+            Set()
+            length()
+            contains(element)
+            add(element)
+            remove(element)
+    
+            isSubsetOf(setB)
+            union(setB)
+            intersect(setB)
+            difference(setB)
+            iterator
+    
+        """
+    
+            def __init__(self):
+                self._theElements = list()
+        
+            def __len__(self):
+                return len(self._theElements)
+        
+            def __contains__(self, item):
+                return item in self._theElements
+        
+            def add(self, item):
+                if item not in self._theElements:
+                    self._theElements.append(item)
+        
+            def print(self):
+                for i in self._theElements:
+                    print('{0}'.format(i))
+        
+            def remove(self, item):
+                assert item in self._theElements, "The element must be set"
+        
+            def __eq__(self, setB):
+                if len(self._theElements) != len(setB):
+                    return False
+                else:
+                    return self.isSubsetof(setB)
+        
+            def isSubsetof(self, setB):
+        
+                for item in self._theElements:
+                    if item not in setB:
+                        return False
+                    else:
+                        return True
+        
+            def union(self, setB):
+        
+                newSet = Set()
+                newSet._theElements.extend(self._theElements)
+        
+                for item in setB:
+                    if item not in self._theElements:
+                        newSet._theElements.append(item)
+                return newSet
+            
+            def __iter__(self):
+                
+                return _SetIterator(self._theElements)
+    
+
+        class _SetIterator(object):
+        
+            def __init__(self, items):
+                self._items = items
+                self._idx = 0
+        
+            def __iter__(self):
+                return self
+        
+            def __next__(self):
+                if self._idx < len(self._items):
+                    val = self._items[self._idx]
+                    self._idx += 1
+                    return val
+                else:
+                    raise StopIteration
+        
+        if __name__ == '__main__':
+        
+            setA = Set()
+            for i in range(10):
+                setA.add(i)
+        
+            setA.print()
+            
+            for i in setA:
+                print(i)
+        
+            print('-----------------')
+        
+            setB = set('iloveyou')
+        
+            setC = setA.union(setB)
+        
+            setC.print()
+            
+        
+        
            
      
             
