@@ -2312,7 +2312,13 @@
         
  
  """Sets and Maps"""           
-        
+    
+    除了 list 之外，最常用的应该是 Python 内置的 set 和 dict 了。
+    
+    1、set ADT:
+    
+           
+     
             
         
         
