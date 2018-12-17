@@ -2020,7 +2020,7 @@
 
                     第 六 章 用 Python 实现基本的数据结构和算法 
 
-""" ADT（Abstract Data Type）抽象数据类型，定义数据和其操作"""
+""" 01 ADT（Abstract Data Type）抽象数据类型，定义数据和其操作"""
     
     什么是抽象数据类型:
     
@@ -2116,7 +2116,7 @@
                         break
             """
 
-""" array VS list"""
+""" 02 array VS list"""
 
     array : 
         
@@ -2311,7 +2311,7 @@
             the_1d_array[col] = value
         
  
- """Sets and Maps"""           
+ """03 Sets and Maps"""           
     
     除了 list 之外，最常用的应该是 Python 内置的 set 和 dict 了。
     
@@ -2565,7 +2565,18 @@
                 for e in entryList:
                     yield e   
                           
-            
+""04 Searching and Sorting """
+    
+    排序和查找是最基础和频繁的操作，python内置了in操作符和bisect二分操作模块实现查找，
+    内置了sorted方法来实现排序操作。
+    二分和快排也是面试中经常考到的，本章讲的是基本的排序和查找。
+    
+        
+    
+      
+    
+    
+                
             
                
            
