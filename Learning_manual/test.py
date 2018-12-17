@@ -198,3 +198,6 @@ class Map(object):
             yield
 
 if __name__ == '__main__':
+
+    Map = Map()
+
