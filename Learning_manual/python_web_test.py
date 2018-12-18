@@ -43,14 +43,60 @@ def binary64(decimal, base):
         m = decimal % base
         return binary64(decimal //base, base) + str(KeyCode[m])
 
+
+def quick_sort(alist, start, end):
+
+    if start  >= end:
+        return
+    mid = alist[start]
+    low = start
+    high = end
+
+    while low < high:
+        while low < high and alist[high] >= mid:
+            high -= 1
+        alist[low] = alist[high]
+        while low < high and alist[low] < mid:
+            low += 1
+        alist[high] = alist[low]
+
+    alist[low] = mid
+
+    quick_sort(alist, 0, low - 1)
+    quick_sort(alist, low + 1, end)
+
+def shell_sort(alist):
+    n = len(alist)
+    # 初始步长
+    gap = n // 2
+    while gap > 0:
+        # 按步长进行插入排序
+        for i in range(gap, n):
+            j = i
+            # 插入排序
+            while j>=gap and alist[j-gap] > alist[j]:
+                alist[j-gap], alist[j] = alist[j], alist[j-gap]
+                j -= gap
+        # 得到新的步长
+        gap = gap // 2
+
 if __name__ == "__main__":
 
-    #source_list = [32, 543, 324, 34, 7, 90, 30, 14, 53, 99, 333]
+    source_list = [32, 543, 324, 34, 7, 90, 30, 14, 53, 99, 333]
     #bubble_sort(source_list)
     #selection_sort(source_list)
     #insert_sort(source_list)
-    #print(source_list)
 
-    decimal = int(input("please input a decimal:"))
+    #quick_sort(source_list, 0 , len(source_list)-1)
+
+    merge_sort(source_list)
+
+
+    print(source_list)
+
+
+
+
+    #decimal = int(input("please input a decimal:"))
     #print(binary_2(decimal))
-    print(binary64(decimal, 64))
+    #print(binary64(decimal, 64))
