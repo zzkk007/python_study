@@ -469,6 +469,117 @@ class SinCycLinkedList(object):
                 pre.next = self._head
 
 
+class DNode(object):
+
+    def __init__(self, item):
+        self.item = item
+        self.next = None
+        self.prev = None
+
+class DLinkList(object):
+
+    def __init__(self):
+        self._head = None
+
+    def isEmpty(self):
+        return self._head is None
+
+    def length(self):
+        cur = self._head
+        count = 0
+        while cur != None:
+            cur = cur.next
+            count += 1
+        return count
+
+    def travel(self):
+        cur = self._head
+
+        while cur.next != None:
+            print(cur.item)
+            cur = cur.next
+        print('---------')
+
+    def add(self, item):
+
+        node = DNode(item)
+
+        if self.isEmpty():
+            self._head = node
+
+        else:
+
+            node.next = self._head
+            self._head.prev = node
+
+            self._head = node
+
+    def append(self, item):
+
+        node = DNode(item)
+
+        if self.isEmpty():
+            self._head = node
+
+        else:
+            cur = self._head
+
+            while cur.next != None:
+                cur = cur.next
+
+            cur.next = node
+            node.prev = cur
+
+    def search(self, item):
+        cur = self._head
+
+        while cur != None:
+            if cur.item == item:
+                return True
+            cur = cur.next
+
+        return False
+
+    def insert(self, pos, item):
+
+        if pos < 0:
+            self.add(item)
+
+        elif pos > self.length() - 1:
+            self.append(item)
+
+        else:
+            node  = DNode(item)
+            cur = self._head
+
+            count = 0
+            while count < pos - 1:
+                count += 1
+                cur = cur.next
+
+            node.prev = cur
+            node.next = cur.next
+
+            cur.next.prev = node
+            cur.next = node
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
 
     # source_list = [32, 543, 324, 34, 7, 90, 30, 14, 53, 99, 333]
