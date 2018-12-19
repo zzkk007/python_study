@@ -3899,8 +3899,13 @@
               self.postorder(root.lchild)
               self.postorder(root.rchild)
               print root.elem
-           
-            
+              
+        if __name__ == '__main__':   
+                T = Tree()
+                T.add(1)
+                T.add(2)
+                T.add(3)
+                T.preorder(T.root)   
               
          
         
