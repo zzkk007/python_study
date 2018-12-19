@@ -563,24 +563,18 @@ class DLinkList(object):
             cur.next.prev = node
             cur.next = node
 
-
-
-
-
-
-
-
-
-
-
-
-
+def printRev(n):
+    if n > 0:
+        print(n)
+        print(printRev(n - 1))
 
 
 
 
 
 if __name__ == "__main__":
+
+    printRev(3)
 
     # source_list = [32, 543, 324, 34, 7, 90, 30, 14, 53, 99, 333]
     # bubble_sort(source_list)
@@ -620,7 +614,6 @@ if __name__ == "__main__":
     # print('%s' % q.dequeue())
     # print('%s' % q.dequeue())
 
-    """2018-12-19 """
 
 
 

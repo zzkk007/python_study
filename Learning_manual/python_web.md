@@ -3495,7 +3495,49 @@
 """09 Recursion """        
 
     递归是把一个大的问题分解成更小的问题，然后再解决更小、更琐碎的部分，从而解决问题的过程。                    
-                            
+    
+    1、递归函数，调用自己的函数，看一个简单的递归函数，倒序打印一个数
+    
+       def printRev(n):
+            if n > 0:
+                print(n)
+                print(printRev(n - 1))
+       
+       
+       if __name__ == "__main__":
+
+            printRev(3)    
+            
+       打印结果：
+                3
+                2
+                1
+                None
+                None
+                None
+       
+       def printRev(n):
+            if n > 0:
+                print(printRev(n - 1))
+                #之所以最小的先打印是因为函数一直递归到n==1时候的最深栈，此时不再
+                # 递归，开始执行print语句，这时候n==1，之后每跳出一层栈，打印更大的值
+                print(n)
+       if __name__ == "__main__": 
+            printRev(3)
+            
+       打印结果：
+                None
+                1
+                None
+                2
+                None
+                3 
+                
+"""10 Hash Tables 哈希表，散列表"""
+
+         
+       
+                           
                 
        
     
