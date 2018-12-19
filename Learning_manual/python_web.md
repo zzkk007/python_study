@@ -3535,6 +3535,379 @@
                 
 """10 Hash Tables 哈希表，散列表"""
 
+    基于比较的搜索（线性搜索、有序数组的二分搜索）最好的时间复杂度只能达到 O(logn)
+    利用 Hash 可以实现 O(1) 查找，Python 内置dict 实现就是 hash, 你会发现 dict 的
+    key 必须实现了 __hash__ 和 __eq__ 方法。
+ 
+    Hash: Hash是将搜索键映射到有限范围的数组索引的过程，目的是提供对键的直接访问。
+    
+    has 方法有一个 hash 函数来计算一个 hash 值， 作为数组下标， 放到该下标对应的槽中。
+    当不同 key 根据 hash 函数计算得到的下标相同时， 就出现了冲突。 解决冲突的方式有很多，
+    比如让比如让每个槽成为链表，每次冲突以后放到该槽链表的尾部，但是查询时间就会退化，不再是O(1)。
+    还有一种探查方式，当key的槽冲突时候，就会根据一种计算方式去寻找下一个空的槽存放，
+    探查方式有线性探查，二次方探查法等，cpython解释器使用的是二次方探查法。
+    还有一个问题就是当python使用的槽数量大于预分配的2/3时候，会重新分配内存并拷贝以前的数据，
+    所以有时候dict的add操作代价还是比较高的，牺牲空间但是可以始终保证O(1)的查询效率。
+    如果有大量的数据，建议还是使用bloomfilter或者redis提供的HyperLogLog。
+    
+    用 python 实现一个类似的 hash 结构
+    
+            import ctypes
+
+            class Array:  # 第二章曾经定义过的ADT，这里当做HashMap的槽数组使用
+                def __init__(self, size):
+                    assert size > 0, 'array size must be > 0'
+                    self._size = size
+                    PyArrayType = ctypes.py_object * size
+                    self._elements = PyArrayType()
+                    self.clear(None)
+            
+                def __len__(self):
+                    return self._size
+            
+                def __getitem__(self, index):
+                    assert index >= 0 and index < len(self), 'out of range'
+                    return self._elements[index]
+            
+                def __setitem__(self, index, value):
+                    assert index >= 0 and index < len(self), 'out of range'
+                    self._elements[index] = value
+            
+                def clear(self, value):
+                    """ 设置每个元素为value """
+                    for i in range(len(self)):
+                        self._elements[i] = value
+            
+                def __iter__(self):
+                    return _ArrayIterator(self._elements)
+            
+            
+            class _ArrayIterator:
+                def __init__(self, items):
+                    self._items = items
+                    self._idx = 0
+            
+                def __iter__(self):
+                    return self
+            
+                def __next__(self):
+                    if self._idx < len(self._items):
+                        val = self._items[self._idx]
+                        self._idx += 1
+                        return val
+                    else:
+                        raise StopIteration
+            
+            
+            class HashMap:
+                """ HashMap ADT实现，类似于python内置的dict
+                一个槽有三种状态：
+                1.从未使用 HashMap.UNUSED。此槽没有被使用和冲突过，查找时只要找到UNUSEd就不用再继续探查了
+                2.使用过但是remove了，此时是 HashMap.EMPTY，该探查点后边的元素扔可能是有key
+                3.槽正在使用 _MapEntry节点
+                """
+            
+                class _MapEntry:    # 槽里存储的数据
+                    def __init__(self, key, value):
+                        self.key = key
+                        self.value = value
+            
+                UNUSED = None    # 没被使用过的槽，作为该类变量的一个单例，下边都是is 判断
+                EMPTY = _MapEntry(None, None)     # 使用过但是被删除的槽
+            
+                def __init__(self):
+                    self._table = Array(7)    # 初始化7个槽
+                    self._count = 0
+                    # 超过2/3空间被使用就重新分配，load factor = 2/3
+                    self._maxCount = len(self._table) - len(self._table) // 3
+            
+                def __len__(self):
+                    return self._count
+            
+                def __contains__(self, key):
+                    slot = self._findSlot(key, False)
+                    return slot is not None
+            
+                def add(self, key, value):
+                    if key in self:    # 覆盖原有value
+                        slot = self._findSlot(key, False)
+                        self._table[slot].value = value
+                        return False
+                    else:
+                        slot = self._findSlot(key, True)
+                        self._table[slot] = HashMap._MapEntry(key, value)
+                        self._count += 1
+                        if self._count == self._maxCount:    # 超过2/3使用就rehash
+                            self._rehash()
+                        return True
+            
+                def valueOf(self, key):
+                    slot = self._findSlot(key, False)
+                    assert slot is not None, 'Invalid map key'
+                    return self._table[slot].value
+            
+                def remove(self, key):
+                    """ remove操作把槽置为EMPTY"""
+                    assert key in self, 'Key error %s' % key
+                    slot = self._findSlot(key, forInsert=False)
+                    value = self._table[slot].value
+                    self._count -= 1
+                    self._table[slot] = HashMap.EMPTY
+                    return value
+            
+                def __iter__(self):
+                    return _HashMapIteraotr(self._table)
+            
+                def _slot_can_insert(self, slot):
+                    return (self._table[slot] is HashMap.EMPTY or
+                            self._table[slot] is HashMap.UNUSED)
+            
+                def _findSlot(self, key, forInsert=False):
+                    """ 
+                    Args:
+                        forInsert (bool): if the search is for an insertion
+                    Returns:
+                        slot or None
+                    """
+                    slot = self._hash1(key)
+                    step = self._hash2(key)
+                    _len = len(self._table)
+            
+                    if not forInsert:    # 查找是否存在key
+                        while self._table[slot] is not HashMap.UNUSED:
+                            # 如果一个槽是UNUSED，直接跳出
+                            if self._table[slot] is HashMap.EMPTY:
+                                slot = (slot + step) % _len
+                                continue
+                            elif self._table[slot].key == key:
+                                return slot
+                            slot = (slot + step) % _len
+                        return None
+            
+                    else:    # 为了插入key
+                        while not self._slot_can_insert(slot):    # 循环直到找到一个可以插入的槽
+                            slot = (slot + step) % _len
+                        return slot
+            
+                def _rehash(self):    # 当前使用槽数量大于2/3时候重新创建新的table
+                    origTable = self._table
+                    newSize = len(self._table) * 2 + 1    # 原来的2*n+1倍
+                    self._table = Array(newSize)
+            
+                    self._count = 0
+                    self._maxCount = newSize - newSize // 3
+            
+                    # 将原来的key value添加到新的table
+                    for entry in origTable:
+                        if entry is not HashMap.UNUSED and entry is not HashMap.EMPTY:
+                            slot = self._findSlot(entry.key, True)
+                            self._table[slot] = entry
+                            self._count += 1
+            
+                def _hash1(self, key):
+                    """ 计算key的hash值"""
+                    return abs(hash(key)) % len(self._table)
+            
+                def _hash2(self, key):
+                    """ key冲突时候用来计算新槽的位置"""
+                    return 1 + abs(hash(key)) % (len(self._table)-2)
+            
+            
+            class _HashMapIteraotr:
+                def __init__(self, array):
+                    self._array = array
+                    self._idx = 0
+            
+                def __iter__(self):
+                    return self
+            
+                def __next__(self):
+                    if self._idx < len(self._array):
+                        if self._array[self._idx] is not None and self._array[self._idx].key is not None:
+                            key = self._array[self._idx].key
+                            self._idx += 1
+                            return key
+                        else:
+                            self._idx += 1
+                    else:
+                        raise StopIteration
+            
+            
+            def print_h(h):
+                for idx, i in enumerate(h):
+                    print(idx, i)
+                print('\n')
+            
+            
+            if __name__ == "__main__":
+            
+                def test_HashMap():
+                    """ 一些简单的单元测试，不过测试用例覆盖不是很全面 """
+                    h = HashMap()
+                    assert len(h) == 0
+                    h.add('a', 'a')
+                    assert h.valueOf('a') == 'a'
+                    assert len(h) == 1
+                
+                    a_v = h.remove('a')
+                    assert a_v == 'a'
+                    assert len(h) == 0
+                
+                    h.add('a', 'a')
+                    h.add('b', 'b')
+                    assert len(h) == 2
+                    assert h.valueOf('b') == 'b'
+                    b_v = h.remove('b')
+                    assert b_v == 'b'
+                    assert len(h) == 1
+                    h.remove('a')
+                    assert len(h) == 0
+                
+                    n = 10
+                    for i in range(n):
+                        h.add(str(i), i)
+                    assert len(h) == n
+                    print_h(h)
+                    for i in range(n):
+                        assert str(i) in h
+                    for i in range(n):
+                        h.remove(str(i))
+                    assert len(h) == 0 
+        
+        
+""" Binary Tree 二叉树 """
+
+    数（tree） 是一种抽象的数据类型(ADT)，或是实作这种抽象数据类型的数据结构，用来模拟
+    具有树状结构性质的数据集合。 它是由 n(n >= 1) 个有限节点组成一个具有层次关系的集合。
+    
+    它具有如下特点：
+    
+        每个节点有零个或多个子节点
+        没有父节点的节点是根节点
+        每个非根节点有且只有一个父节点
+        除了根节点外，每个子节点可以分为多个不相交的子树。
+    
+    树的术语：
+    
+        节点的度：一个节点含有的子树的个数称为该节点的度
+        树的度：一颗树中， 最大的节点的度称为树的度
+        叶节点或终端节点：度为零的节点。
+        父亲节点或父节点：若一个节点含有子节点，则这个节点称为其子节点的父节点；
+        孩子节点或子节点：一个节点含有的子树的根节点称为该节点的子节点；  
+        兄弟节点：具有相同父节点的节点互称为兄弟节点；
+        节点的层次：从根开始定义起，根为第1层，根的子节点为第2层，以此类推；    
+        树的高度或深度：树中节点的最大层次；
+        堂兄弟节点：父节点在同一层的节点互为堂兄弟；
+        节点的祖先：从根到该节点所经分支上的所有节点；
+        子孙：以某节点为根的子树中任一节点都称为该节点的子孙。
+        森林：由m（m>=0）棵互不相交的树的集合称为森林；      
+        
+    树的种类：
+        
+        无序树：树中任意节点的子节点之间没有顺序关系，这种树称为无序树，也称为自由树；
+        有序树：树中任意节点的子节点之间有顺序关系，这种树称为有序树；
+        二叉树：每个节点最多含有两个子树的树称为二叉树；
+        完全二叉树：对于一颗二叉树，假设其深度为d(d>1)。除了第d层外，其它各层的节点数目均已达最大值，且第d层所有节点从左向右连续地紧密排列，这样的二叉树被称为完全二叉树，其中满二叉树的定义是所有叶节点都在最底层的完全二叉树;
+        平衡二叉树（AVL树）：当且仅当任何节点的两棵子树的高度差不大于1的二叉树；
+        排序二叉树（二叉查找树（英语：Binary Search Tree），也称二叉搜索树、有序二叉树）；
+        霍夫曼树（用于信息编码）：带权路径最短的二叉树称为哈夫曼树或最优二叉树；
+        B树：一种对读写操作进行优化的自平衡的二叉查找树，能够保持数据有序，拥有多余两个子树。
+    
+    二叉树:
+        
+        二叉树是每个节点最多有两个子树的树结构。通常子树被称作“左子树”（left subtree）和“右子树”（right subtree）
+        
+        二叉树的性质(特性)--> 这个和 棋盘的性质是一样的。
+            
+            性质1：在二叉树的第 i 层上至多有 2^(i - 1) 个节点(i > 0)
+            性质2：深度为k的二叉树至多有 2^k - 1 个节点 （k > 0）
+            性质3：对于任意一颗二叉树，如果其叶节点数为 N0, 而度数为2的节点总数为 N2, 则 N0 = N2 + 1(根节点)
+            性质4：具有 n 个节点是完全二叉树的深度必须为 log2(n + 1)
+            性质5：对完全二叉树，若从上至下、从左至右编号，则编号为i 的结点，
+                  其左孩子编号必为2i，其右孩子编号必为2i＋1；其双亲的编号必为i/2（i＝1 时为根,除外）
+    
+    二叉树的实现（使用列表）:
+           
+        # 通过使用Node类中定义三个属性，分别为elem本身的值，还有lchild左孩子和rchild右孩子
+        
+        class Node_Tree(object):
+
+            def __init__(self, elem = -1, lchild = None, rchild = None):
+                self.elem = elem
+                self.lchild = lchild
+                self.rchild = rchild    
+        
+        # 树的创建,创建一个树的类，并给一个root根节点，一开始为空，随后添加节点
+        
+        class Tree(object):
+            """树类"""
+            def __init__(self, root=None):
+                self.root = root
+        
+            def add(self, elem):
+                """为树添加节点"""
+                node = Node(elem)
+                #如果树是空的，则对根节点赋值
+                if self.root == None:
+                    self.root = node
+                else:
+                    queue = []
+                    queue.append(self.root)
+                    #对已有的节点进行层次遍历
+                    while queue:
+                        #弹出队列的第一个元素
+                        cur = queue.pop(0)
+                        if cur.lchild == None:
+                            cur.lchild = node
+                            return
+                        elif cur.rchild == None:
+                            cur.rchild = node
+                            return
+                        else:
+                            #如果左右子树都不为空，加入队列继续判断
+                            queue.append(cur.lchild)
+                            queue.append(cur.rchild)
+    # 先序遍历 在先序遍历中，我们先访问根节点，
+    # 然后递归使用先序遍历访问左子树，再递归使用先序遍历访问右子树                    
+                   
+           #根节点->左子树->右子树
+           def preorder(self, root):
+                """递归实现先序遍历"""
+                if root == None:
+                    return
+                print root.elem
+                self.preorder(root.lchild)
+                self.preorder(root.rchild)           
+           
+           # 左子树->根节点->右子树
+           # 中序遍历 在中序遍历中，我们递归使用中序遍历访问左子树，
+           # 然后访问根节点，最后再递归使用中序遍历访问右子树
+           def inorder(self, root):
+              """递归实现中序遍历"""
+              if root == None:
+                  return
+              self.inorder(root.lchild)
+              print root.elem
+              self.inorder(root.rchild) 
+            
+           # 左子树->右子树->根节点
+           # 后序遍历 在后序遍历中，我们先递归使用后序遍历访问左子树和右子树，最后访问根节点
+           def postorder(self, root):
+              """递归实现后续遍历"""
+              if root == None:
+                  return
+              self.postorder(root.lchild)
+              self.postorder(root.rchild)
+              print root.elem
+           
+            
+              
+         
+        
+        
+        
+    
+        
          
        
                            

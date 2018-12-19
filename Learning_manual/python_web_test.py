@@ -569,12 +569,59 @@ def printRev(n):
         print(printRev(n - 1))
 
 
+# 树
 
+class Node_Tree(object):
+
+    def __init__(self, elem = -1, lchild = None, rchild = None):
+        self.elem = elem
+        self.lchild = lchild
+        self.rchild = rchild
+
+
+# 树的创建,创建一个树的类，并给一个root根节点，一开始为空，随后添加节点
+
+class Tree(object):
+
+    def __init__(self, root = None):
+        self.root = root
+
+    def add(self, elem):
+
+        node = Node_Tree(elem)
+        if self.root is None:
+            self.root = node
+
+        else:
+            queue = []
+            queue.append(self.root)
+
+            while queue:
+                cur = queue.pop(0)
+                if cur.lchild is None:
+                    cur.lchild = node
+                    return
+                elif cur.rchild is None:
+                    cur.rchild = node
+                    return
+                else:
+                    queue.pop(cur.lchild)
+                    queue.pop(cur.rchild)
+
+
+    def preorder(self, roo):
+
+        if roo is None:
+            return
+
+        print(roo.elem)
+        self.preorder(roo.lchild)
+        self.preorder(roo.rchild)
 
 
 if __name__ == "__main__":
 
-    printRev(3)
+    # printRev(3)
 
     # source_list = [32, 543, 324, 34, 7, 90, 30, 14, 53, 99, 333]
     # bubble_sort(source_list)
@@ -613,6 +660,14 @@ if __name__ == "__main__":
     # print('%s' % q.dequeue())
     # print('%s' % q.dequeue())
     # print('%s' % q.dequeue())
+
+
+    T = Tree()
+    T.add(1)
+    T.add(2)
+    T.add(3)
+    T.preorder(T.root)
+
 
 
 
