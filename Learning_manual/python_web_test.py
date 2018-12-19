@@ -352,10 +352,126 @@ class _QueueNode(object):
         self.next = None
 
 
+''' 2018 - 12 - 19'''
+
+class Node_cycle(object):
+    def __init__(self, item):
+        self.item = item
+        self.next = None
+
+class SinCycLinkedList(object):
+    def __init__(self):
+        self._head = None
+
+    def is_empty(self):
+        return self._head is None
+
+    def length(self):
+        if self.is_empty():
+            return 0
+        else:
+            count = 1
+            cur = self._head
+            while cur.next != self._head:
+                count += 1
+                cur = cur.next
+            return count
+
+    def travel(self):
+        cur =self._head
+
+        if self.is_empty():
+            return
+
+        while cur.next != self._head:
+            print(cur.item)
+            cur = cur.next
+
+    def add(self, item):
+        node = Node_cycle(item)
+
+        if self.is_empty():
+            self._head = node
+            node.next = self._head
+        else:
+            node.next = self._head
+
+            cur = self._head
+
+            while cur.next != self._head:
+                cur = cur.next
+            cur.next = node
+
+            self._head = node
+
+    def append(self, item):
+        node = Node_cycle(item)
+
+        if self.is_empty():
+            self._head = node
+            node.next = self._head
+
+        else:
+            cur = self._head
+            while cur.next != self._head:
+                cur = cur.next
+            cur.next = node
+            node.next = self._head
+
+    def insert(self, pos, item):
+
+        if pos <= 0:
+            self.add(item)
+        elif pos > (self.length() - 1):
+            self.append(item)
+        else:
+            node = Node_cycle(item)
+            cur = self._head
+            count = 0
+
+            while count < (pos - 1):
+                count += 1
+                cur = cur.next
+            node.next = cur.next
+            cur.next = node
+
+    def remove(self, item):
+
+        if self.is_empty():
+            return
+
+        cur = self._head
+        pre = None
+
+        if cur.item == item:
+
+            if cur.next != self._head:
+
+                while cur.next != self._head:
+                    cur = cur.next
+
+                cur.next = self._head.next
+                self._head = self._head.next
+            else:
+                self._head = None
+        else:
+            pre = self._head
+
+            while cur.next != self._head:
+
+                if cur.item == item:
+                    pre.next = cur.next
+                    return
+                else:
+                    pre = cur
+                    cur = cur.next
+            if cur.item == item:
+                pre.next = self._head
+
 
 if __name__ == "__main__":
 
-    source_list = [32, 543, 324, 34, 7, 90, 30, 14, 53, 99, 333]
+    # source_list = [32, 543, 324, 34, 7, 90, 30, 14, 53, 99, 333]
     # bubble_sort(source_list)
     # selection_sort(source_list)
     # insert_sort(source_list)
@@ -383,12 +499,24 @@ if __name__ == "__main__":
     # print(stack.pop())
 
 
-    q = Queue_list()
-    q.enqueue("hello")
-    q.enqueue("I")
-    q.enqueue("Love")
-    q.enqueue("world")
+    # q = Queue_list()
+    # q.enqueue("hello")
+    # q.enqueue("I")
+    # q.enqueue("Love")
+    # q.enqueue("world")
 
-    print('%s' % q.dequeue())
-    print('%s' % q.dequeue())
-    print('%s' % q.dequeue())
+    # print('%s' % q.dequeue())
+    # print('%s' % q.dequeue())
+    # print('%s' % q.dequeue())
+
+    """2018-12-19 """
+
+
+
+
+
+
+
+
+
+
