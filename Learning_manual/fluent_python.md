@@ -36,8 +36,180 @@
         这些特殊方法名能让你自己的对象实现和支持一下的语言框架，并与之交互：
             迭代、集合类、属性访问、运算符重载、函数和方法的调用、对象的创建和销毁
             字符串表示形式和格式化、管理上下文（即 with 块）
+    
+    1.1、一摞 Python 风格的纸牌
+    
+        import collections
+        Card = collections.namedtuple('Card',['rank', 'suit'])
+        class FrenchDeck:
+            ranks = [str(n) for n in range(2, 11)] + list('JQKA')
+            suits = 'spades diamonds clubs hearts'.split()
+            def __init__(self):
+                self._cards = [Card(rank, suit) for suit in self.suits for rank in self.ranks]
+            def __len__(self):
+                return len(self._cards)
+            def __getitem__(self, position):
+                return self._cards[position]
+        
+        # {'hearts': 2, 'clubs': 0, 'spades': 3, 'diamonds': 1}
+        suit_values = dict(spades=3, hearts=2, diamonds=1, clubs=0)
+
+
+        def spades_high(card):
+            rank_value = FrenchDeck.ranks.index(card.rank)
+            print("rank_value[%d]" % rank_value)
+            return rank_value * len(suit_values) + suit_values[card.suit]
+        
+        if __name__ == "__main__":
+        
+            deck = FrenchDeck()
+            # 1 一叠牌有多少张
+            print(len(deck))
+      
+            # 2、3 随机抽取一张，python 内置了一个序列中随机挑出一个元素的函数 random.choice,
+            print(choice(deck))
+        
+            # 4 可迭代
+            for card in deck:
+                print(card)
+        
+            # 反向迭代也没有关系
+            for card in reversed(deck):
+                print(card)
+        
+            # 5 in 操作
+        
+            print(Card('Q', 'hearts') in deck)
+            print(Card('7', 'beasts') in deck)
             
+            # 6 排序：
+            for card in sorted(deck, key=spades_high):
+                print(card)
+  
+    
             
+        内置函数sorted 
+         
+            sort 是应用在 list 上的方法，sorted 可以对所有可迭代的对象进行排序操作。
+             list 的 sort 方法返回的是对已经存在的列表进行操作，无返回值。
+             而内建函数 sorted 方法返回的是一个新的 list，而不是在原来的基础上进行的操作。
+             
+             sorted 语法
+             sorted(iterable[, cmp[, key[, reverse]]])
+             参数说明：
+                iterable -- 可迭代对象
+                cmp -- 比较的函数，这个具有两个参数，参数的值都是从可迭代对象中取出，
+                       此函数必须遵守的规则为 大于则返回 1，小于则返回 -1，等于则返回 0
+                key -- 主要是用来进行比较的元素，只有一个参数，具体的函数的
+                       参数就是取自于可迭代对象中，指定可迭代对象中的一个元素来进行排序
+                reverse -- 排序规则，reverse = True 降序 ， reverse = False 升序（默认）。
+                
+                >>>a = [5,7,6,3,4,1,2]
+                >>> b = sorted(a) # 保留原列表
+                >>> a
+                   [5, 7, 6, 3, 4, 1, 2]
+                >>> b
+                   [1, 2, 3, 4, 5, 6, 7]
+                >>> L=[('b',2),('a',1),('c',3),('d',4)]
+                >>> sorted(L, cmp=lambda x,y:cmp(x[1],y[1])) # 利用cmp函数
+                    [('a', 1), ('b', 2), ('c', 3), ('d', 4)]
+                >>> sorted(L, key=lambda x:x[1]) # 利用key
+                     [('a', 1), ('b', 2), ('c', 3), ('d', 4)]
+                >>> students = [('john', 'A', 15), ('jane', 'B', 12), ('dave', 'B', 10)]
+                >>> sorted(students, key=lambda s: s[2]) # 按年龄排序
+                    [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
+                >>> sorted(students, key=lambda s: s[2], reverse=True) # 按降序
+                     [('john', 'A', 15), ('jane', 'B', 12), ('dave', 'B', 10)]
+        
+        内置函数 reversed   
+        
+            描述：reversed 函数返回一个反转的迭代器。
+            语法：reversed(seq)
+            
+            参数：seq -- 要转换的序列，可以是 tuple, string, list 或 range
+            返回值: 返回一个反转的迭代器。 
+    
+            # 字符串
+            >>> seqString = 'Runoob'
+            >>> print(list(reversed(seqString)))
+            ['b', 'o', 'o', 'n', 'u', 'R']
+            >>> print((reversed(seqString)))    
+            <reversed object at 0x7fc0c94d33d0>
+      
+            # 元组
+            >>> seqTuple = ('R', 'u', 'n', 'o', 'o', 'b')
+            >>> print(list(reversed(seqTuple)))
+            ['b', 'o', 'o', 'n', 'u', 'R']
+            >>> 
+            
+            # range
+            >>> seqRange = range(5, 9)
+            >>> print(list(reversed(seqRange)))
+            [8, 7, 6, 5]
+            >>> 
+            
+            # 列表
+            >>> seqList = [1, 2, 4, 3, 5]
+            >>> print(list(reversed(seqList)))
+            [5, 3, 4, 2, 1]
+            
+            # 字典
+            >>> seqDict = dict(a = 1, b = 2, c = 3, d= 4)
+            >>> seqDict
+            {'a': 1, 'c': 3, 'b': 2, 'd': 4}
+            >>> reversed(seqDict)
+            Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+            TypeError: argument to reversed() must be a sequence
+            
+            >>> print(list(reversed(list[seqDict])))
+            Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+            TypeError: 'type' object has no attribute '__getitem__'
+        
+        random 生成随机数：
+            
+            # 返回range(0,stop)之间的一个整数
+            random.randrange(stop)	 
+            
+            # 返回range[start,stop)之间的一个整数，可加step，跟range(0,10,2)类似
+            random.randrange(start, stop[, step])  
+            
+            # 返回range[a,b]之间的一个整数，等价于然的range(a,b+1)
+            random.randint(a, b)
+            
+            # 从非空序列seq中随机选取一个元素。如果seq为空则弹出 IndexError异常。
+            random.choice(seq)	
+            
+            # 3.6版本新增。从population集群中随机抽取K个元素（可重复）。
+            # weights是相对权重列表，cum_weights是累计权重，两个参数不能同时存在。
+            random.choices(population, weights=None, *, cum_weights=None, k=1)  
+             
+            # 从population样本或集合中随机抽取K个不重复的元素形成新的序列。
+            random.sample(population, k)   
+            
+            # 返回一个介于左闭右开[0.0, 1.0)区间的浮点数
+            random.random()                  
+            
+            # 返回一个介于a和b之间的浮点数。如果a>b，则是b到a之间的浮点数。这里的a和b都有可能出现在结果中。
+            random.uniform(a, b)  
+            
+        collections 模块
+        
+            自Python 2.4版本开始被引入，包含了dict、set、list、tuple以外的一些特殊的容器类型
+            分别是：
+            
+                OrderedDict类：排序字典，是字典的子类。引入自2.7。
+                namedtuple()函数：命名元组，是一个工厂函数。引入自2.6。
+                Counter类：为hashable对象计数，是字典的子类。引入自2.7。
+                deque：双向队列。引入自2.4。
+                defaultdict：使用工厂函数创建字典，使不用考虑缺失的字典键。引入自2.5。
+    
+    1.2  如何使用特殊方法:
+    
+        
+    
+         
                 
              
      

@@ -73,11 +73,11 @@ if __name__ == "__main__":
     print(len(deck))
 
     # 2、3 随机抽取一张，python 内置了一个序列中随机挑出一个元素的函数 random.choice,
-    print(choice(deck))
+    #print(choice(deck))
 
     # 4 可迭代
-    for card in deck:
-        print(card)
+    #for card in deck:
+    #    print(card)
 
     # 反向迭代也没有关系
     for card in reversed(deck):
