@@ -27,7 +27,7 @@ class FrenchDeck(object):
     def __getitem__(self, positions):
         return self._cards[positions]
 
-
+# {'hearts': 2, 'clubs': 0, 'spades': 3, 'diamonds': 1}
 suit_values = dict(spades=3, hearts=2, diamonds=1, clubs=0)
 
 
@@ -58,7 +58,12 @@ if __name__ == "__main__":
         
         6、排序，用点数来判定扑克牌的大小，2 最小、A 最大，同时黑桃
         最大、红桃次之、方块再次、梅花最小。梅花 2 的大小是 0，黑桃 A 是 51：
-    
+        
+        7、虽然 FrenchDeck 隐式的继承了 object 类，但功能不是类继承来的。
+            我们通过数据模型和一些合成来实现这些功能。通过实现__len__ 和 __getitem__
+            这两个特殊方法， FrenchDeck 就跟一个 python 自有的序列数据类型一样，可以
+            提现出 python 的核心语言特性（例如迭代和切片）。同时这个类还可以用于标准库中
+            诸如 random.choice、reversed 和 sorted 这些函数。
     
     """
 
@@ -68,7 +73,7 @@ if __name__ == "__main__":
     print(len(deck))
 
     # 2、3 随机抽取一张，python 内置了一个序列中随机挑出一个元素的函数 random.choice,
-    # print(choice(deck))
+    print(choice(deck))
 
     # 4 可迭代
     for card in deck:
