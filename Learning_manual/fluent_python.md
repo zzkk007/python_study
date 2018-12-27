@@ -275,8 +275,63 @@
             >>> math.hypot(2, 2) 
             2.8284271247461903
             
-    1.2.2     
+    1.2.2  字符串表示形式：
     
+        Python 中有一个内置函数叫 repr, 它能把一个对象用字符串的形式表达出来以便辨认。
+        这就是"字符串表还是形式"。 repr 就是通过 __repr__ 这个特殊方法来得到一个对象
+        的字符串表示形式的。当我们在控制台里打印一个向量的实例时，得到的字符串可能会
+        是<Vector object at 0x10e100070>
+        
+        在 __repr__ 的实现中，我们用到了 %r 来获取对象的各个属性的标准字符串表示形式
+        --- 这是一个好习惯，它暗示了一个关键： Vector(1, 2) 和 Vector('1', '2')
+        是不一样的。如下面的例子：
+        
+            class Test(object):
+                def __init__(self, value):
+                    self.data = value
+            
+            class TestRepr(Test):
+                def __repr__(self):
+                    return 'Value(%r)' % self.data
+            
+            class TestStr(Test):
+                def __str__(self):
+                    return '(Value(%s)' % self.data
+            
+            tr = TestRepr(1)
+            print(tr)   # 返回结果 Value(1)
+            
+            tr1 = TestRepr('1')
+            print(tr1)  # 返回结果 Value('1')
+            
+            ts = TestStr(1)
+            print(ts)   # 返回结果 Value(1)
+            ts1 = TestStr('1')
+            print(ts1)  # 返回结果 Value(1)
+        
+         __repr__ 所返回的字符串应该准确、无歧义，并且尽可以表达出
+         如何使用代码创建出整个被打印的对象。
+         
+         __repr__ 和 __str__ 的区别在于，后者是在 str() 函数中被使用。
+         或者在用 print 函数打印一个对象时候才被调用，并且返回的字符串
+         对终端用户更友好。
+         如果一个对象没有 __str__ 函数，而python 又需要调用它的时候，解释器
+         会用 __repr__ 作为替代。
+    
+    1.2.4 自定义的布尔值：
+    
+        尽管 Python 里有 bool 类型，但实际上任何对象都可以用于需要布尔值的上下文中
+        （比如 if 或 while 语句，或者 and、or 或 not 运算），为了判断一个值 x 为真
+        还是为假，Python 会调用 bool(x), 这个函数只能返回 True 或 False.
+        bool(x) 的背后是调用x.__bool__() 的结果； 如果不存在 __bool__ 方法， 
+        那么 bool(x) 会尝试调用 x.__len__()。 若返回 0， 则 bool 会返回 False； 
+        否则返回True。
+        
+        
+        
+        
+    
+             
          
                 
              
