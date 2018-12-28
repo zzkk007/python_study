@@ -919,6 +919,237 @@
 
 """2.6 序列的增量赋值"""    
     
+        增量赋值运算符 += 和 *= 的表现取决于它们的第一个操作对象。简单起见，我们把讨论集中在增量加法
+        （+=）上， 但这些概念对 *= 和其他增量运算符来说都是一样的。
+        
+        += 背后的特殊方法是 __iadd__ (用于"就地加法")。但是如果一个类没有是实现这个方法的话，Python
+        会退一步调用 __add__。
+        
+        考虑下面这个简单表达式： >>> a += b
+        
+        如果 a 实现了 __iadd__ 方法，就会调用这个方法，同时对可变序列（如 list、bytearray、array.array）
+        来说，a 就会就地改动，就像调用 a.extend(b) 一样。 但是如果 a 没有实现 __iadd__的话， a += b
+        这个表达式的效果就变得跟 a = a + b 一样了。首先计算 a + b ,得到一个新的对象，然后赋值给 a。
+        也就是在这个表达式中，变量名会不会被关联到新的对象， 完全取决于这个类型有没有实现__iadd__ 这个方法。
+        
+        上面所说的这些关于 += 的概念也适用于 *=， 不同的是， 后者相对应的是 __imul__。
+        
+        python2 中:
+        
+            >>> l = [1, 2, 3]
+            >>> id(l)
+            4311953800  # (1)
+            >>> l *= 2
+            >>> l
+            [1, 2, 3, 1, 2, 3]
+            >>> id(l)
+            4311953800  # (2)
+            >>> t = (1, 2, 3)
+            >>> id(t)
+            4312681568  # (3)
+            >>> t *= 2
+            >>> id(t)
+            4301348296    
+            
+            (1) 刚开始的列表的 ID
+            (2) 运用增量乘法后，列表的 ID 没有变， 新元素追加到列表上了。
+            (3) 元组最开始的 ID
+            (4) 运用增量乘法之后，新的元组被创建。
+        
+        对不可变序列进行重复拼接操作的话， 效率会很低， 因为每次都有一个
+        新对象， 而解释器需要把原来对象中的元素先复制到新的对象里， 然后
+        再追加新的元素。 
+        
+        
+        一个关于 += 的谜题：
+        
+            >>> t = (1, 2, [30, 40])
+            >>> t[2] += [50, 60]    
+            到底会发生下面 4 种的情况中的哪一种？
+            
+            a. t 变成 (1, 2, [30, 40, 50, 60])。
+            b. 因为 tuple 不支持对它的元素赋值，所以会抛出 TypeError 异常。
+            c. 以上两个都不是。
+            d. a 和 b 都不对。
+        
+            答案是：选项 d, t[2] 被改动了，但是也抛出异常出来。
+            
+            >>> t = (1,2,[20,30])
+            >>> t[2] += [50,60]
+            Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+            TypeError: 'tuple' object does not support item assignment
+            >>> 
+            >>> t
+            (1, 2, [20, 30, 50, 60])  
+            
+            Python 为表达式 s[a] += b 生成的字节码， 可能这个现象背后的原因会变得清晰起来。
+            示例 2-16 s[a] = b 背后的字节码
+            
+                >>> dis.dis('s[a] += b')
+                1 0 LOAD_NAME 0(s)
+                3 LOAD_NAME 1(a)
+                6 DUP_TOP_TWO
+                7 BINARY_SUBSCR #（1）
+                8 LOAD_NAME 2(b)
+                11 INPLACE_ADD  #（2）
+                12 ROT_THREE
+                13 STORE_SUBSCR #（3）
+                14 LOAD_CONST 0(None)
+                17 RETURN_VALU
+                
+            （1）将 s[a] 的值存入 TOS（Top Of Stack， 栈的顶端） 
+            （2）计算 TOS += b。 这一步能够完成， 是因为 TOS 指向的是一个可变对象
+            （3）s[a] = TOS 赋值。 这一步失败， 是因为 s 是不可变的元组
+            
+            这其实是个非常罕见的边界情况， 在 15 年的 Python 生涯中， 我还没见过谁在这个地方吃过亏。
+            至此我得到了 3 个教训：
+                
+                (1) 不要把可变对象放在元组里面。
+                (2) 增量赋值不是一个原子操作。 我们刚才也看到了， 它虽然抛出了异常， 但还是完成了操作。
+                (3) 查看 Python 的字节码并不难， 而且它对我们了解代码背后的运行机制很有帮助。   
+                
+                
+""" 2.7 list.sort 方法和 内置函数 sorted """
+
+    list.sort 方法会就地排序列表，也就是说不会把原列表赋值一份。这也就是这个方法的返回值 None 的原因。
+    本方法不会创建新的列表，在这种情况下，返回 None 其实是 Python 的一个惯例。    
+    如果一个函数或者方法对对象进行的是就地改动， 那它就应该返回 None， 好让调用
+    者知道传入的参数发生了变动， 而且并未产生新的对象。 例如， random.shuffle 函数也遵守了这个惯例。        
+             
+    用返回 None 来表示就地改动这个惯例有个弊端， 那就是调用者无法将其串联起来。 
+    而返回一个新对象的方法（比如说 str 里的所有方法） 则正好相反， 它们可以串联起来调用， 
+    从而形成连贯接口（fluent interface）。
+    
+    与 list.sort 相反的是内置函数 sorted， 它会新建一个列表作为返回值。 
+    这个方法可以接受任何形式的可迭代对象作为参数， 甚至包括不可变序列或生成器。 
+    而不管 sorted 接受的是怎样的参数， 它最后都会返回一个列表。
+    
+    不管是 list.sort 方法还是 sorted 函数， 都有两个可选的关键字参数。
+    语法：sorted(iterable[, cmp[, key[, reverse]]])
+        
+        reverse: 
+            如果被设定为 True, 被排序的元素里会降序输出。默认 False
+        
+        key: 
+            一个只有一个参数的函数， 这个函数会被用在序列里的每一个元素上，
+            所产生的结果将是排序算法依赖的对比关键字。 比如说， 
+            在对一些字符串排序时， 可以用 key=str.lower 来实现忽略大小写的排序， 
+            或者是用 key=len 进行基于字符串长度的排序。
+            这个参数的默认值是恒等函数（identity function）， 
+            也就是默认用元素自己的值来排序。
+            
+            可选参数 key 还可以在内置函数 min() 和 max() 中起作用。
+            另外， 还有些标准库里的函数也接受这个参数， 
+            像itertools.groupby() 和 heapq.nlargest() 等。
+            
+         
+    下面通过几个小例子来看看这两个函数和它们的关键字参数：
+    
+        >>> fruits = ['grape', 'raspberry', 'apple', 'banana']
+        >>> sorted(fruits)
+        ['apple', 'banana', 'grape', 'raspberry'] ➊
+        >>> fruits
+        ['grape', 'raspberry', 'apple', 'banana'] ➋
+        >>> sorted(fruits, reverse=True)
+        ['raspberry', 'grape', 'banana', 'apple'] ➌
+        >>> sorted(fruits, key=len)
+        ['grape', 'apple', 'banana', 'raspberry'] ➍
+        >>> sorted(fruits, key=len, reverse=True)
+        ['raspberry', 'banana', 'grape', 'apple'] ➎
+        >>> fruits
+        ['grape', 'raspberry', 'apple', 'banana'] ➏
+        >>> fruits.sort() ➐
+        >>> fruits
+        ['apple', 'banana', 'grape', 'raspberry'] ➑
+    
+        ❶ 新建了一个按照字母排序的字符串列表。
+        ❷ 原列表并没有变化。
+        ❸ 按照字母降序排序。
+        ❹ 新建一个按照长度排序的字符串列表。 因为这个排序算法是稳定
+            的， grape 和 apple 的长度都是 5， 它们的相对位置跟在原来的列表里是一样的。
+        ❺ 按照长度降序排序的结果。 结果并不是上面那个结果的完全翻转，
+          因为用到的排序算法是稳定的， 也就是说在长度一样时， grape 和 apple
+          的相对位置不会改变。
+        ❻ 直到这一步， 原列表 fruits 都没有任何变化。
+        ❼ 对原列表就地排序， 返回值 None 会被控制台忽略。
+        ❽ 此时 fruits 本身被排序。        
+ 
+"""2.8 用 bisect 来管理已排序的序列 """
+
+    bisect 模块包含两个主要的函数， bisect 和 insort。 两个函数都是用二分查找算法
+    来在有序的序列中查找和插入元素。
+    
+    2.8.1 用 bisect 来搜索:
+        
+        bisect(haystack, needle) 在 haystack 里搜索 needle(针) 的位置。
+        该位置满足的条件是， 把 needle 插入这个位置之后， haystack 还能保持升序。 
+        也就是在说这个函数返回的位置前面的值， 都小于或等于 needle 的值。 
+        其中 haystack 必须是一个有序的序列。 你可以先用 bisect(haystack, needle)查找位置index， 
+        再用 haystack.insert(index, needle) 来插入新值。 但你也可用insort 来一步到位， 并且后者的速度更快一些。
+             
+        import bisect
+        import sys
+        HAYSTACK = [1, 4, 5, 6, 8, 12, 15, 20, 21, 23, 23, 26, 29, 30]
+        NEEDLES = [0, 1, 2, 5, 8, 10, 22, 23, 29, 30, 31]
+        ROW_FMT = '{0:2d} @ {1:2d} {2}{0:<2d}'
+        def demo(bisect_fn):
+        for needle in reversed(NEEDLES):
+        position = bisect_fn(HAYSTACK, needle) ➊
+        offset = position * ' |' ➋print(ROW_FMT.format(needle, position, offset)) ➌
+        if __name__ == '__main__':
+        if sys.argv[-1] == 'left': ➍
+        bisect_fn = bisect.bisect_left
+        else:
+        bisect_fn = bisect.bisect
+        print('DEMO:', bisect_fn.__name__) ➎
+        print('haystack ->', ' '.join('%2d' % n for n in HAYSTACK))
+        demo(bisect_fn)
+        
+        ❶ 用特定的 bisect 函数来计算元素应该出现的位置。
+        ❷利用该位置来算出需要几个分隔符号。
+        ❸ 把元素和其应该出现的位置打印出来。
+        ❹ 根据命令上最后一个参数来选用 bisect 函数。
+        ❺ 把选定的函数在抬头打印出来。
+
+
+
+"""2.9 当列表不是首选时 """
+
+    虽然列表既灵活又简单， 但面对各类需求时， 我们可能会有更好的选择。 
+    比如， 要存放 1000 万个浮点数的话， 数组（array） 的效率要高得多， 
+    因为数组在背后存的并不是 float 对象， 而是数字的机器翻译， 也就是字节表述。 
+    这一点就跟 C 语言中的数组一样。 再比如说， 如果需要频繁对序列做先进先出的操作， 
+    deque（双端队列） 的速度应该会更快。
+    
+    如果在你的代码里， 包含操作（比如检查一个元素是否出现在一个集合中） 的频率很高， 
+    用 set（集合） 会更合适。 set 专为检查元素是否存在做过优化。 但是它并不是序列， 
+    因为 set 是无序的。
+    
+    2.9.1 数组:
+    
+        如果我们需要一个只包含数字的列表， 那么 array.array 比 list 更高效。 
+        数组支持所有跟可变序列有关的操作， 包括 .pop、 .insert 和.extend。 
+        另外， 数组还提供从文件读取和存入文件的更快的方法， 如.frombytes 和 .tofile。
+        
+        Python 数组跟 C 语言数组一样精简。 创建数组需要一个类型码， 这个类
+        型码用来表示在底层的 C 语言应该存放怎样的数据类型。 比如 b 类型码
+        代表的是有符号的字符（signed char） ， 因此 array('b') 创建出的
+        数组就只能存放一个字节大小的整数， 范围从 -128 到 127， 这样在序列
+        很大的时候， 我们能节省很多空间。 而且 Python 不会允许你在数组里存
+        放除指定类型之外的数据   
+        
+    示例 2-20 一个浮点型数组的创建、 存入文件和从文件读取的过程
+    
+    
+    
+    
+       
+       
+ 
+ 
+ 
+ 
         
      
           
