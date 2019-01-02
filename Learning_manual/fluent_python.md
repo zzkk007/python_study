@@ -1395,6 +1395,93 @@
 "---------------------------------------------------------------------"
     
                      第三章   字典和集合
+ 
+    字典这个数据结构活跃在所有 Python 程序的背后，即便你的源码里并没有直接用到它。
+    它是 Python 语言的基石。模块的命名空间、实例的属性和函数的关键字参数中都可以
+    看到它的身影。跟它有关的内置函数在 __builtins__.__dict__ 模块中。
+    
+    字典的几种创建方式：
+    
+        def create_dict():
+            # 1 创建空字典
+            dict1 = {}
+            print(dict1)
+        
+            # 2 直接赋值创建
+            dict2 = {'spam':1, 'egg':2, 'bar':3}
+            print(dict2)
+        
+            # 3 通过关键词 dict 和关键参数创建
+            dict3 = dict(spam = 1, egg = 2, bar = 3)
+            print(dict3)
+        
+            # 4 通过二元元组列表创建
+            list = [('spam', 1), ('egg', 2), ('bar', 3)]
+            dict4 = dict(list)
+            # dict4 = dict([('spam',1),('egg',2),('bar',3)])
+            print(dict4)
+        
+            # 5 dict和zip结合创建
+            dict5 = dict(zip('abc',[1,2,3]))
+            print(dict5)
+        
+            # 6 通过字典推导式创建
+            dict6 = {i:2*i for i in range(3)}
+            print(dict6)
+        
+            # 7 通过 dict.fromkeys() 创建
+            dict7 = dict.fromkeys(range(3),'x')
+            print(dict7)
+        
+            # 8 其他
+            list = ['x',1,'y',2,'z',3]
+            dict8 = dict(zip(list[::2], list[1::2]),)
+            print(dict8)
+        
+    
+    
+    集合（set）的实现其实也依赖于散列表。
+    
+    本章大纲如下：
+        
+        常见的字典方法
+        如何处理查找不到的键
+        标准库中 dict 类型的变种
+        set 和 frozenset 类型
+        散列表的工作原理
+        三列表带来的潜在影响（什么样的数据类型可作为键，不可预知的顺序，等等）
+        
+"""3.1 泛映射类型 """
+
+    collections.abc 模块中有 Mapping 和 MutableMapping 这两个抽象的基类，它们的作用
+    是为 dict 和其他类似的类型定义形式接口。
+    
+    类                父类              抽象方法                                                      方法
+    Mapping	        Collection	__getitem__, __iter__, __len__	                            __contains__, keys, items, values, get, __eq__, and __ne__
+    MutableMapping	Mapping	    __getitem__, __setitem__, __delitem__, __iter__, __len__	Inherited Mapping methods and pop, popitem, clear, update, and setdefault     
+    
+    标准库里所有的映射类型都是利用 dict 来实现的，因此它们有一个共同的限制，
+    即只有可散列的数据类型才能用作这些映射里的键（只有键有这个要求，值并不需要可散列的数据类型）。
+    
+    什么是可散列的数据类型:
+        如果一个对象是可散列的，那么在这个对象的生命周期中，它的散列值不变的，而且这个对象需要实现 __hash__()方法。
+        另外可散列对象还有有 __qe__() 方法，这样才能跟其他键做比较。如果两个可散列的对象是相等的，那么它们的散列值
+        一定是一样的。
+    
+    原子不可变数据类型，（str, bytes 和 数值类型） 都是可散列类型，   
+        
+        
+           
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
     
 "---------------------------------------------------------------------"
 
