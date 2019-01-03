@@ -1681,7 +1681,32 @@
     做出了改动， 我们通过这个视图可以观察到， 但是无法通过这个视图对
     原映射做出修改。 
     
-    
+        >>> from types import MappingProxyType
+        >>> d = {1:'A'}
+        >>> d_proxy = MappingProxyType(d)
+        >>> d_proxy
+        mappingproxy({1: 'A'})
+        >>> d_proxy[1] ➊
+        'A'
+        >>> d_proxy[2] = 'x' ➋
+        Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        TypeError: 'mappingproxy' object does not support item assignment
+        >>> d[2] = 'B'
+        >>> d_proxy ➌
+        mappingproxy({1: 'A', 2: 'B'})
+        >>> d_proxy[2]
+        'B'
+        >>>
+        
+        ➊ d 中的内容可以通过 d_proxy 看到。
+        ➋ 但是通过 d_proxy 并不能做任何修改。
+        ➌ d_proxy 是动态的， 也就是说对 d 所做的任何改动都会反馈到它上面。
+        
+        
+"""3.8 集合论"""
+
+        
     
     
     
