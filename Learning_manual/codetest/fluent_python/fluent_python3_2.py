@@ -10,8 +10,8 @@ with open("zen.txt", encoding='utf-8') as fp:
         for math in WORD_RE.finditer(line):
             word = math.group()
             column_no = math.start() + 1
-            location = (line_no, column_no)
 
+            location = (line_no, column_no)
             occurrences = index.get(word, [])
             occurrences.append(location)
             index[word] = occurrences

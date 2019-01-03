@@ -1536,8 +1536,80 @@
         每个 Python 程序员都知道可以用 d.get(k, default) 来代替 d[k], 给找不到的键一个默认的返回值
         （这样处理 KeyError 要方便不少。但是要更新某个键对应的值的时候， 不管使用 __getitem__ 还是 get 都会不自然，
         而且效率就像示例 3-2 中的还没有经过优化的代码所显示的那样，dict.get 并不是处理找不到的键的最好方法。
+            
+            """创建一个从单词到其出现情况的映射"""
+            import sys
+            import re
+            WORD_RE = re.compile(r'\w+')
+            index = {}
+            with open(sys.argv[1], encoding='utf-8') as fp:
+                for line_no, line in enumerate(fp, 1):
+                    for match in WORD_RE.finditer(line):
+                        word = match.group()
+                        column_no = match.start()+1
+                        location = (line_no, column_no)
+                        # 这其实是一种很不好的实现， 这样写只是为了证明论点
+                        occurrences = index.get(word, []) ➊
+                        occurrences.append(location) ➋
+                        index[word] = occurrences ➌
+            
+            # 以字母顺序打印出结果
+            for word in sorted(index, key=str.upper): ➍
+            print(word, index[word])      
+            
+            ❶ 提取 word 出现的情况， 如果还没有它的记录， 返回 []。
+            ❷ 把单词新出现的位置添加到列表的后面。
+            ❸ 把新的列表放回字典中， 这又牵扯到一次查询操作。  
+            ❹ sorted 函数的 key= 参数没有调用 str.uppper， 而是把这个方法
+              的引用传递给 sorted 函数， 这样在排序的时候， 单词会被规范成统一格式。
         
+        示例 3-3，这里是示例 3-2 的不完全输出，每一行的列表都代表一个单词的出现情况，
+        列表中的元素是一对值，第一个值表示出现的行，第二个值表示出现的列。
+            
+            $ python3 index0.py ../../data/zen.txt
+            a [(19, 48), (20, 53)]
+            Although [(11, 1), (16, 1), (18, 1)]
+            ambiguity [(14, 16)]
+            and [(15, 23)]
+            are [(21, 12)]
+            aren [(10, 15)]
+            at [(16, 38)]
+            bad [(19, 50)]
+            be [(15, 14), (16, 27), (20, 50)]
+            beats [(11, 23)]
+            Beautiful [(3, 1)]
+            better [(3, 14), (4, 13), (5, 11), (6, 12), (7, 9), (8, 11),
+            (17, 8), (18, 25)]
+    
+        示例 3-4 index.py 用一行就解决了获取和更新单词的出现情况列表。
         
+            """创建从一个单词到其出现情况的映射"""
+            import sys
+            import re
+            WORD_RE = re.compile(r'\w+')
+            index = {}
+            with open(sys.argv[1], encoding='utf-8') as fp:
+                for line_no, line in enumerate(fp, 1):
+                    for match in WORD_RE.finditer(line):
+                    word = match.group()
+                    column_no = match.start()+1
+                    location = (line_no, column_no)
+                    index.setdefault(word, []).append(location) ➊    
+            # 以字母顺序打印出结果
+            for word in sorted(index, key=str.upper):
+                print(word, index[word])    
+        
+            ➊ 获取单词的出现情况列表， 如果单词不存在， 把单词和一个空列表
+              放进映射， 然后返回这个空列表， 这样就能在不进行第二次查找的情况下更新列表了。        
+            
+        也就是说， 这样写
+            my_dict.setdefault(key, []).append(new_value)
+        跟这样写：
+            if key not in my_dict:
+                my_dict[key] = []
+            my_dict[key].append(new_value)            
+        
+     
 """3.4 映射的弹性键查询"""
 
     有时候为了方便起见， 就算某个键在映射里不存在， 我们也希望在通过
@@ -1546,7 +1618,83 @@
     是给自己定义一个 dict 的子类， 然后在子类中实现 __missing__ 方
     法。 下面将介绍这两种方法。
     
+    3.4.1 defaultfict: 处理找不到的键的一个选择：
+         
+        在用户创建 defaultdict 对象的时候， 就需要给它配置一个为找不到的键创造默认值的方法。
+        
+        具体而言， 在实例化一个 defaultdict 的时候， 需要给构造方法提供
+        一个可调用对象， 这个可调用对象会在 __getitem__ 碰到找不到的键
+        的时候被调用， 让 __getitem__ 返回某种默认值。       
     
+    3.4.2 特殊方法 __missing__
+        
+        所有的映射类型在处理找不到的键的时候，都会牵扯到 __missing__ 方法。
+        这也是这个方法称作“missing”的原因。 虽然基类 dict 并没有定
+        义这个方法， 但是 dict 是知道有这么个东西存在的。 也就是说， 如果
+        有一个类继承了 dict， 然后这个继承类提供了 __missing__ 方法， 那
+        么在 __getitem__ 碰到找不到的键的时候， Python 就会自动调用它，
+        而不是抛出一个 KeyError 异常。
+        
+        
+"""3.5 字典的变种"""        
+    
+    collections.OrderedDict:
+        
+        这个类型在添加键的时候会保持顺序， 因此键的迭代次序总是一致的。
+        OrderedDict 的 popitem 方法默认删除并返回的是字典里的最后
+        一个元素， 但是如果像 my_odict.popitem(last=False) 这样调用它，
+        那么它删除并返回第一个被添加进去的元素。
+    
+    collections.ChainMap:
+        
+        该类型可以容纳数个不同的映射对象， 然后在进行键查找操作的时
+        候， 这些对象会被当作一个整体被逐个查找， 直到键被找到为止。 这个
+        功能在给有嵌套作用域的语言做解释器的时候很有用， 可以用一个映射
+        对象来代表一个作用域的上下文。 
+    
+    collections.Counter:
+        
+        这个映射类型会给键准备一个整数计数器。 每次更新一个键的时候
+        都会增加这个计数器。 所以这个类型可以用来给可散列表对象计数， 或
+        者是当成多重集来用——多重集合就是集合里的元素可以出现不止一
+        次。 Counter 实现了 + 和 - 运算符用来合并记录， 还有像
+        most_common([n]) 这类很有用的方法。    
+    
+    colllections.UserDict:
+    
+        这个类其实就是把标准 dict 用纯 Python 又实现了一遍。
+        跟 OrderedDict、 ChainMap 和 Counter 这些开箱即用的类型不
+        同， UserDict 是让用户继承写子类的。
+    
+"""3.6 子类化 UserDict """
+    
+    就创造自定义映射类型来说， 以 UserDict 为基类， 总比以普通的dict 为基类要来得方便。
+
+"""3.7 不可变映射类型 """
+
+    标准库里所有的映射类型都是可变的， 但有时候你会有这样的需求， 
+    比如不能让用户错误地修改某个映射。                 
+    
+    从 Python 3.3 开始， types 模块中引入了一个封装类名叫
+    MappingProxyType。 如果给这个类一个映射， 它会返回一个只读的映
+    射视图。 虽然是个只读视图， 但是它是动态的。 这意味着如果对原映射
+    做出了改动， 我们通过这个视图可以观察到， 但是无法通过这个视图对
+    原映射做出修改。 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+       
  
 "---------------------------------------------------------------------"
 
