@@ -1468,7 +1468,79 @@
         另外可散列对象还有有 __qe__() 方法，这样才能跟其他键做比较。如果两个可散列的对象是相等的，那么它们的散列值
         一定是一样的。
     
-    原子不可变数据类型，（str, bytes 和 数值类型） 都是可散列类型，   
+    原子不可变数据类型，（str, bytes 和 数值类型） 都是可散列类型，frozenset 也是可散列的， 
+    因为根据其定义， frozenset 里只能容纳可散列类型。 
+    元组的话， 只有当一个元组包含的所有元素都是可散列类型的情况下， 它才是可散列的。 
+    来看下面的元组tt、 tl 和 tf：
+    
+        >>> tt = (1, 2, (30, 40))
+        >>> hash(tt)
+        8027212646858338501
+        >>> tl = (1, 2, [30, 40])
+        >>> hash(tl)
+        Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        TypeError: unhashable type: 'list'
+        >>> tf = (1, 2, frozenset([30, 40]))
+        >>> hash(tf)
+        -4118419923444501110   
+    
+    注意：
+        虽然元组本身是不可变序列， 它里面的元素可能是其他可变类型的引用。
+        
+        一般来讲用户自定义的类型的对象都是可散列的， 散列值就是它们
+        的 id() 函数的返回值， 所以所有这些对象在比较的时候都是不相
+        等的。 如果一个对象实现了 __eq__ 方法， 并且在方法中用到了这
+        个对象的内部状态的话， 那么只有当所有这些内部状态都是不可变
+        的情况下， 这个对象才是可散列的。
+        
+        
+"""3.2 字典推导 """
+
+    自 python 2.7 以来， 列表推导和生成器表达式的概念就移植到了字典上，从而有了字典推导。
+    （后面还有集合推导）。
+    字典推导（dictcomp）可以从任何以键值对作为元素的可迭代对象中构建出字典。
+    
+    示例 3.1 把一个装满元组的列表变成两个不同的字典。
+    
+        >>> DIAL_CODES = [ 
+        ... (86, 'China'),
+        ... (91, 'India'),
+        ... (1, 'United States'),
+        ... (62, 'Indonesia'),
+        ... (55, 'Brazil'),
+        ... (92, 'Pakistan'),
+        ... (880, 'Bangladesh'),
+        ... (234, 'Nigeria'),
+        ... (7, 'Russia'),
+        ... (81, 'Japan'),
+        ... ]
+        >>> country_code = {country: code for code, country in DIAL_CODES} 
+        >>> country_code
+        {'China': 86, 'India': 91, 'Bangladesh': 880, 'United States': 1,
+        'Pakistan': 92, 'Japan': 81, 'Russia': 7, 'Brazil': 55, 'Nigeria':
+        234, 'Indonesia': 62}
+        >>>
+        >>> {code: country.upper() for country, code in country_code.items() 
+        ... if code < 66}
+        {1: 'UNITED STATES', 55: 'BRAZIL', 62: 'INDONESIA', 7: 'RUSSIA'}
+        
+"""3.3 常见的映射方法""" 
+
+    映射类型的方法其实很丰富。 表 3-1 为我们展示了dict、 defaultdict 和 OrderedDict 的常见方法，
+    后面两个数据类型是 dict 的变种， 位于 collections 模块内。
+    
+    用 setdefault 处理找不到的键:
+        
+        当字典 d[k] 不能找到正确的键的时候，Python 会抛异常，这个行为符合 Python 所信奉的"快速失败"哲学。
+        每个 Python 程序员都知道可以用 d.get(k, default) 来代替 d[k], 给找不到的键一个默认的返回值
+        （这样处理 KeyError 要方便不少。但是要更新某个键对应的值的时候， 不管使用 __getitem__ 还是 get 都会不自然，
+        而且效率就像示例 3-2 中的还没有经过优化的代码所显示的那样，dict.get 并不是处理找不到的键的最好方法。
+        
+        
+"""3.4 映射的弹性键查询"""
+
+      
         
         
            
