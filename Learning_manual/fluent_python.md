@@ -1936,6 +1936,20 @@
     
     Python 3 明确区分了人类可读的文本字符串和原始的字节序列。
     隐式地把字节序列转换成 Unicode 文本已成过去。
+    本章将要讨论 Unicode 字符串、 二进制序列， 以及在二者之间转换时使用的编码。
+    
+    本章将讨论下述话题：
+        1、字符、 码位和字节表述
+        2、bytes、 bytearray 和 memoryview 等二进制序列的独特特性
+        3、全部 Unicode 和陈旧字符集的编解码器
+        4、避免和处理编码错误
+        5、处理文本文件的最佳实践
+        6、默认编码的陷阱和标准 I/O 的问题
+        7、规范化 Unicode 文本， 进行安全的比较
+        8、规范化、 大小写折叠和暴力移除音调符号的实用函数
+        9、使用 locale 模块和 PyUCA 库正确地排序 Unicode 文本
+        10、Unicode 数据库中的字符元数据
+        11、能处理字符串和字节序列的双模式 API
          
 """4.1 字符问题"""
 
@@ -1978,7 +1992,57 @@
     串就是解码， 而把字符串变成用于存储或传输的字节序列就是编码。                 
 
 """4.2 字节概要 """
+
+    Python 的字符串类型:
     
+        python2.x:
+            
+            str： 表示8位文本和二进制数据。
+            Unicode： 用来表示宽字符Unicode文本。
+            
+        python3.x:
+            
+            str: 表示 Unicode 文本（8位或更宽的）。
+            bytes: 二进制数据。
+            bytearray: 是一个种可变的 bytes 类型。
+            
+
+    Python 内置了两种基本的二进制序列类型：
+        python3 引入的不可变 bytes 类型
+        python2.6 添加的可变 bytearray 类型
+       （python 2.6 也引入了 bytes类型，但是那只不过是 str 类型的别名，与python3 的bytes类型不同）
+        
+        bytes 或 bytearray 对象的各个元素是介于 0~255（含）之间的整数，而不像 Python 2 的 str 对象那样是单个的字符。
+        然而， 二进制序列的切片始终是同一类型的二进制序列，包括长度为 1 的切片。
+        
+        示例 4-2 包含 5 个字节的 bytes 和 bytearray 对象
+        
+            python2 中：
+            >>> cafe = bytes('café', encoding='utf-8')
+            Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+            TypeError: str() takes at most 1 argument (2 given)
+            
+            python3 中：
+            
+            >>> cafe = bytes('café', encoding='utf_8') ➊
+            >>> cafe
+            b'caf\xc3\xa9'
+            >>> cafe[0] ➋
+            99
+            >>> cafe[:1] ➌
+            b'c'
+            >>> cafe_arr = bytearray(cafe)
+            >>> cafe_arr ➍
+            bytearray(b'caf\xc3\xa9')
+            >>> cafe_arr[-1:] ➎
+            bytearray(b'\xa9')    
+        
+            ❶ bytes 对象可以从 str 对象使用给定的编码构建。
+            ❷ 各个元素是 range(256) 内的整数。
+            ❸ bytes 对象的切片还是 bytes 对象， 即使是只有一个字节的切片。
+            ❹ bytearray 对象没有字面量句法， 而是以 bytearray() 和字节序列字面量参数的形式显示。
+            ❺ bytearray 对象的切片还是 bytearray 对象。
     
                          
                      
