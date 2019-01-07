@@ -2200,6 +2200,32 @@
     所以调用 my_file.read() 方法得到的以及传给my_file.write(text) 方法的都是字符串对象。
     可以看出， 处理文本文件很简单。 但是， 如果依赖默认编码， 你会遇到麻烦。
     
+    示例4.9 一个平台上的编码问题：
+            open('zen.txt', 'w',encoding='utf_8').write('café')
+            print(open('zen.txt').read())
+            输出的结果是：caf茅
+            
+        问题是:在写入文件的时候制定了 UTF-8 编码，但是读取的时候没有这么做，Windows上默认的是GB2312.
+        在新版 GNU/Linux 或 Mac OS X中运行同样的语句不会出问题， 因为这几个操作系统的默认编码是UTF-8.
+        
+        如果打开文件是为了写入， 但是没有指定编码参数， 会使用区域设置中的默认编码， 
+        而且使用那个编码也能正确读取文件。
+            open('zen.txt', 'w').write('café')
+            print(open('zen.txt').read())
+            输出的结果是：café
+        
+        需要在多台设备中或多种场合下运行的代码， 一定不能依赖
+        默认编码。 打开文件时始终应该明确传入 encoding= 参数， 因为
+        不同的设备使用的默认编码可能不同， 有时隔一天也会发生变化
+        
+            open('zen.txt', 'w',encoding='utf_8').write('café')
+            print(open('zen.txt','r',encoding='utf-8').read())
+            输出结果：café
+            
+"""4.6 为了正确比较而规范化Unicode 字符串"""                
+        
+        
+    
     
                      
                      
