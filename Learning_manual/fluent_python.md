@@ -2223,12 +2223,112 @@
             输出结果：café
             
 """4.6 为了正确比较而规范化Unicode 字符串"""                
+
+    因为 Unicode 有组合字符，所以字符串比较起来很复杂。
+    例如， “café”这个词可以使用两种方式构成， 分别有 4 个和 5 个码位，但是结果完全一样：
+    
+        >>> s1 = 'café'
+        >>> s2 = 'cafe\u0301'
+        >>> s1, s2
+        ('café', 'café')
+        >>> len(s1), len(s2)
+        (4, 5)
+        >>> s1 == s2
+        False     
+    在Unicode 标准中， 'é' 和 'e\u0301' 这样的序列叫“标准等价物”（canonical equivalent）
+    应用程序应该把它们视作相同的字符。 但是， Python 看到的是不同的码位序列，因此判定二者不相等。
+    
+    这个问题的解决方案是使用 unicodedata.normalize 函数提供的Unicode 规范化。 
+    这个函数的第一个参数是这 4 个字符串中的一个： 'NFC'、 'NFD'、 'NFKC' 和 'NFKD'。
+      
+    NFC（Normalization Form C） 使用最少的码位构成等价的字符串， 
+    而NFD 把组合字符分解成基字符和单独的组合字符。 这两种规范化方式都能让比较行为符合预期：
+        
+        >>> from unicodedata import normalize
+        >>> s1 = 'café' # 把"e"和重音符组合在一起
+        >>> s2 = 'cafe\u0301' # 分解成"e"和重音符
+        >>> len(s1), len(s2)
+        (4, 5)
+        >>> len(normalize('NFC', s1)), len(normalize('NFC', s2))
+        (4, 4)
+        >>> len(normalize('NFD', s1)), len(normalize('NFD', s2))
+        (5, 5)
+        >>> normalize('NFC', s1) == normalize('NFC', s2)
+        True
+        >>> normalize('NFD', s1) == normalize('NFD', s2)
+        True
         
         
+"""4.7 Unicode 文本排序 """        
+    
+    Python 比较任何类型的序列时， 会一一比较序列里的各个元素。 对字符串来说， 比较的是码位。 
+    可是在比较非 ASCII 字符时， 得到的结果不尽如人意。 
+    
+    在 Python 中， 非 ASCII 文本的标准排序方式是使用 locale.strxfrm函数， 
+    根据 locale 模块的文档这 个函数会“把字符串转换成适合所在区域进行比较的形式”。
+
+"""4.8 Unicode数据库"""    
+    
+    Unicode 标准提供了一个完整的数据库（许多格式化的文本文件） ， 不仅包括码位与字符名称之间的映射， 
+    还有各个字符的元数据， 以及字符之间的关系。
     
     
-                     
-                     
+"""4.9 支持字符串和字节序列的双模式API"""
+
+    标准库中的一些函数能接受字符串或字节序列为参数， 然后根据类型展现不同的行为。 
+    re 和 os 模块中就有这样的函数。               
+    
+    4.9.1 正则表达式中的字符串和字节序列:
+    
+        如果使用字节序列构建正则表达式， \d 和 \w 等模式只能匹配 ASCII 字符； 
+        相比之下， 如果是字符串模式， 就能匹配 ASCII 之外的 Unicode 数字或字母。 
+    
+        示例 4-22 ramanujan.py： 比较简单的字符串正则表达式和字节序列正则表达式的行为.
+            
+            import re
+            re_numbers_str = re.compile(r'\d+') ➊
+            re_words_str = re.compile(r'\w+')
+            re_numbers_bytes = re.compile(rb'\d+') ➋
+            re_words_bytes = re.compile(rb'\w+')
+            text_str = ("Ramanujan saw \u0be7\u0bed\u0be8\u0bef" ➌
+                        " as 1729 = 1³ + 12³ = 9³ + 10³.") ➍
+            text_bytes = text_str.encode('utf_8') ➎
+            
+            print('Text', repr(text_str), sep='\n ')
+            print('Numbers')
+            print(' str :', re_numbers_str.findall(text_str)) ➏
+            print(' bytes:', re_numbers_bytes.findall(text_bytes)) ➐
+            print('Words')
+            print(' str :', re_words_str.findall(text_str)) ➑
+            print(' bytes:', re_words_bytes.findall(text_bytes)) ➒   
+            
+            ❶ 前两个正则表达式是字符串类型。
+            ❷ 后两个正则表达式是字节序列类型。
+            ❸ 要搜索的 Unicode 文本， 包括 1729 的泰米尔数字（逻辑行直到右括号才结束） 。
+            ❹ 这个字符串在编译时与前一个拼接起来
+            ❺ 字节序列只能用字节序列正则表达式搜索。
+            ❻ 字符串模式 r'\d+' 能匹配泰米尔数字和 ASCII 数字。
+            ❼ 字节序列模式 rb'\d+' 只能匹配 ASCII 字节中的数字。
+            ❽ 字符串模式 r'\w+' 能匹配字母、 上标、 泰米尔数字和 ASCII 数字。
+            ❾ 字节序列模式 rb'\w+' 只能匹配 ASCII 字节中的字母和数字。
+        
+        可以使用正则表达式搜索字符串和字节序列， 但是在后一种情况中， ASCII 范围外的字节不会当成数字和组成单词的字母.
+        字符串正则表达式有个 re.ASCII 标志， 它让\w、 \W、 \b、 \B、 \d、 \D、 \s 和 \S 只匹配 ASCII 字符。
+    
+    4.9.2 os 函数中的字符串和字节序列：
+    
+        GNU/Linux 内核不理解 Unicode， 因此你可能发现了， 对任何合理的编
+        码方案来说， 在文件名中使用字节序列都是无效的， 无法解码成字符
+        串。 在不同操作系统中使用各种客户端的文件服务器， 在遇到这个问题
+        时尤其容易出错。
+        
+        为了规避这个问题， os 模块中的所有函数、 文件名或路径名参数既能
+        使用字符串， 也能使用字节序列。 如果这样的函数使用字符串参数调
+        用， 该参数会使用 sys.getfilesystemencoding() 得到的编解码器
+        自动编码， 然后操作系统会使用相同的编解码器解码。 这几乎就是我们
+        想要的行为， 与 Unicode 三明治最佳实践一致。
+    
+  
 "---------------------------------------------------------------------"
 
                      第三部分  把函数视作对象
