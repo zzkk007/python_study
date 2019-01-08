@@ -2343,6 +2343,128 @@
 
                      第五章   一等函数
     
+    在python 中，函数是一等对象，编程语言理论家把"一等对象"定义为满足下述条件的程序实体：
+        （1）在运行时创建
+        （2）能赋值给变量或数据结构中的元素
+        （3）能作为参数传给函数
+        （4）能作为函数的返回结果
+    在 Python 中， 整数、 字符串和字典都是一等对象——没什么特别的。
+    在 Python 中， 所有函数都是一等对象。
+
+"""5.1 把函数视为对象"""
+
+    示例 5-1 创建并测试一个函数， 然后读取它的 __doc__ 属性， 再检查它的类型
+        
+        >>> def factorial(n): ➊
+        ... '''returns n!'''
+        ... return 1 if n < 2 else n * factorial(n-1)
+        ...
+        >>> factorial(42)
+        1405006117752879898543142606244511569936384000000000
+        >>> factorial.__doc__ ➋
+        'returns n!'
+        >>> type(factorial) ➌
+        <class 'function'>   
+        
+    ➊ 这是一个控制台会话， 因此我们是在“运行时”创建一个函数。
+    ➋ __doc__ 是函数对象众多属性中的一个。
+    ➌ factorial 是 function 类的实例。    
+    
+    示例 5-2 展示了函数对象的“一等”本性。 
+        我们可以把 factorial 函数赋值给变量 fact， 然后通过变量名调用。 
+        我们还能把它作为参数传给map 函数。 map 函数返回一个可迭代对象， 
+        里面的元素是把第一个参数（一个函数） 应用到第二个参数（一个可迭代对象， 
+        这里是range(11)） 中各个元素上得到的结果。 
+
+        >>> fact = factorial
+        >>> fact
+        <function factorial at 0x...>
+        >>> fact(5)
+        120
+        >>> map(factorial, range(11))
+        <map object at 0x...>
+        >>> list(map(fact, range(11)))
+        [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800]        
+    有了一等函数， 就可以使用函数式风格编程。 函数式编程的特点之一是使用高阶函数。
+
+"""5.2 高阶函数"""
+    
+    接受函数为参数， 或者把函数作为结果返回的函数是高阶函数（higher-order function），map 函数就是一例。
+
+"""map、 filter和reduce的现代替代品"""
+    
+    函数式语言通常会提供 map、 filter 和 reduce 三个高阶函数。
+    在 Python 3 中， map 和 filter 还是内置函数， 但是由于引入了列表推导和生成器表达式， 
+    它们变得没那么重要了。 列表推导或生成器表达式具有 map 和 filter 两个函数的功能， 而且更易于阅读。
+    
+        >>> list(map(fact, range(6))) ➊
+        [1, 1, 2, 6, 24, 120]
+        >>> [fact(n) for n in range(6)] ➋
+        [1, 1, 2, 6, 24, 120]
+        >>> list(map(factorial, filter(lambda n: n % 2, range(6)))) ➌
+        [1, 6, 120]
+        >>> [factorial(n) for n in range(6) if n % 2] ➍
+        [1, 6, 120]
+        >>>     
+        
+        ❶ 构建 0! 到 5! 的一个阶乘列表。
+        ❷ 使用列表推导执行相同的操作。
+        ❸ 使用 map 和 filter 计算直到 5! 的奇数阶乘列表。
+        ❹ 使用列表推导做相同的工作， 换掉 map 和 filter， 并避免了使用lambda 表达式。
+    
+    在 Python 3 中， map 和 filter 返回生成器（一种迭代器） ， 因此现在它们的直接替代品是生成器表达式。
+    在 Python 2 中， reduce 是内置函数， 但是在 Python 3 中放到functools 模块里了。 这个函数最常用于求和。
+        
+        >>> from functools import reduce ➊
+        >>> from operator import add ➋
+        >>> reduce(add, range(100)) ➌
+        4950
+        >>> sum(range(100)) ➍
+        4950
+        >>>
+        
+        ❶ 从 Python 3.0 起， reduce 不再是内置函数了。
+        ❷ 导入 add， 以免创建一个专求两数之和的函数。
+        ❸ 计算 0~99 之和。
+        ❹ 使用 sum 做相同的求和； 无需导入或创建求和函数
+        sum 和 reduce 的通用思想是把某个操作连续应用到序列的元素上， 累计之前的结果， 把一系列值归约成一个值。
+
+"""5.3 匿名函数"""
+
+    lambda 关键字在 Python 表达式内创建匿名函数。
+    
+    然而， Python 简单的句法限制了 lambda 函数的定义体只能使用纯表达式。 
+    换句话说， lambda 函数的定义体中不能赋值， 也不能使用 while和 try 等 Python 语句。
+               
+    在参数列表中最适合使用匿名函数。
+    
+    示例 5-7 使用 lambda 表达式反转拼写， 然后依此给单词列表排序：
+        
+        >>> fruits = ['strawberry', 'fig', 'apple', 'cherry', 'raspberry', 'banana']
+        >>> sorted(fruits, key=lambda word: word[::-1])
+        ['banana', 'apple', 'fig', 'raspberry', 'strawberry', 'cherry']
+        >>>
+    
+    Lundh 提出的 lambda 表达式重构秘笈：
+        
+        (1) 编写注释， 说明 lambda 表达式的作用。
+        (2) 研究一会儿注释， 并找出一个名称来概括注释。
+        (3) 把 lambda 表达式转换成 def 语句， 使用那个名称来定义函数。
+        (4) 删除注释。
+        
+        
+        
+    
+            
+    
+    
+    
+    
+        
+    
+            
+   
+    
 "---------------------------------------------------------------------"
 
                      第六章   使用一等函数实现设计模式
