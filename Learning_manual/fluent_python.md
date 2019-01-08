@@ -2656,7 +2656,135 @@
 
     装饰器的一个关键特性是， 它们在被装饰的函数定义之后立即运行。 这通常是在导入时（即 Python 加载模块时）。
     
+    示例 7-2 registration.py 模块：
+    
+        registry = [] ➊
+        def register(func): ➋
+            print('running register(%s)' % func) ➌
+            registry.append(func) ➍
+            return func ➎
+        @register ➏
+        def f1():
+            print('running f1()')
+        @register
+        def f2():
+            print('running f2()')
+        def f3(): ➐
+            print('running f3()')
         
+        def main(): ➑
+            print('running main()')
+            print('registry ->', registry)
+            f1()
+            f2()
+            f3()
+        if __name__=='__main__':
+            main() ➒     
+    
+        ❶ registry 保存被 @register 装饰的函数引用。
+        ❷ register 的参数是一个函数。
+        ❸ 为了演示， 显示被装饰的函数。
+        ❹ 把 func 存入 registry。
+        ❺ 返回 func： 必须返回函数； 这里返回的函数与通过参数传入的一样。
+        ❻ f1 和 f2 被 @register 装饰。
+        ❼ f3 没有装饰。
+        ❽ main 显示 registry， 然后调用 f1()、 f2() 和 f3()。
+        ❾ 只有把 registration.py 当作脚本运行时才调用 main()。
+    运行结果为：
+        running register(<function f1 at 0x00000000006FC598>)
+        running register(<function f2 at 0x00000000006FC620>)
+        running register(<function f3 at 0x00000000006FC6A8>)
+        running main()
+        registry -> [<function f1 at 0x00000000006FC598>, <function f2 at 0x00000000006FC620>, <function f3 at 0x00000000006FC6A8>]
+        running f1
+        running f2
+        running f3    
+        
+    注意， register 在模块中其他函数之前运行（三次），调用register 时， 传给它的参数是被装饰的函数。
+    加载模块后， registry 中有两个被装饰函数的引用： f1 和 f2，f3函数 只在 main 明确调用它们时才执行。
+    
+    函数装饰器在导入模块时立即执行， 而被装饰的函数只在明确调用时运行。 
+    这突出了 Python 程序员所说的导入时和运行时之间的区别。
+    
+    考虑到装饰器在真实代码中的常用方式， 示例 7-2 有两个不寻常的地方。
+    
+        装饰器函数与被装饰的函数在同一个模块中定义。 
+        实际情况是， 装饰器通常在一个模块中定义， 然后应用到其他模块中的函数上。
+        
+        register 装饰器返回的函数与通过参数传入的相同。 
+        实际上， 大多数装饰器会在内部定义一个函数， 然后将其返回。
+
+
+"""7.3 变量作用域规则"""
+
+    示例 7-4 一个函数， 读取一个局部变量和一个全局变量
+    
+        >>> def f1(a):
+        ... print(a)
+        ... print(b)
+        ...
+        >>> f1(3)
+        3T
+        raceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        File "<stdin>", line 3, in f1
+        NameError: global name 'b' is not defined   
+    
+    在示例 7-4 中， 如果先给全局变量 b 赋值， 然后再调用 f1， 那就不会出错：    
+        
+        >>> b = 6
+        >>> f1(3)
+        36    
+        
+    示例 7-5 b 是局部变量， 因为在函数的定义体中给它赋值了
+    
+        >>> b = 6
+        >>> def f2(a):
+        ... print(a)
+        ... print(b)
+        ... b = 9
+        ...
+        >>> f2(3)
+        3T
+        raceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        File "<stdin>", line 3, in f2
+        UnboundLocalError: local variable 'b' referenced before assignment    
+              
+    注意， 首先输出了 3， 这表明 print(a) 语句执行了。 但是第二个语句print(b) 执行不了。
+    一开始我很吃惊， 我觉得会打印 6， 因为有个全局变量 b，而且是在 print(b) 之后为局部变量 b 赋值的。
+    
+    可事实是， Python 编译函数的定义体时， 它判断 b 是局部变量， 因为在函数中给它赋值了。 
+    生成的字节码证实了这种判断， Python 会尝试从本地环境获取 b。 后面调用 f2(3) 时， 
+    f2 的定义体会获取并打印局部变量 a 的值， 但是尝试获取局部变量 b 的值时， 发现 b 没有绑定值。
+
+    这不是缺陷， 而是设计选择：Python 不要求声明变量， 但是假定在函数定义体中赋值的变量则是局部变量。
+    这比 JavaScript 的行为好多了，JavaScript 也不要求声明变量， 但是如果忘记把变量声明为局部变量
+    （使用 var） ，可能会在不知情的情况下获取全局变量。
+     
+    如果在函数中赋值时想让解释器把 b 当成全局变量， 要使用 global 声明：
+    
+        >>> b = 6
+        >>> def f3(a):
+        ... global b
+        ... print(a)
+        ... print(b)
+        ... b = 9
+        ...
+        >>> f3(3)
+        36>
+        >> b   
+
+        
+"""7.5 闭包"""
+    
+    在博客圈，人们有时会把闭包和匿名函数弄混。 这是有历史原因的： 
+    在函数内部定义函数不常见，直到开始使用匿名函数才会这样做。 
+    而且，只有涉及嵌套函数时才有闭包问题。 因此， 很多人是同时知道这两个概念的。
+    
+    
+    
+
 
 
 
