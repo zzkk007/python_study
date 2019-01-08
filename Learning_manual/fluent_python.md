@@ -2455,9 +2455,61 @@
     lambda 句法只是语法糖： 与 def 语句一样， lambda 表达式会创建函数对象。 这是 Python 中几种可调用对象的一种。    
         
 """5.4 可调用对象"""
-
-        
     
+    Python 数据模型文档列出了 7 种可调用对象:
+        (1) 用户调用的函数：
+            
+            使用 def 语句或 lambda 表达式创建
+            
+        (2) 内置函数：
+            
+            使用 c 语言 （CPython）实现的函数，如 len 或 time.strftime.
+        
+        (3) 内置方法：
+            
+            使用 c 语言实现的方法，如 dict.get.
+        
+        (4) 方法：
+            
+            在类的定义中定义的函数。
+            
+        (5) 类：
+            
+            调用类时会运行类的 __new__ 方法创建一个实例， 然后运行__init__ 方法， 初始化实例， 
+            最后把实例返回给调用方。 因为 Python没有 new 运算符， 所以调用类相当于调用函数。     
+       
+        (6) 类的实例：
+            
+            如果类定义了 __call__ 方法， 那么它的实例可以作为函数调用。
+      
+        (7) 生成器函数：
+        
+            使用 yield 关键字的函数或方法。 调用生成器函数返回的是生成器对象。
+            
+"""5.5 用户定义的可调用类型"""
+
+    不仅 Python 函数是真正的对象，任何 Python 对象都可以表现得像函数。为此，只需实现实例方法 __call__。
+    
+    示例 5-8 bingocall.py： 调用 BingoCage 实例， 从打乱的列表中取出一个元素
+    
+        import random
+        class BingoCage:
+            def __init__(self, items):
+                self._items = list(items) ➊
+                random.shuffle(self._items) ➋
+            def pick(self): ➌
+                try:
+                    return self._items.pop()
+                except IndexError:
+                    raise LookupError('pick from empty BingoCage') ➍
+            def __call__(self): ➎
+                return self.pick()                     
+         
+        ❶ __init__ 接受任何可迭代对象； 在本地构建一个副本， 防止列表参数的意外副作用。
+        ❷ shuffle 定能完成工作， 因为 self._items 是列表。
+        ❸ 起主要作用的方法。
+        ❹ 如果 self._items 为空， 抛出异常， 并设定错误消息。
+        ❺ bingo.pick() 的快捷方式是 bingo()。
             
     
     
