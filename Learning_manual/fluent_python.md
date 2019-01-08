@@ -2567,16 +2567,48 @@
     而且 Python3 进一步提供了仅限关键字参数(keyword-only argument)。 
     与之密切相关的是， 调用函数时使用 * 和 **“展开”可迭代对象，映射到单个参数。
         
-            
-   
-    
-"---------------------------------------------------------------------"
+"""5.10 支持函数式编程的包"""       
 
-                     第六章   使用一等函数实现设计模式
+    虽然 Guido 明确表明， Python 的目标不是变成函数式编程语言， 
+    但是得益于 operator 和 functools 等包的支持， 函数式编程风格也可以信手拈来。 
+    接下来的两节分别介绍这两个包。    
+
+    5.10.1  operator模块:
+        
+        在函数式编程中， 经常需要把算术运算符当作函数使用。
+        
+        示例 5-21 使用 reduce 函数和一个匿名函数计算阶乘
+            from functools import reduce
+            def fact(n):
+                return reduce(lambda a, b: a*b, range(1, n+1))
+        
+        operator 模块为多个算术运算符提供了对应的函数， 从而避免编写lambda a, b: a*b 这种平凡的匿名函数。    
+        示例 5-22 使用 reduce 和 operator.mul 函数计算阶乘
+        
+            from functools import reduce
+            from operator import mul
+            def fact(n):
+                return reduce(mul, range(1, n+1))   
+                
+    5.10.2 使用functools.partial冻结参数:
+        functools 模块提供了一系列高阶函数， 其中最为人熟知的或许是reduce.
+        
+  
 
 "---------------------------------------------------------------------"
 
                      第七章   函数装饰器和闭包
+
+
+
+
+
+
+
+
+
+
+
 
 "---------------------------------------------------------------------"
 
