@@ -2511,12 +2511,62 @@
         ❹ 如果 self._items 为空， 抛出异常， 并设定错误消息。
         ❺ bingo.pick() 的快捷方式是 bingo()。
             
-    
-    
-    
-    
+        如果没有实现def __call__(self) 函数而调用bingo() 会抛出 TypeError: 'BingoCage' object is not callable 异常。
         
+        实现 __call__ 方法的类是创建函数类对象的简便方式， 此时必须在内部维护一个状态， 让它在调用之间可用。
+        例如 BingoCage 中的剩余元素。 装饰器就是这样，装饰器必须是函数， 而且有时要在多次调用之间“记住”某些事。
+        创建保有内部状态的函数， 还有一种截然不同的方式——使用闭包。
+
+"""5.6 函数内省"""
     
+    把函数视作对象处理的另一方面： 运行时内省。
+    
+    除了 __doc__， 函数对象还有很多属性。 使用 dir 函数可以探知factorial 具有下述属性：
+    
+    >>> dir(factorial)
+    ['__call__', '__class__', '__closure__', '__code__', '__defaults__', '__delattr__', 
+     '__dict__', '__doc__', '__format__', '__get__', '__getattribute__', '__globals__', 
+     '__hash__', '__init__', '__module__', '__name__', '__new__', '__reduce__', 
+     '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', 
+     '__subclasshook__', 'func_closure', 'func_code', 'func_defaults', 
+     'func_dict', 'func_doc', 'func_globals', 'func_name']
+            
+    与用户定义的常规类一样，函数使用 __dict__ 属性存储赋予它的用户属性。这相当于一种基本形式的注解。
+    
+    示例 5-9 列出常规对象没有而函数有的属性
+        
+        >>> class C: pass # ➊
+        >>> obj = C() # ➋
+        >>> def func(): pass # ➌
+        >>> sorted(set(dir(func)) - set(dir(obj))) # ➍
+        ['__annotations__', '__call__', '__closure__', '__code__', '__defaults__',
+        '__get__', '__globals__', '__kwdefaults__', '__name__', '__qualname__']
+        >>>      
+        
+        ➊ 创建一个空的用户定义的类。
+        ➋ 创建一个实例。
+        ➌ 创建一个空函数。
+        ➍ 计算差集， 然后排序， 得到类的实例没有而函数有的属性列表。
+            
+           名称                  类型             说明 
+        __annotations__          dict       参数和返回值的注解
+        __call__             methodwrapper   实现 () 运算符； 即可调用对象协议
+        __closure__          tuple           函数闭包， 即自由变量的绑定（通常是 None）
+        __code__             code            编译成字节码的函数元数据和函数定义体
+        __defaults__         tuple           形式参数的默认值
+        __get__              methodwrapper   实现只读描述符协议（参见第 20 章）
+        __globals__          dict            函数所在模块中的全局变量
+        __kwdefaults__       dict            仅限关键字形式参数的默认值
+        __name__             str             函数名称
+        __qualname__         str             函数的限定名称， 如 Random.choice       
+    
+    
+"""5.7 从定位参数到仅限关键字参数"""    
+       
+    Python 最好的特性之一是提供了极为灵活的参数处理机制， 
+    而且 Python3 进一步提供了仅限关键字参数(keyword-only argument)。 
+    与之密切相关的是， 调用函数时使用 * 和 **“展开”可迭代对象，映射到单个参数。
+        
             
    
     
