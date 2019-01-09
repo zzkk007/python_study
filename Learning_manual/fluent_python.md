@@ -2786,17 +2786,175 @@
     不在定义体中定义的非全局变量。 函数是不是匿名的没有关系， 关键是
     它能访问定义体之外定义的非全局变量。
     
+    示例 7-9： average.py： 计算移动平均值的高阶函数：
+        
+        def make_averager():
+            series = []
+            def averager(new_value):
+                series.append(new_value)
+                total = sum(series)
+                return total/len(series)
+            return averager
+        
+        示例 7-10 测试示例 7-9
+        >>> avg = make_averager()
+        >>> avg(10)
+        10.0
+        >>> avg(11)
+        10.5
+        >>> avg(12)
+        
+        调用 make_averager 时， 返回一个 averager 函数对象。 
+        每次调用averager 时， 它会把参数添加到系列值中， 然后计算当前平均值。
+        
+        注意， series 是 make_averager 函数的局部变量， 因为那个函数的定义体中初始化了series：
+        series = []。 可是， 调用 avg(10)时， make_averager 函数已经返回了， 
+        而它的本地作用域也一去不复返了。
+        
+        averager 的闭包延伸到那个函数的作用域之外， 包含自由变量 series 的绑定。
+        
+        审查返回的 averager 对象， 我们发现 Python 在 __code__ 属性（表示编译后的函数定义体） 
+        中保存局部变量和自由变量的名称：
+            >>> avg.__code__.co_varnames
+            ('new_value', 'total')
+            >>> avg.__code__.co_freevars
+            ('series',)
+             
+        series 的绑定在返回的 avg 函数的 __closure__ 属性中。 
+        avg.__closure__ 中的各个元素对应于avg.__code__.co_freevars 中的一个名称。 
+        这些元素是 cell 对象，有个 cell_contents 属性， 保存着真正的值。 
+        这些属性的值如示例 7-12 所示
+            >>> avg.__code__.co_freevars
+            ('series',)
+            >>> avg.__closure__
+            (<cell at 0x107a44f78: list object at 0x107a91a48>,)
+            >>> avg.__closure__[0].cell_contents
+            [10, 11, 12]
     
+    综上， 闭包是一种函数， 它会保留定义函数时存在的自由变量的绑定，
+    这样调用函数时， 虽然定义作用域不可用了， 但是仍能使用那些绑定。                    
+                        
+    注意， 只有嵌套在其他函数中的函数才可能需要处理不在全局作用域中的外部变量。                   
+
+"""7.6 nonlocal 声明"""
     
+    示例 7-13 计算移动平均值的高阶函数， 不保存所有历史值， 但有缺陷
     
+        def make_averager():
+            count = 0
+            total = 0
+            def averager(new_value):
+                count += 1
+                total += new_value
+                return total / count
+            return averager    
+        
+    尝试使用示例 7-13 中定义的函数， 会得到如下结果：
+        
+        >>> avg = make_averager()
+        >>> avg(10)
+        Traceback (most recent call last):
+        ...
+        UnboundLocalError: local variable 'count' referenced before assignment
+        >>>
+        
+        问题是， 当 count 是数字或任何不可变类型时， count += 1 语句的作用其实与 count = count + 1 一样。
+        因此， 我们在 averager 的定义体中为 count 赋值了， 这会把 count 变成局部变量。 
+        total 变量也受这个问题影响。
+        
+    示例 7-9 没遇到这个问题， 因为我们没有给 series 赋值， 我们只是调用 series.append， 
+    并把它传给 sum 和 len。 也就是说， 我们利用了列表是可变的对象这一事实。        
     
+    但是对数字、 字符串、 元组等不可变类型来说， 只能读取， 不能更新。
+    如果尝试重新绑定， 例如 count = count + 1， 其实会隐式创建局部
+    变量 count。 这样， count 就不是自由变量了， 因此不会保存在闭包中。
 
+    为了解决这个问题， Python 3 引入了 nonlocal 声明。 它的作用是把变量标记为自由变量， 
+    即使在函数中为变量赋予新值了， 也会变成自由变量。 如果为 nonlocal 声明的变量赋予新值， 
+    闭包中保存的绑定会更新。 
 
+    示例 7-14 计算移动平均值， 不保存所有历史（使用 nonlocal 修正）
+        
+        def make_averager():
+            count = 0
+            total = 0
+            def averager(new_value):
+                nonlocal count, total
+                count += 1
+                total += new_value
+                return total / count
+            return averager    
+    
+"""7.7 实现一个简单的装饰器"""
 
+    示例 7-15 一个简单的装饰器， 输出函数的运行时间
+    
+        import time
+        def clock(func):
+            def clocked(*args): # ➊
+                t0 = time.perf_counter()
+                result = func(*args) # ➋
+                elapsed = time.perf_counter() - t0
+                name = func.__name__
+                arg_str = ', '.join(repr(arg) for arg in args)
+                print('[%0.8fs] %s(%s) -> %r' % (elapsed, name, arg_str, result))
+                return result
+                return clocked # ➌            
+        
+        ❶ 定义内部函数 clocked， 它接受任意个定位参数。
+        ❷ 这行代码可用， 是因为 clocked 的闭包中包含自由变量 func。
+        ❸ 返回内部函数， 取代被装饰的函数。 
+        
+"""7.8 标准库中的装饰器"""
 
-
-
-
+    Python 内置了三个用于装饰方法的函数： property、 classmethod 和staticmethod。
+    
+    另一个常见的装饰器是 functools.wraps， 它的作用是协助构建行为
+    良好的装饰器。 我们在示例 7-17 中用过。 标准库中最值得关注的两个
+    装饰器是 lru_cache 和全新的 singledispatch（Python 3.4 新增） 。
+    这两个装饰器都在 functools 模块中定义。        
+    
+    7.8.1 使用functools.lru_cache做备忘:
+        
+        functools.lru_cache 是非常实用的装饰器， 它实现了备忘
+        （memoization） 功能。 这是一项优化技术， 它把耗时的函数的结果保存
+        起来， 避免传入相同的参数时重复计算。 LRU 三个字母是“Least
+        Recently Used”的缩写， 表明缓存不会无限制增长， 一段时间不用的缓存
+        条目会被扔掉。
+        
+        示例 7-18 生成第 n 个斐波纳契数， 递归方式非常耗时
+            from clockdeco import clock
+            @clock
+            def fibonacci(n):
+                if n < 2:
+                    return n
+                return fibonacci(n-2) + fibonacci(n-1)
+            if __name__=='__main__':
+                print(fibonacci(6))
+        
+        示例 7-19 使用缓存实现， 速度更快:
+            
+            import functools
+            from clockdeco import clock
+            @functools.lru_cache() # ➊
+            @clock # ➋
+            def fibonacci(n):
+                if n < 2:
+                    return n
+                return fibonacci(n-2) + fibonacci(n-1)  
+            if __name__=='__main__':
+                print(fibonacci(6))     
+              
+            ❶ 注意， 必须像常规函数那样调用 lru_cache。 
+              这一行中有一对括号： @functools.lru_cache()。 
+              这么做的原因是， lru_cache 可以接受配置参数， 稍后说明。
+            ❷ 这里叠放了装饰器： @lru_cache() 应用到 @clock 返回的函数上。
+            
+        特别要注意， lru_cache 可以使用两个可选的参数来配置。 它的签名是：
+        
+            functools.lru_cache(maxsize=128, typed=False)
+            
+               
 
 "---------------------------------------------------------------------"
 
