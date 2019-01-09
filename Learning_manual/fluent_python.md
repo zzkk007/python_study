@@ -2953,9 +2953,138 @@
         特别要注意， lru_cache 可以使用两个可选的参数来配置。 它的签名是：
         
             functools.lru_cache(maxsize=128, typed=False)
-            
-               
+        maxsize 参数指定存储多少个调用的结果。 缓存满了之后， 旧的结果会
+        被扔掉， 腾出空间。 为了得到最佳性能， maxsize 应该设为 2 的幂。     
+    
+"""7.9 叠放装饰器 """
 
+    把 @d1 和 @d2 两个装饰器按顺序应用到 f 函数上， 作用相当于 f =d1(d2(f))。
+    也就是说， 下述代码:
+        
+        @d1
+        @d2
+        def f():
+            print('f')
+    
+    等同于：
+        
+        def f():
+            print('f')
+        f = d1(d2(f))     
+              
+"""7.10 参数化装饰器 """   
+
+    解析源码中的装饰器时，Python 把被装饰的函数作为第一个参数传给装饰器函数。那怎么让装饰器接受其他参数呢？ 
+    答案是： 创建一个装饰器工厂函数， 把参数传给它， 返回一个装饰器， 然后再把它应用到要装饰的函数上。 
+    不明白什么意思？ 当然。 下面以我们见过的最简单的装饰器为例说明： 
+    示例 7-22 中的 register:
+        
+        registry = []
+        def register(func):
+            print('running register(%s)' % func)
+            registry.append(func)
+            return func
+        @register
+        def f1():
+            print('running f1()')
+        
+        print('running main()')
+        print('registry ->', registry)
+        f1()
+        
+    7.10.1 一个参数化的注册装饰器：
+    
+        为了便于启用或禁用 register 执行的函数注册功能， 我们为它提供一
+        个可选的 active 参数， 设为 False 时， 不注册被装饰的函数。 实现方
+        式参见示例 7-23。 从概念上看， 这个新的 register 函数不是装饰器，
+        而是装饰器工厂函数。 调用它会返回真正的装饰器， 这才是应用到目标
+        函数上的装饰器。     
+        
+        示例 7-23 为了接受参数， 新的 register 装饰器必须作为函数调用：
+        
+            registry = set() ➊
+            def register(active=True): ➋
+                def decorate(func): ➌
+                    print('running register(active=%s)->decorate(%s)'% (active, func))
+                    if active: ➍
+                        registry.add(func)
+                    else:
+                        registry.discard(func) ➎
+                    return func ➏
+                return decorate ➐
+            
+            @register(active=False) ➑
+            def f1():
+                print('running f1()')
+            
+            @register() ➒
+            def f2():
+                print('running f2()')
+            
+            def f3():
+                print('running f3()')     
+                
+            ❶ registry 现在是一个 set 对象， 这样添加和删除函数的速度更快。
+            ❷ register 接受一个可选的关键字参数。
+            ❸ decorate 这个内部函数是真正的装饰器； 注意， 它的参数是一个函数。
+            ❹ 只有 active 参数的值（从闭包中获取） 是 True 时才注册 func。
+            ❺ 如果 active 不为真， 而且 func 在 registry 中， 那么把它删除。
+            ❻ decorate 是装饰器， 必须返回一个函数。
+            ❼ register 是装饰器工厂函数， 因此返回 decorate。
+            ❽ @register 工厂函数必须作为函数调用， 并且传入所需的参数。
+            ❾ 即使不传入参数， register 也必须作为函数调用（@register()）即要返回真正的装饰器 decorate。
+        这里的关键是， register() 要返回 decorate， 然后把它应用到被装饰的函数上。            
+             
+    7.10.2 参数化clock装饰器：
+        
+        本节再次探讨 clock 装饰器， 为它添加一个功能： 让用户传入一个格式字符串， 控制被装饰函数的输出。 
+          
+        示例 7-25 clockdeco_param.py 模块： 参数化 clock 装饰器：
+            
+            import time
+            DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
+            
+            def clock(fmt=DEFAULT_FMT): ➊
+                def decorate(func): ➋
+                    def clocked(*_args): ➌
+                        t0 = time.time()
+                        _result = func(*_args) ➍
+                        elapsed = time.time() - t0
+                        name = func.__name__
+                        args = ', '.join(repr(arg) for arg in _args) ➎
+                        result = repr(_result) ➏
+                        print(fmt.format(**locals())) ➐
+                        return _result ➑
+                    return clocked ➒
+                return decorate ➓
+            
+            if __name__ == '__main__':
+                @clock()
+                def snooze(seconds):
+                    time.sleep(seconds)
+                
+                for i in range(3):
+                    snooze(.123)
+            
+            ❶ clock 是参数化装饰器工厂函数。
+            ❷ decorate 是真正的装饰器。
+            ❸ clocked 包装被装饰的函数。
+            ❹ _result 是被装饰的函数返回的真正结果。
+            ❺ _args 是 clocked 的参数， args 是用于显示的字符串。
+            ❻ result 是 _result 的字符串表示形式， 用于显示。
+            ❼ 这里使用 **locals() 是为了在 fmt 中引用 clocked 的局部变量。
+            ❽ clocked 会取代被装饰的函数， 因此它应该返回被装饰的函数返回的值。
+            ❾ decorate 返回 clocked。
+            ❿ clock 返回 decorate。
+            ⓫ 在这个模块中测试， 不传入参数调用 clock()， 因此应用的装饰器使用默认的格式 str。
+    
+    
+"""7.11 本章小结"""    
+    
+    
+    
+    
+    
 "---------------------------------------------------------------------"
 
                      第四部分 面向对象惯用法
