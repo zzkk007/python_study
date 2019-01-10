@@ -3421,19 +3421,101 @@
 
 """8.5 del 和垃圾回收"""
     
-    对象绝对不会自行销毁，
-
-
-
-
-
-
-
-
-
-        
+    对象绝对不会自行销毁；然而，无法得到对象时，可能会被当作垃圾回收。
     
- 
+    del 语句删除名称， 而不是对象。 del 命令可能会导致对象被当作垃圾回收， 
+    但是仅当删除的变量保存的是对象的最后一个引用， 或者无法得到对象时。 
+    重新绑定也可能会导致对象的引用数量归零， 导致对象被销毁。
+
+"""8.6 弱作用"""
+
+    正是因为有引用， 对象才会在内存中存在。 当对象的引用数量归零后，垃圾回收程序会把对象销毁。 
+    但是， 有时需要引用对象， 而不让对象存在的时间超过所需时间。 这经常用在缓存中。        
+
+    弱引用不会增加对象的引用数量。 引用的目标对象称为所指对象（referent）。 
+    因此我们说， 弱引用不会妨碍所指对象被当作垃圾回收。    
+    弱引用在缓存应用中很有用，因为我们不想仅因为被缓存引用着而始终保存缓存对象。
+
+    8.6.1 WeakValueDictionary简介：
+        WeakValueDictionary 类实现的是一种可变映射， 里面的值是对象的弱引用。 
+        被引用的对象在程序中的其他地方被当作垃圾回收后， 对应的键会自动从 WeakValueDictionary 中删除。 
+        因此， WeakValueDictionary 经常用于缓存。
+           
+        示例 8-18 实现一个简单的类， 表示各种奶酪：
+        
+            class Cheese:
+            def __init__(self, kind):
+                self.kind = kind
+            def __repr__(self):
+                return 'Cheese(%r)' % self.kind        
+        
+            >>> import weakref
+            >>> stock = weakref.WeakValueDictionary() ➊
+            >>> catalog = [Cheese('Red Leicester'), Cheese('Tilsit'),
+            ... Cheese('Brie'), Cheese('Parmesan')]
+            ...
+            >>> for cheese in catalog:
+            ...     stock[cheese.kind] = cheese ➋
+            ...
+            >>> sorted(stock.keys())
+            ['Brie', 'Parmesan', 'Red Leicester', 'Tilsit'] ➌
+            >>> del catalog
+            >>> sorted(stock.keys())
+            ['Parmesan'] ➍
+            >>> del cheese
+            >>> sorted(stock.keys())
+            []
+            
+            ❶ stock 是 WeakValueDictionary 实例。
+            ❷ stock 把奶酪的名称映射到 catalog 中 Cheese 实例的弱引用上。
+            ❸ stock 是完整的。
+            ❹ 删除 catalog 之后， stock 中的大多数奶酪都不见了， 这是WeakValueDictionary 的预期行为。
+            为什么不是全部呢？
+                临时变量引用了对象， 这可能会导致该变量的存在时间比预期长。
+                通常，这对局部变量来说不是问题， 因为它们在函数返回时会被销毁。
+    
+"""8.7 Python对不可变类型施加的把戏"""
+
+    我惊讶地发现， 对元组 t 来说， t[:] 不创建副本， 而是返回同一个对象的引用。 
+    此外， tuple(t) 获得的也是同一个元组的引用。    
+        
+        >>> t1 = (1, 2, 3)
+        >>> t2 = tuple(t1)
+        >>> t2 is t1 ➊
+        True
+        >>> t3 = t1[:]
+        >>> t3 is t1 ➋
+        True    
+        
+        ❶ t1 和 t2 绑定到同一个对象。
+        ❷ t3 也是
+
+        str、 bytes 和 frozenset 实例也有这种行为。
+    
+    示例 8-21 字符串字面量可能会创建共享的对象:
+    
+        >>> t1 = (1, 2, 3)
+        >>> t3 = (1, 2, 3) # ➊
+        >>> t3 is t1 # ➋
+        False
+        >>> s1 = 'ABC'
+        >>> s2 = 'ABC' # ➌
+        >>> s2 is s1 # ➍
+        True     
+        
+        ❶ 新建一个元组。
+        ❷ t1 和 t3 相等， 但不是同一个对象。
+        ❸ 再新建一个字符串。
+        ❹ 奇怪的事发生了， a 和 b 指代同一个字符串。
+        
+    共享字符串字面量是一种优化措施， 称为驻留（interning）。
+    千万不要依赖字符串或整数的驻留！ 比较字符串或整数是否相等时， 应该使用 ==， 而不是 is。 
+    驻留是 Python 解释器内部使用的一个特性。     
+
+"""8.8 本章小结"""
+
+    每个 Python 对象都有标识、 类型和值。 只有对象的值会不时变化。
+                
  
                      
 "---------------------------------------------------------------------"
