@@ -2628,13 +2628,13 @@
     示例 7-1 装饰器通常把函数替换成另一个函数
     
         >>> def deco(func):
-        ... def inner():
-        ... print('running inner()')
-        ... return inner ➊
+            ... def inner():
+                ... print('running inner()')
+            ... return inner ➊
         ...
         >>> @deco
         ... def target(): ➋
-        ... print('running target()')
+            ... print('running target()')
         ...
         >>> target() ➌
         running inner()
@@ -2701,7 +2701,7 @@
         running f3    
         
     注意， register 在模块中其他函数之前运行（三次），调用register 时， 传给它的参数是被装饰的函数。
-    加载模块后， registry 中有两个被装饰函数的引用： f1 和 f2，f3函数 只在 main 明确调用它们时才执行。
+    加载模块后， registry 中有三个被装饰函数的引用： f1 和 f2，f3函数 只在 main 明确调用它们时才执行。
     
     函数装饰器在导入模块时立即执行， 而被装饰的函数只在明确调用时运行。 
     这突出了 Python 程序员所说的导入时和运行时之间的区别。
