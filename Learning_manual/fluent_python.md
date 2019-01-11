@@ -3615,20 +3615,163 @@
         ❸ 从第一个字节中读取 typecode。
         ❹ 使用传入的 octets 字节序列创建一个 memoryview， 然后使用typecode 转换。
         ❺ 拆包转换后的 memoryview， 得到构造方法所需的一对参数。
+ 
         
-"""9.4 classmethod与staticmethod """      
+"""9.4 classmethod 与staticmethod """
 
+    classmethod: 定义操作类，而不是操作实例的方法。classmethod 改变了调用方法的方式，因此类方法的第一个参数是类本身，而不是实例。
+    staticmethod:  装饰器也会改变方法的调用方式， 但是第一个参数不是特殊的值。 
+                   其实， 静态方法就是普通的函数， 只是碰巧在类的定义体中， 而不是在模块层定义。 
+                   
+        示例 9-4 比较 classmethod 和 staticmethod 的行为:
+            
+            >>> class Demo:
+            ... @classmethod
+            ... def klassmeth(*args):
+            ...     return args # ➊
+            ... @staticmethod
+            ... def statmeth(*args):
+            ...     return args # ➋
+            ...
+            >>> Demo.klassmeth() # ➌
+            (<class '__main__.Demo'>,)
+            >>> Demo.klassmeth('spam')
+            (<class '__main__.Demo'>, 'spam')
+            >>> Demo.statmeth() # ➍
+            ()
+            >>> Demo.statmeth('spam')
+            ('spam',)
+            
+            ❶ klassmeth 返回全部位置参数。
+            ❷ statmeth 也是。
+            ❸ 不管怎样调用 Demo.klassmeth， 它的第一个参数始终是 Demo 类。
+            ❹ Demo.statmeth 的行为与普通的函数相似。
+                  
+                          
+"""9.5 格式化显示"""       
+      
+    内置的 format() 函数和str.format()方法把各个类型的格式化方式委托给相应的 .__format__(format_spec) 方法。 
+    format_spec 是格式说明符， 它是：
+        format(my_obj, format_spec) 的第二个参数， 或者
+        str.format() 方法的格式字符串， {} 里代换字段中冒号后面的部分。
+        
+        >>> brl = 1/2.43 # BRL到USD的货币兑换比价
+        >>> brl
+        0.4115226337448559
+        >>> format(brl, '0.4f') # ➊
+        '0.4115'
+        >>> '1 BRL = {rate:0.2f} USD'.format(rate=brl) # ➋
+        '1 BRL = 0.41 USD   
+        
+    ❶ 格式说明符是 '0.4f'。
     
+    ❷ 格式说明符是 '0.2f'。 代换字段中的 'rate' 子串是字段名称， 与格式说明符无关， 
+      但是它决定把 .format() 的哪个参数传给代换字段。        
     
+    第 2 条标注指出了一个重要知识点： '{0.mass:5.3e}' 这样的格式字符串其实包含两部分， 
+    冒号左边的 '0.mass' 在代换字段句法中是字段名， 冒号后面的 '5.3e' 是格式说明符。 
+    格式说明符使用的表示法叫格式规范微语言。
     
+    格式规范微语言为一些内置类型提供了专用的表示代码。 比如，b 和 x分别表示二进制和十六进制的 int 类型， 
+    f 表示小数形式的 float 类型， 而 % 表示百分数形式：
     
+        >>> format(42, 'b')
+        '101010'
+        >>> format(2/3, '.1%')
+        '66.7%'    
+            
+    格式规范微语言是可扩展的， 因为各个类可以自行决定如何解释format_spec 参数。 
+    例如， datetime 模块中的类， 它们的__format__ 方法使用的格式代码与 strftime() 函数一样。 
+    下面是内置的 format() 函数和 str.format() 方法的几个示例：    
+        
+        >>> from datetime import datetime
+        >>> now = datetime.now()
+        >>> format(now, '%H:%M:%S')
+        '18:49:05'
+        >>> "It's now {:%I:%M %p}".format(now)
+        "It's now 06:49 PM"   
     
+    如果类没有定义 __format__ 方法， 从 object 继承的方法会返回str(my_object)。
+    我们为 Vector2d 类定义了 __str__ 方法， 因此可以这样做：
+        
+        >>> v1 = Vector2d(3, 4)
+        >>> format(v1)
+        '(3.0, 4.0)'   
+     
+    然而， 如果传入格式说明符， object.__format__ 方法会抛出TypeError：
     
+        >>> format(v1, '.3f')
+        Traceback (most recent call last):
+        ...
+        TypeError: non-empty format string passed to object.__format__
     
+    示例 9-6 Vector2d.__format__ 方法， 第 2 版， 现在能计算极坐标了:
+        
+        def __format__(self, fmt_spec=''):
+            if fmt_spec.endswith('p'): ➊
+                fmt_spec = fmt_spec[:-1] ➋
+                coords = (abs(self), self.angle()) ➌
+                outer_fmt = '<{}, {}>' ➍
+            else:
+                coords = self ➎
+                outer_fmt = '({}, {})' ➏
+            components = (format(c, fmt_spec) for c in coords) ➐
+            return outer_fmt.format(*components) ➑    
     
+        ❶ 如果格式代码以 'p' 结尾， 使用极坐标。
+        ❷ 从 fmt_spec 中删除 'p' 后缀。
+        ❸ 构建一个元组， 表示极坐标： (magnitude, angle)。
+        ❹ 把外层格式设为一对尖括号。
+        ❺ 如果不以 'p' 结尾， 使用 self 的 x 和 y 分量构建直角坐标。
+        ❻ 把外层格式设为一对圆括号。
+        ❼ 使用各个分量生成可迭代的对象， 构成格式化字符串。
+        ❽ 把格式化字符串代入外层格式。
     
+"""9.6 可散列的Vector2d """  
     
-
+    按照定义，目前 Vector2d 实例是不可散列的， 因此不能放入集合（set）中：
+        
+        >>> v1 = Vector2d(3, 4)
+        >>> hash(v1)
+        Traceback (most recent call last):
+        ...
+        TypeError: unhashable type: 'Vector2d'
+        >>> set([v1])
+        Traceback (most recent call last):
+        ...
+        TypeError: unhashable type: 'Vector2d'
+        
+    为了把 Vector2d 实例变成可散列的，必须使用 __hash__ 方法（还需要 __eq__ 方法，前面已经实现了）此外， 还要让向量不可变，     
+    
+    示例 9-7 vector2d_v3.py： 这里只给出了让 Vector2d 不可变的代码：
+    
+        class Vector2d:
+            typecode = 'd'
+            
+            def __init__(self, x, y):
+                self.__x = float(x) ➊     
+                self.__y = float(y)
+            @property ➋
+            def x(self): ➌
+                return self.__x ➍
+            @property ➎
+            def y(self):
+                return self.__y
+            def __iter__(self):
+                return (i for i in (self.x, self.y)) ➏
+      
+        ❶ 使用两个前导下划线（尾部没有下划线， 或者有一个下划线），把属性标记为私有的。
+        ❷ @property 装饰器把读值方法标记为特性。
+        ❸ 读值方法与公开属性同名， 都是 x。
+        ❹ 直接返回 self.__x。
+        ❺ 以同样的方式处理 y 特性。
+        ❻ 需要读取 x 和 y 分量的方法可以保持不变， 通过 self.x 和 self.y读取公开特性， 而不必读取私有属性， 
+          因此上述代码清单省略了这个类的其他代码。
+    
+    注意， 我们让这些向量不可变是有原因的， 因为这样才能实现__hash__ 方法。 这个方法应该返回一个整数， 
+    理想情况下还要考虑对象属性的散列值（__eq__ 方法也要使用） ， 因为相等的对象应该具有相同的散列值。
+    
+        
 
 "---------------------------------------------------------------------"
 
