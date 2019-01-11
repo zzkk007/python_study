@@ -3902,13 +3902,27 @@
         
 """10.3 协议和鸭子类型 """  
 
-               
+    在面向对象编程中，协议是非正式的接口，只在文档中定义，在代码中不定义。 
+    例如， Python 的序列协议只需要 __len__ 和 __getitem__ 两个方法。 
+    任何类（如 Spam） ， 只要使用标准的签名和语义实现了这两个方法， 就能用在任何期待序列的地方。 
+    Spam 是不是哪个类的子类无关紧要， 只要提供了所需的方法即可。               
        
+        import collections
+        Card = collections.namedtuple('Card', ['rank', 'suit'])
+        class FrenchDeck:
+            ranks = [str(n) for n in range(2, 11)] + list('JQKA')
+            suits = 'spades diamonds clubs hearts'.split()
+            def __init__(self):
+                self._cards = [Card(rank, suit) for suit in self.suits for rank in self.ranks]
+            def __len__(self):
+                return len(self._cards)
+            def __getitem__(self, position):
+                return self._cards[position]
     
+    协议是非正式的， 没有强制力， 因此如果你知道类的具体使用场景， 通常只需要实现一个协议的部分。 
+    例如， 为了支持迭代， 只需实现__getitem__ 方法， 没必要提供 __len__ 方法
 
-
-
-
+"""10.4 Vector类第2版： 可切片的序列"""
 
 
 
