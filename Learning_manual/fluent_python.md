@@ -3935,6 +3935,82 @@
 "---------------------------------------------------------------------"
 
                      第十一章  接口: 从协议到抽象基类
+    协议：
+        在 python 中，协议是一个或一组方法。例如 python 的序列协议包含 len 和 getitem 两个方法。
+        上下文管理协议包含 enter 和 exit 两个方法。
+        
+    鸭子类型（duck typing）：
+        
+        多态的一种形式，这种形式中，对象的类型无关紧要，只要实现了特定的协议即可。
+        
+        例子：
+                class Eg1(object):
+                    def __init__(self, text):
+                        self.txt = text
+                        self.sub_text = text.split('')
+                    
+                    def __getitem__(self,index):
+                        return self.sub_text[index]
+                        
+                    def __len__(slef):
+                        return len(self.sub_txt)
+                        
+        示例 中Eg1类 实现了 len 和 getitem两个方法，也就是实现了序列协议，那么它的表现就和序列类似。
+        通过输出结果就能看出，Eg1的对象可以计算长度，也可以循环处理，这和正常的序列没什么不同。
+        因此我们可以把Eg1称为一个鸭子类型，即 只关注它是否实现了相应的协议，不关注它的类型。
+    
+    抽象基类:
+    
+        抽象基类就是定义各种方法而不做具体实现的类，任何继承自抽象基类的类必须实现这些方法，否则无法实例化。
+        
+        那么抽象基类这样实现的目的是什么呢？ 假设我们在写一个关于动物的代码。
+        涉及到的动物有鸟，狗，牛。首先鸟，狗，牛都是属于动物的。
+        既然是动物那么肯定需要吃饭，发出声音。但是具体到鸟，狗，牛来说吃饭和声音肯定是不同的。
+        需要具体去实现鸟，狗，牛吃饭和声音的代码。
+        概括一下抽象基类的作用：定义一些共同事物的规则和行为。
+
+        例子：
+            
+            class Animal(abc.ABC):
+                
+                @abstractmethod
+                def eat(self):
+                
+                @abstractmethod
+                def voice(self):
+                
+            calss Dog(Animal):
+                def eat(self):    
+                    print('Dog eating....')
+                def voice(self):
+                     print('wow....')    
+                     
+            class Bird(Animal):
+                def eat(self):
+                    print('Bird eating....')
+                def voice(self):
+                     print('jiji....')
+        
+        示例定义了一个抽象基类 Animal，它包含两个抽象方法eat和voice，Dog和Bird都继承了Animal，
+        并各自实现了具体的eat和voice方法。Dog和Bird在实例化之后调用相同的方法，但是却有不同的输出，
+        这就是最简单的抽象基类的用法。
+
+        注意，自己定义的抽象基类要继承 abc.ABC（abc.ABC 是 Python 3.4 新增的类，python2的语法不是这样的）。
+        抽象方法使用 @abstractmethod 装饰器标记，而且定义体中通常只有文档字符串。
+
+        除了继承，还有一种方法可以将类和抽象基类关联起来
+
+                                        
+    
+        
+        
+        
+    
+    
+    
+                     
+                     
+                     
 
 "---------------------------------------------------------------------"
 
