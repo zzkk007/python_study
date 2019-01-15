@@ -4005,16 +4005,167 @@
 
 """11.1 Python文化中的接口和协议 """                                        
     
+    接口在动态类型语言中是怎么运作的呢？ 
+    
+    首先， 基本的事实是，Python 语言没有 interface 关键字， 而且除了抽象基类， 每个类都有接口：
+    类实现或继承的公开属性（方法或数据属性） ， 包括特殊方法， 如__getitem__ 或 __add__。        
             
-        
-        
+    按照定义， 受保护的属性和私有属性不在接口中：即便“受保护的”属性
+    也只是采用命名约定实现的（单个前导下划线）；私有属性可以轻松地
+    访问，原因也是如此。不要违背这些约定。
     
+    另一方面， 不要觉得把公开数据属性放入对象的接口中不妥， 因为如果需要， 
+    总能实现读值方法和设值方法， 把数据属性变成特性， 使用obj.attr 句法的客户代码不会受到影响。
     
+    示例 11-1 vector2d_v0.py： x 和 y 是公开数据属性：
     
-                     
-                     
-                     
+        class Vector2d(object):
+            typecode = 'd'
+            def __init__(self, x, y):
+                self.x = float(x)
+                self.y = float(y)
+                
+            def __iter__(self):
+                return (i for i in (self.x, self.y))
+    
+    示例 11-2 vector2d_v3.py： 使用特性实现 x 和 y 变成了只读特性:
+    
+        class Vector2d(object):
+            typecode = 'd'
+            
+            def __init__(self, x, y):
+                self._x = float(x)
+                self._y = float(y)
+                
+            @property
+            def x(self):
+                return self._x
+                      
+            @property
+            def y(self):
+                return self._y
+              
+            def __iter__(self):
+                return (i for i in (self.x, self.y))
+                
+    关于接口， 这里有个实用的补充定义：对象公开方法的子集，让对象在系统中扮演特定的角色。 
+    Python 文档中的“文件类对象”或“可迭代对象”就是这个意思， 这种说法指的不是特定的类。   
+    接口是实现特定角色的方法集合， 这样理解正是 Smalltalk 程序员所说的协议， 其他动态语
+    言社区都借鉴了这个术语。 协议与继承没有关系。 一个类可能会实现多个接口， 从而让实例扮演多个角色。
+                    
+    协议是接口， 但不是正式的（只由文档和约定定义） ， 因此协议不能像
+    正式接口那样施加限制（本章后面会说明抽象基类对接口一致性的强制） 。 一个类可能只实现部分接口， 
+    这是允许的。 有时， 某些 API 只要求“文件类对象”返回字节序列的 .read() 方法。 
+    在特定的上下文中可能需要其他文件操作方法， 也可能不需要。 
 
+"""11.2 Python 喜欢序列"""
+    
+    Python 数据模型的哲学是尽量支持基本协议。 对序列来说， 即便是最简单的实现， Python 也会力求做到最好。    
+    如果没有 __iter__ 和 __contains__方法， Python 会调用 __getitem__ 方法， 设法让迭代和 in 运算符可用。
+
+    示例 11-4 实现序列协议的 FrenchDeck 类
+        
+        import collections
+        Card = collections.namedtuple('Card', ['rank', 'suit'])
+        class FrenchDeck:
+            ranks = [str(n) for n in range(2, 11)] + list('JQKA')
+            suits = 'spades diamonds clubs hearts'.split()
+            
+            def __init__(self):
+                self._cards = [Card(rank, suit) for suit in self.suits
+                              for rank in self.ranks]
+            def __len__(self):
+                return len(self._cards)
+        
+            def __getitem__(self, position):
+                return self._cards[position]    
+        
+
+
+"""11.3 使用猴子补丁在运行时实现协议 """
+
+    示例 11-4 中的 FrenchDeck 类有个重大缺陷： 无法洗牌。 几年前， 第一次编写 FrenchDeck 示例时，
+    我实现了 shuffle 方法。 后来， 我对Python 风格有了深刻理解， 
+    我发现如果 FrenchDeck 实例的行为像序列， 那么它就不需要 shuffle 方法，因为已经有 random.shuffle 函数可用.
+    
+    如果遵守既定协议， 很有可能增加利用现有的标准库和第三方代码的可能性， 这得益于鸭子类型。
+    
+    标准库中的 random.shuffle 函数用法如下：
+        
+        >>> from random import shuffle
+        >>> l = list(range(10))
+        >>> shuffle(l)
+        >>> l
+        [5, 2, 9, 7, 8, 3, 1, 4, 0, 6]
+        
+    示例 11-5 random.shuffle 函数不能打乱 FrenchDeck 实例:
+    
+        >>> from random import shuffle
+        >>> from frenchdeck import FrenchDeck
+        >>> deck = FrenchDeck()
+        >>> shuffle(deck)
+        Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        File ".../python3.3/random.py", line 265, in shuffle
+        x[i], x[j] = x[j], x[i]
+        TypeError: 'FrenchDeck' object does not support item assignment             
+    
+    错误消息相当明确， “'FrenchDeck' object does not support itemassignment”
+    （'FrenchDeck' 对象不支持为元素赋值） 。 这个问题的原因是， 
+    shuffle 函数要调换集合中元素的位置， 而 FrenchDeck 只实现了不可变的序列协议。 
+    可变的序列还必须提供 __setitem__ 方法。        
+
+    示例 11-6 为FrenchDeck 打猴子补丁， 把它变成可变的， 让random.shuffle 函数能处理.
+    
+        >>> def set_card(deck, position, card): ➊
+        ... deck._cards[position] = card
+        ...
+        >>> FrenchDeck.__setitem__ = set_card ➋
+        >>> shuffle(deck) ➌
+        >>> deck[:5]
+        [Card(rank='3', suit='hearts'), Card(rank='4', suit='diamonds'), Card(rank='4',
+        suit='clubs'), Card(rank='7', suit='hearts'), Card(rank='9', suit='spades')]
+        
+        ❶ 定义一个函数， 它的参数为 deck、 position 和 card。
+        ❷ 把那个函数赋值给 FrenchDeck 类的 __setitem__ 属性。
+        ❸ 现在可以打乱 deck 了， 因为 FrenchDeck 实现了可变序列协议所需的方法。 
+
+    这里的关键是， set_card 函数要知道 deck 对象有一个名为 _cards 的
+    属性， 而且 _cards 的值必须是可变序列。 然后， 我们把 set_card 函
+    数赋值给特殊方法 __setitem__， 从而把它依附到 FrenchDeck 类
+    上。 这种技术叫猴子补丁： 在运行时修改类或模块， 而不改动源码。 猴
+    子补丁很强大， 但是打补丁的代码与要打补丁的程序耦合十分紧密， 而
+    且往往要处理隐藏和没有文档的部分。
+    
+    除了举例说明猴子补丁之外， 示例 11-6 还强调了协议是动态
+    的： random.shuffle 函数不关心参数的类型， 只要那个对象实现了部
+    分可变序列协议即可。 即便对象一开始没有所需的方法也没关系， 后来
+    再提供也行。
+    
+    目前， 本章讨论的主题是“鸭子类型”： 对象的类型无关紧要， 只要实现了特定的协议即可。
+
+"""11.4 Alex Martelli 的水禽 """
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
 "---------------------------------------------------------------------"
 
                      第十二章  继承的优缺点
