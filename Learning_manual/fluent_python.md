@@ -3924,14 +3924,85 @@
 
 """10.4 Vector类第2版： 可切片的序列"""
 
+    
+    10.4.1 切片原理:
+    
+        示例 10-4 了解 __getitem__ 和切片的行为
+        
+            >>> class MySeq:
+            ... def __getitem__(self, index):
+            ... return index # ➊
+            ...
+            >>> s = MySeq()
+            >>> s[1] # ➋
+            1
+            >> s[1:4] # ➌
+            slice(1, 4, None)
+            >>> s[1:4:2] # ➍
+            slice(1, 4, 2)
+            >>> s[1:4:2, 9] # ➎
+            (slice(1, 4, 2), 9)
+            >>> s[1:4:2, 7:9] # ➏
+            (slice(1, 4, 2), slice(7, 9, None))         
 
-
-
-
-
-
-
-
+            ❶ 在这个示例中， __getitem__ 直接返回传给它的值。
+            ❷ 单个索引， 没什么新奇的。
+            ❸ 1:4 表示法变成了 slice(1, 4, None)。
+            ❹ slice(1, 4, 2) 的意思是从 1 开始， 到 4 结束， 步幅为 2。
+            ❺ 神奇的事发生了： 如果 [] 中有逗号， 那么 __getitem__ 收到的是元组。
+            ❻ 元组中甚至可以有多个切片对象。
+        
+        示例 10-5 查看 slice 类的属性:
+        
+            >>> slice # ➊
+            <class 'slice'>
+            >>> dir(slice) # ➋
+            ['__class__', '__delattr__', '__dir__', '__doc__', '__eq__',
+            '__format__', '__ge__', '__getattribute__', '__gt__',
+            '__hash__', '__init__', '__le__', '__lt__', '__ne__',
+            '__new__', '__reduce__', '__reduce_ex__', '__repr__',
+            '__setattr__', '__sizeof__', '__str__', '__subclasshook__',
+            'indices', 'start', 'step', 'stop']
+            
+            ❶ slice 是内置的类型（2.4.2 节首次出现） 。
+            ❷ 通过审查 slice， 发现它有 start、 stop 和 step 数据属性， 以及indices 方法。
+            
+        调用 dir(slice) 得到的结果中有个 indices 属性，这个方法有很大的作用， 但是鲜为人知。 
+        help(slice.indices) 给出的信息如下。
+            
+            S.indices(len) -> (start, stop, stride)
+            
+        给定长度为 len 的序列， 计算 S 表示的扩展切片的起始（start）和结尾（stop） 索引， 
+        以及步幅（stride）。 超出边界的索引会被截掉， 这与常规切片的处理方式一样。
+                
+        换句话说， indices 方法开放了内置序列实现的棘手逻辑， 用于优雅地处理缺失索引和负数索引， 
+        以及长度超过目标序列的切片。 这个方法会“整顿”元组， 把 start、 stop 和 stride 都变成非负数， 
+        而且都落在指定长度序列的边界内。        
+                 
+    10.4.2 能处理切片的__getitem__方法:
+        
+        示例 10-6 列出了让 Vector 表现为序列所需的两个方法： __len__ 和__getitem__
+        
+         
+        def __len__(self):
+            return len(self._components)
+        def __getitem__(self, index):
+            cls = type(self) ➊
+            if isinstance(index, slice): ➋
+                return cls(self._components[index]) ➌
+            elif isinstance(index, numbers.Integral): ➍
+                return self._components[index] ➎
+            else:
+                msg = '{cls.__name__} indices must be integers'
+                raise TypeError(msg.format(cls=cls)) ➏
+                    
+        ❶ 获取实例所属的类（即 Vector） ， 供后面使用。
+        ❷ 如果 index 参数的值是 slice 对象……
+        ❸ ……调用类的构造方法， 使用 _components 数组的切片构建一个新Vector 实例。
+        ❹ 如果 index 是 int 或其他整数类型
+        ❺ ……那就返回 _components 中相应的元素。
+        ❻ 否则， 抛出异常。
+        
 "---------------------------------------------------------------------"
 
                      第十一章  接口: 从协议到抽象基类
