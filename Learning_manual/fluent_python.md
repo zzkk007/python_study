@@ -4145,27 +4145,114 @@
     目前， 本章讨论的主题是“鸭子类型”： 对象的类型无关紧要， 只要实现了特定的协议即可。
 
 """11.4 Alex Martelli 的水禽 """
-
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    鸭子类型，对 Python 来说， 这基本上是指避免使用 isinstance 检查对象的类型（更别提 type(foo) is bar 这种更糟的检查方式了，
+    这样做没有任何好处， 甚至禁止最简单的继承方式） 。    
     
+    总的来说， 鸭子类型在很多情况下十分有用； 但是在其他情况下，随着发展， 通常有更好的方式。 事情是这样的…… 
     
+    近代， 属和种（包括但不限于水禽所属的鸭科） 基本上是根据表型系统学（phenetics） 分类的。 
+    表征学关注的是形态和举止的相似性……主要是表型系统学特征。 因此使用“鸭子类型”比喻是贴切的。
+    
+    然而， 平行进化往往会导致不相关的种产生相似的特征， 形态和举止方面都是如此， 
+    但是生态位的相似性是偶然的，不同的种仍属不同的生态位。编程语言中也有这种“偶然的相似性”， 
+    比如说下述经典的面向对象编程示例:
+    
+        class Artist:
+            def draw(self): ...
+        class Gunslinger:
+            def draw(self): ...
+        class Lottery:
+            def draw(self): ...       
+
+    显然， 只因为 x 和 y 两个对象刚好都有一个名为 draw 的方法， 而且调用时不用传入参数， 
+    即 x.draw() 和 y.draw()， 远远不能确保二者可以相互调用， 或者具有相同的抽象。 
+    也就是说， 从这样的调用中不能推导出语义相似性。 相反， 我们需要一位渊博的程序员
+    主动把这种等价维持在一定层次上。
+
+    生物（和其他学科） 遇到的这个问题， 迫切需要（从很多方面来说， 是催生） 表征学之外的分类方式解决， 
+    即支序系统学（cladistics） 。 这种分类学主要根据从共同祖先那里继承的特征分类， 而不是单独进化的特征。
+    
+    因此， 参照水禽的分类学演化， 在鸭子类型的基础上增加白鹅类型（goose typing）.
+    白鹅类型指， 只要 cls 是抽象基类， 即 cls 的元类是abc.ABCMeta， 就可以使用 isinstance(obj, cls)。
+    
+    使用 isinstance 和 issubclass 测试抽象基类更为人接受。过去，这两个函数用来测试鸭子类型，但用于抽象基类会更灵活。
+    然而， 即便是抽象基类， 也不能滥用 isinstance 检查， 用得多了可能导致代码异味， 即表明面向对象设计得不好。
+    
+    示例 11-7 使用鸭子类型处理单个字符串或由字符串组成的可迭代:
+    
+        try: ➊
+            field_names = field_names.replace(',', ' ').split() ➋
+        except AttributeError: ➌
+            pass➍
+        field_names = tuple(field_names) ➎
+            
+        ❶ 假设是单个字符串（EAFP 风格， 即“取得原谅比获得许可容易”） 。
+        ❷ 把逗号替换成空格， 然后拆分成名称列表。
+        ❸ 抱歉， field_names 看起来不像是字符串……没有 .replace 方法， 或者返回值不能使用 .split 方法拆分。
+        ❹ 假设已经是由名称组成的可迭代对象了。
+        ❺ 为了确保的确是可迭代对象， 也为了保存一份副本， 使用所得值创建一个元组。  
+    
+    抽象基类是用于封装框架引入的一般性概念和抽象的， 例如“一个序列”和“一个确切的数”。 
+    （读者） 基本上不需要自己编写新的抽象基类， 只要正确使用现有的抽象基类， 
+    就能获得 99.9% 的好处，而不用冒着设计不当导致的巨大风险。    
+              
+    
+"""11.5 定义抽象基类的子类"""   
+    
+    import collections
+    Card = collections.namedtuple('Card', ['rank', 'suit'])
+    
+    class FrenchDeck2(collections.MutableSequence):
+        ranks = [str(n) for n in range(2, 11)] + list('JQKA')
+        suits = 'spades diamonds clubs hearts'.split()
+        
+        def __init__(self):
+            self._cards = [Card(rank, suit) for suit in self.suits for rank in self.ranks]
+        
+        def __len__(self):
+            return len(self._cards)
+
+        def __getitem__(self, position):
+            return self._cards[position]
+
+        def __setitem__(self, position, value): # ➊
+            self._cards[position] = value
+
+        def __delitem__(self, position): # ➋
+            del self._cards[position]
+    
+        def insert(self, position, value): # ➌
+            self._cards.insert(position, value)    
+        
+    ❶ 为了支持洗牌， 只需实现 __setitem__ 方法
+    ❷ 但是继承 MutableSequence 的类必须实现 __delitem__ 方法， 这是 MutableSequence 类的一个抽象方法。
+    ❸ 此外， 还要实现 insert 方法， 这是 MutableSequence 类的第三个抽象方法。             
+                
+
+"""11.6 标准库中的抽象基类 """    
+    
+    11.6.1 collections.abc模块中的抽象基类
+    
+        Iterable、 Container 和 Sized:
+            各个集合应该继承这三个抽象基类， 或者至少实现兼容的协议。 
+            Iterable 通过 __iter__ 方法支持迭代， Container 通过__contains__ 方法支持 in 运算符， 
+            Sized 通过 __len__ 方法支持len() 函数。
+            
+        Sequence、 Mapping 和 Set:
+        
+            这三个是主要的不可变集合类型， 而且各自都有可变的子类。 
+            
+        Callable 和 Hashable:
+            
+            这两个抽象基类与集合没有太大的关系， 只不过因为collections.abc 
+            是标准库中定义抽象基类的第一个模块， 而它们又太重要了， 
+            因此才把它们放到 collections.abc 模块中。    
+                        
+            这两个抽象基类的主要作用是为内置函数 isinstance 提供支持， 
+            以一种安全的方式判断对象能不能调用或散列。
+                              
+
 "---------------------------------------------------------------------"
 
                      第十二章  继承的优缺点
