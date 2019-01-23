@@ -4329,14 +4329,139 @@
                      第十二章  继承的优缺点
   
 """12.1 子类化内置类型很麻烦 """  
+    
+    在 Python 2.2 之前， 内置类型（如 list 或 dict） 不能子类化。 
+    在Python 2.2 之后， 内置类型可以子类化了， 但是有个重要的注意事项：
+    内置类型（使用 C 语言编写）不会调用用户定义的类覆盖的特殊方法。
+    
+    至于内置类型的子类覆盖的方法会不会隐式调用， CPython 没有制定官方规则。 
+    基本上， 内置类型的方法不会调用子类覆盖的方法。例如， 
+    dict 的子类覆盖的 __getitem__() 方法不会被内置类型的get() 方法调用。 
   
-  
-  
-  
-  
-  
-  
-                     
+    示例 12-1 内置类型 dict 的 __init__ 和 __update__ 方法会忽略我们覆盖的 __setitem__ 方法：
+    
+        >>> class DoppelDict(dict):
+        ... def __setitem__(self, key, value):
+        ... super().__setitem__(key, [value] * 2) # ➊
+        ...
+        >>> dd = DoppelDict(one=1) # ➋
+        >>> dd
+        {'one': 1}
+        >>> dd['two'] = 2 # ➌
+        >>> dd
+        {'one': 1, 'two': [2, 2]}
+        >>> dd.update(three=3) # ➍
+        >>> dd
+        {'three': 3, 'one': 1, 'two': [2, 2]}   
+        
+        
+        ❶ DoppelDict.__setitem__ 方法会重复存入的值（只是为了提供易于观察的效果） 。 它把职责委托给超类。
+        ❷ 继承自 dict 的 __init__ 方法显然忽略了我们覆盖的 __setitem__方法： 'one' 的值没有重复。
+        ❸ [] 运算符会调用我们覆盖的 __setitem__ 方法， 按预期那样工作： 'two' 对应的是两个重复的值， 即 [2, 2]。
+        ❹ 继承自 dict 的 update 方法也不使用我们覆盖的 __setitem__ 方法：'three' 的值没有重复。
+        
+    原生类型的这种行为违背了面向对象编程的一个基本原则： 始终应该从实例（self） 所属的类开始搜索方法， 
+    即使在超类实现的类中调用也是如此。 
+    
+    不只实例内部的调用有这个问题（self.get() 不调用self.__getitem__()） ， 
+    内置类型的方法调用的其他类的方法， 如果被覆盖了， 也不会被调用。 
+    
+    示例 12-2 dict.update 方法会忽略 AnswerDict.__getitem__方法
+        
+        >>> class AnswerDict(dict):
+        ... def __getitem__(self, key): # ➊
+        ... return 42
+        ...
+        >>> ad = AnswerDict(a='foo') # ➋
+        >>> ad['a'] # ➌
+        42
+        >>> d = {}
+        >>> d.update(ad) # ➍
+        >>> d['a'] # ➎
+        'foo'
+        >>> d
+        {'a': 'foo'}       
+                              
+        ❶ 不管传入什么键， AnswerDict.__getitem__ 方法始终返回 42。
+        ❷ ad 是 AnswerDict 的实例， 以 ('a', 'foo') 键值对初始化。
+        ❸ ad['a'] 返回 42， 这与预期相符。
+        ❹ d 是 dict 的实例， 使用 ad 中的值更新 d。
+        ❺ dict.update 方法忽略了 AnswerDict.__getitem__ 方法。 
+                            
+    直接子类化内置类型（如 dict、 list 或 str） 容易出错，因为内置类型的方法通常会忽略用户覆盖的方法。 
+    不要子类化内置类型， 用户自己定义的类应该继承 collections 模块例如UserDict、 UserList 和 UserString，
+    这些类做了特殊设计， 因此易于扩展。
+        
+    示例 12-3 DoppelDict2 和 AnswerDict2 能像预期那样使用， 因为它们扩展的是 UserDict，而不是 dict：
+    
+        >>> import collections
+        >>>
+        >>> class DoppelDict2(collections.UserDict):
+        ... def __setitem__(self, key, value):
+        ... super().__setitem__(key, [value] * 2)
+        ...
+        >>> dd = DoppelDict2(one=1)
+        >>> dd
+        {'one': [1, 1]}
+        >>> dd['two'] = 2
+        >>> dd
+        {'two': [2, 2], 'one': [1, 1]}
+        >>> dd.update(three=3)
+        >>> dd
+        {'two': [2, 2], 'three': [3, 3], 'one': [1, 1]}
+        >>>
+        >>> class AnswerDict2(collections.UserDict):
+        ... def __getitem__(self, key):
+        ... return 42
+        ...        
+        >>> ad = AnswerDict2(a='foo')
+        >>> ad['a']
+        42
+        >>> d = {}
+        >>> d.update(ad)
+        >>> d['a']
+        42
+        >>> d
+        {'a': 42}
+        
+    综上， 本节所述的问题只发生在 C 语言实现的内置类型内部的方法委托上， 而且只影响直接继承内置类型的用户自定义类。 
+    如果子类化使用Python 编写的类， 如 UserDict 或 MutableMapping， 就不会受此影响。
+    
+    
+"""12.2 多重继承和方法解析顺序"""
+
+    任何实现多重继承的语言都要处理潜在的命名冲突， 这种冲突由不相关的祖先类实现同名方法引起。 这种冲突称为“菱形问题” 
+    
+    示例 12-4 diamond.py： 图 12-1 中的 A、 B、 C 和 D 四个类:
+        
+        class A:
+            def ping(self):
+                print('ping:', self)
+        
+        class B(A):
+            def pong(self):
+                print('pong:', self)
+        
+        class C(A):
+            def pong(self):
+                print('PONG:', self)
+        
+        class D(B, C):
+        
+            def ping(self):
+                super().ping()
+                print('post-ping:', self)
+            def pingpong(self):
+                self.ping()
+                super().ping()
+                self.pong()
+                super().pong()
+                C.pong(self)
+    
+    注意， B 和 C 都实现了 pong 方法， 二者之间唯一的区别是， C.pong 方法输出的是大写的 PONG。
+        
+    
+        
 "---------------------------------------------------------------------"
 
                      第十三章  正确重载运算符
