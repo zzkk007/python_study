@@ -4711,7 +4711,199 @@
 
         示例 14-4 sentence_iter.py： 使用迭代器模式实现 Sentence 类：
         
+        import re
+        import reprlib
+        RE_WORD = re.compile('\w+')
         
+        class Sentence:
+            def __init__(self, text):
+                self.text = text
+                self.words = RE_WORD.findall(text)
+            def __repr__(self):
+                return 'Sentence(%s)' % reprlib.repr(self.text)
+            def __iter__(self): ➊
+                return SentenceIterator(self.words) ➋
+        class SentenceIterator:
+            def __init__(self, words):
+                self.words = words ➌    
+                self.index = 0 ➍
+                
+            def __next__(self):
+                try:
+                    word = self.words[self.index] ➎
+                except IndexError:
+                    raise StopIteration() ➏
+                self.index += 1 ➐
+                return word ➑
+            def __iter__(self): ➒
+                return self
+
+        ❶ 与前一版相比， 这里只多了一个 __iter__ 方法。 这一版没有__getitem__ 方法， 
+            为的是明确表明这个类可以迭代， 因为实现了__iter__ 方法。
+        ❷ 根据可迭代协议， __iter__ 方法实例化并返回一个迭代器。
+        ❸ SentenceIterator 实例引用单词列表。
+        ❹ self.index 用于确定下一个要获取的单词。
+        ❺ 获取 self.index 索引位上的单词。
+        ❻ 如果 self.index 索引位上没有单词， 那么抛出 StopIteration 异常。
+        ❼ 递增 self.index 的值。
+        ❽ 返回单词。
+        ❾ 实现 self.__iter__ 方法。
+        
+        注意， 对这个示例来说， 其实没必要在 SentenceIterator 类中实现__iter__ 方法， 
+        不过这么做是对的， 因为迭代器应该实现 __next__和 __iter__ 两个方法， 
+        而且这么做能让迭代器通过issubclass(SentenceInterator, abc.Iterator) 测试。 如果让
+        SentenceIterator 类继承 abc.Iterator 类， 那么它会继承abc.Iterator.__iter__ 这个具体方法。        
+
+        把Sentence变成迭代器： 坏主意:
+        
+            构建可迭代的对象和迭代器时经常会出现错误， 原因是混淆了二者。 
+            要知道， 可迭代的对象有个 __iter__ 方法， 每次都实例化一个新的迭代器； 
+            而迭代器要实现 __next__ 方法， 返回单个元素， 此外还要实现__iter__ 方法，返回迭代器本身。   
+            
+            因此， 迭代器可以迭代， 但是可迭代的对象不是迭代器。
+            
+        《设计模式： 可复用面向对象软件的基础》 一书讲解迭代器设计模式时， 在“适用性”一节中说:
+        迭代器模式可用来：
+            访问一个聚合对象的内容而无需暴露它的内部表示
+            支持对聚合对象的多种遍历
+            为遍历不同的聚合结构提供一个统一的接口（即支持多态迭代）
+        
+        为了“支持多种遍历”， 必须能从同一个可迭代的实例中获取多个独立的迭代器， 
+        而且各个迭代器要能维护自身的内部状态， 因此这一模式正确的实现方式是， 
+        每次调用 iter(my_iterable) 都新建一个独立的迭代器。 
+        这就是为什么这个示例需要定义 SentenceIterator 类。    
+            
+        可迭代的对象一定不能是自身的迭代器。 也就是说， 可迭代的对象
+        必须实现 __iter__ 方法， 但不能实现 __next__ 方法。
+        
+        另一方面， 迭代器应该一直可以迭代。 迭代器的 __iter__ 方法应该返回自身。                       
+                         
+    14.4 Sentence类第3版： 生成器函数:
+    
+        实现相同功能， 但却符合 Python 习惯的方式是， 用生成器函数代替SentenceIterator 类。
+        
+        示例 14-5 sentence_gen.py： 使用生成器函数实现 Sentence 类:
+        
+        import re
+        import reprlib
+        
+        RE_WORD = re.complie('\w+')
+        
+        class Sentence(object):
+            def __init__(self, text):
+                self.text = text
+                self.words = RE_WORD.findall(text)
+                
+            def __repr__(self):
+                return 'Sentence(%s)' % reprlib.repr(self.text)
+                
+            def __iter__(slef):
+                for word in self.words:   ➊
+                    yield word  ➋
+                return  ➌
+                
+        ❶ 迭代 self.words。
+        ❷ 产出当前的 word。
+        ❸ 这个 return 语句不是必要的； 这个函数可以直接“落空”， 自动返回。 
+            不管有没有 return 语句， 生成器函数都不会抛出 StopIteration异常， 
+            而是在生成完全部值之后会直接退出。
+        不用再单独定义一个迭代器类！    
+        
+        生成器函数的工作原理:
+            只要 Python 函数的定义体中有 yield 关键字， 该函数就是生成器函数。 
+            调用生成器函数时， 会返回一个生成器对象。 也就是说， 生成器函数是生成器工厂。              
+          
+            >>> def gen_123(): # ➊
+            ... yield 1 # ➋
+            ... yield 2
+            ... yield 3
+            ...
+            >>> gen_123 # doctest: +ELLIPSIS
+            <function gen_123 at 0x...> # ➌
+            >>> gen_123() # doctest: +ELLIPSIS
+            <generator object gen_123 at 0x...> # ➍
+            >>> for i in gen_123(): # ➎
+            ... print(i)
+            123>
+            >> g = gen_123() # ➏
+            >>> next(g) # ➐
+            1>
+            >> next(g)
+            2>
+            >> next(g)
+            3>
+            >> next(g) # ➑
+            Traceback (most recent call last):
+            ...
+            StopIteration
+            
+            ❶ 只要 Python 函数中包含关键字 yield， 该函数就是生成器函数。
+            ❷ 生成器函数的定义体中通常都有循环， 不过这不是必要条件； 这里我重复使用 3 次 yield。
+            ❸ 仔细看， gen_123 是函数对象。
+            ❹ 但是调用时， gen_123() 返回一个生成器对象。
+            ❺ 生成器是迭代器， 会生成传给 yield 关键字的表达式的值。
+            ❻ 为了仔细检查， 我们把生成器对象赋值给 g。
+            ❼ 因为 g 是迭代器， 所以调用 next(g) 会获取 yield 生成的下一个元素。
+            ❽ 生成器函数的定义体执行完毕后， 生成器对象会抛出StopIteration 异常。   
+                         
+        生成器函数会创建一个生成器对象， 包装生成器函数的定义体。 把生成器传给 next(...) 函数时，
+        生成器函数会向前， 执行函数定义体中的下一个 yield 语句， 返回产出的值， 
+        并在函数定义体的当前位置暂停。 最终， 函数的定义体返回时， 
+        外层的生成器对象会抛出StopIteration 异常——这一点与迭代器协议一致。
+
+    14.5 Sentence类第4版： 惰性实现:        
+        
+        设计 Iterator 接口时考虑到了惰性： next(my_iterator) 一次生成一个元素。 
+        懒惰的反义词是急迫， 其实， 惰性求值（lazy evaluation） 
+        和及早求值（eager evaluation） 是编程语言理论方面的技术术语。   
+        
+        示例 14-7 sentence_gen2.py： 在生成器函数中调用 re.finditer生成器函数， 
+        实现 Sentence 类:
+            
+            import re
+            import reprlib
+            RE_WORD = re.compile('\w+')
+            class Sentence:
+                def __init__(self, text):
+                    self.text = text ➊
+                def __repr__(self):
+                    return 'Sentence(%s)' % reprlib.repr(self.text    
+                def __iter__(self):
+                    for match in RE_WORD.finditer(self.text): ➋
+                        yield match.group() ➌
+            
+            ❶ 不再需要 words 列表。
+            ❷ finditer 函数构建一个迭代器， 包含 self.text 中匹配 RE_WORD的单词， 产出 MatchObject 实例。
+            ❸ match.group() 方法从 MatchObject 实例中提取匹配正则表达式的具体文本。
+
+    14.6 Sentence类第5版： 生成器表达式:
+        
+        生成器表达式可以理解为列表推导的惰性版本： 不会迫切地构建列表，而是返回一个生成器， 
+        按需惰性生成元素。 也就是说， 如果列表推导是制造列表的工厂， 
+        那么生成器表达式就是制造生成器的工厂。   
+        
+        示例 14-9 sentence_genexp.py： 使用生成器表达式实现 Sentence类:
+        
+            import re
+            import reprlib
+            RE_WORD = re.compile('\w+')
+            class Sentence:
+                def __init__(self, text):
+                    self.text = text
+                def __repr__(self):
+                    return 'Sentence(%s)' % reprlib.repr(self.text)
+                def __iter__(self):
+                    return (match.group() for match in RE_WORD.finditer(self.text))
+        
+        这里不是生成器函数了（没有 yield） ， 而是使用生成器表达式构建生成器， 然后将其返回。
+        不过， 最终的效果一样： 调用 __iter__ 方法会得到一个生成器对象。
+        
+    14.7 何时使用生成器表达式:
+    
+            
+        
+
+
 
 
 
