@@ -4898,13 +4898,26 @@
         这里不是生成器函数了（没有 yield） ， 而是使用生成器表达式构建生成器， 然后将其返回。
         不过， 最终的效果一样： 调用 __iter__ 方法会得到一个生成器对象。
         
-    14.7 何时使用生成器表达式:
     
-            
+    14.8 等差数列生成器:
         
+        典型的迭代器模式作用很简单——遍历数据结构。
+        内置的 range 函数用于生成有穷整数等差数列（Arithmetic Progression， AP） ， 
+        itertools.count 函数用于生成无穷等差数列。
+                
+        >>> import itertools
+        >>> gen = itertools.count(1, .5)
+        >>> next(gen)
+        1>
+        >> next(gen)
+        1.5
+        >>> next(gen)
+        2.0
+        >>> next(gen)
+        2.5 
 
-
-
+    
+      
 
 
 
