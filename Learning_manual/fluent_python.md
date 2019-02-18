@@ -4587,18 +4587,131 @@
     而生成器用于“凭空”生成元素。 
 
     14.1 Sentence类第1版： 单词序列：
-    
         
+        我们向这个类的构造方法传入包含一些文本的字符串， 然后可以逐个单词迭代。
+        
+        示例 14-1 sentence.py： 把句子划分为单词序列：
+        
+            import re
+            import reprlib
+            
+            RE_WORD = re.compile('\w+')
+            
+            class Sentence:
+                def __init__(self, text):
+                    self.text = text
+                    self.worlds = RE_WORD.findall(text)  ➊
+                    
+                def __getitem__(self, index):
+                    return self.words[index]  ➋
+                    
+                def __len__(self):  ➌
+                    return len(slef.worlds)
+                    
+                def __repr__(slef):
+                    return 'Sentence(%s)'% reprlib.repr(self.text)  ➍
+                    
+                    
+            ❶ re.findall 函数返回一个字符串列表， 里面的元素是正则表达式的全部非重叠匹配。
+            ❷ self.words 中保存的是 .findall 函数返回的结果， 因此直接返回指定索引位上的单词。
+            ❸ 为了完善序列协议， 我们实现了 __len__ 方法； 不过， 为了让对象可以迭代， 没必要实现这个方法。
+            ❹ reprlib.repr 这个实用函数用于生成大型数据结构的简略字符串表示形式。        
+                          
+        示例 14-2 测试 Sentence 实例能否迭代:
+            
+            s = Sentence('"The time has come", the Walrus said,')
+            for word in s:
+                print(word)
+                
+            打印结果为：
+                The
+                time
+                has
+                come
+                the
+                Walrus
+                said
+                
+            print(list(s))
+                ['The', 'time', 'has', 'come', 'the', 'Walrus', 'said']
+    
+        序列可以迭代的原因： iter函数:
+            解释器需要迭代对象 x 时， 会自动调用 iter(x)。
+            内置的 iter 函数有以下作用。
+        
+            (1) 检查对象是否实现了 __iter__ 方法， 如果实现了就调用它， 获取一个迭代器。
+            
+            (2) 如果没有实现 __iter__ 方法， 但是实现了 __getitem__ 方法，
+                Python 会创建一个迭代器， 尝试按顺序（从索引 0 开始） 获取元素。
+            
+            (3) 如果尝试失败， Python 抛出 TypeError 异常， 通常会提示“C object
+                is not iterable”（C 对象不可迭代） ， 其中 C 是目标对象所属的类。
+        
+        任何 Python 序列都可迭代的原因是， 它们都实现了 __getitem__ 方法。 
+        其实， 标准的序列也都实现了 __iter__ 方法， 因此你也应该这么做。 
 
+        11.2 节提到过， 这是鸭子类型（duck typing） 的极端形式： 不仅要实现特殊的 __iter__ 方法， 
+        还要实现 __getitem__ 方法， 而且__getitem__ 方法的参数是从 0 开始的整数（int） ， 
+        这样才认为对象是可迭代的。
+        
+        在白鹅类型（goose-typing） 理论中， 可迭代对象的定义简单一些， 不过没那么灵活： 
+        如果实现了 __iter__ 方法， 那么就认为对象是可迭代的。 
+    
+    14.2 可迭代的对象与迭代器的对比:
+        
+        可迭代的对象:
+            使用 iter 内置函数可以获取迭代器的对象。 如果对象实现了能返回迭代器的 __iter__ 方法， 
+            那么对象就是可迭代的。 序列都可以迭代； 实现了 __getitem__ 方法， 
+            而且其参数是从零开始的索引， 这种对象也可以迭代。   
+            
+        我们要明确可迭代的对象和迭代器之间的关系： Python 从可迭代的对象中获取迭代器。
+        具体的 Iterable.__iter__ 方法应该返回一个 Iterator 实例。 
+        具体的 Iterator 类必须实现 __next__ 方法。 Iterator.__iter__ 方法直接返回实例本身。
+        
+        下面是一个简单的 for 循环， 迭代一个字符串。 这里， 字符串 'ABC'是可迭代的对象。 
+        背后是有迭代器的， 只不过我们看不到：
+        
+            >>> s = 'ABC'
+            >>> for char in s:
+            ... print(char)
+            ...
+            ABC
+        
+        如果没有 for 语句， 不得不使用 while 循环模拟， 要像下面这样写：        
+            
+            >>> s = 'ABC'
+            >>> it = iter(s) # ➊
+            >>> while True:
+            ...     try:
+            ...         print(next(it)) # ➋
+            ...     except StopIteration: # ➌
+            ...         del it # ➍
+            ...         break # ➎
+            ...
+            ABC                   
 
+        标准的迭代器接口有两个方法。
+        
+            __next__:返回下一个可用的元素， 如果没有元素了， 抛出 StopIteration异常。
+            __iter__:返回 self， 以便在应该使用可迭代对象的地方使用迭代器， 例如在 for 循环中。     
 
+        迭代器：
+            
+            迭代器是这样的对象： 实现了无参数的 __next__ 方法， 返回序列中的下一个元素； 
+            如果没有元素了， 那么抛出 StopIteration 异常。
+            Python 中的迭代器还实现了 __iter__ 方法， 因此迭代器也可以迭代。
+            
+    14.3 Sentence类第2版： 典型的迭代器：
+    
+        示例 14-4 中定义的 Sentence 类可以迭代， 因为它实现了特殊的__iter__ 方法， 
+        构建并返回一个 SentenceIterator 实例。 《设计模式： 可复用面向对象软件的基础》 
+        一书就是这样描述迭代器设计模式的。
+        
+        这里之所以这么做， 是为了清楚地说明可迭代的对象和迭代器之间的重要区别， 以及二者之间的联系。    
 
-
-
-
-
-
-
+        示例 14-4 sentence_iter.py： 使用迭代器模式实现 Sentence 类：
+        
+        
 
 
 
