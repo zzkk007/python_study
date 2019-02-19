@@ -5005,19 +5005,119 @@
 
     16.1 生成器如何进化成协程：
         
+        在Python 2.5之后，yield 关键字可以在表达式中使用， 而且生成器 API 中增加了.send(value)方法。 
+        生成器的调用方可以使用 .send(...) 方法发送数据， 发送的数据会成为生成器函数中 yield 表达式的值。
+        因此， 生成器可以作为协程使用。 协程是指一个过程， 这个过程与调用方协作， 产出由调用方提供的值。  
         
+        现在， 生成器可以返回一个值； 以前， 如果在生成器中给 return语句提供值， 会抛出 SyntaxError 异常。
+        
+        新引入了 yield from 句法， 使用它可以把复杂的生成器重构成小型的嵌套生成器， 
+        省去了之前把生成器的工作委托给子生成器所需的大量样板代码。
+    
+    16.2 用作协程的生成器的基本行为:
+        
+        示例 16-1 可能是协程最简单的使用演示:
+            >>> def simple_coroutine(): # ➊
+            ...     print('-> coroutine started')
+            ...     x = yield # ➋
+            ...     print('-> coroutine received:', x)
+            ...
+            >>> my_coro = simple_coroutine()
+            >>> my_coro # ➌
+            <generator object simple_coroutine at 0x100c2be10>
+            >>> next(my_coro) # ➍
+            -> coroutine started
+            >>> my_coro.send(42) # ➎
+            -> coroutine received: 42
+            Traceback (most recent call last): # ➏
+            ...
+            StopIteration    
+                
+        ❶ 协程使用生成器函数定义： 定义体中有 yield 关键字。
+        ❷ yield 在表达式中使用；如果协程只需从客户那里接收数据， 
+          那么产出的值是 None——这个值是隐式指定的，因为 yield 关键字右边没有表达式。  
+        ❸ 与创建生成器的方式一样， 调用函数得到生成器对象。
+        ❹ 首先要调用 next(...) 函数，因为生成器还没启动，没在 yield 语句处暂停，所以一开始无法发送数据。
+        ❺ 调用这个方法后，协程定义体中的 yield 表达式会计算出 42；
+          现在，协程会恢复，一直运行到下一个 yield 表达式， 或者终止。       
+        ❻ 这里， 控制权流动到协程定义体的末尾， 导致生成器像往常一样抛出 StopIteration 异常。
 
-
-
-
-
-
-
-
-
-
-
-
+        协程可以身处四个状态中的一个。 当前状态可以使用:
+        inspect.getgeneratorstate(...) 函数确定， 该函数会返回下述字符串中的一个。
+            'GEN_CREATED' :等待开始执行。
+            'GEN_RUNNING' :解释器正在执行。    
+            'GEN_SUSPENDED' :在 yield 表达式处暂停。
+            'GEN_CLOSED'：执行结束。 
+        
+        因为 send 方法的参数会成为暂停的 yield 表达式的值， 
+        所以， 仅当协程处于暂停状态时才能调用 send 方法， 
+        例如 my_coro.send(42)。 不过， 如果协程还没激活（即， 状态是 'GEN_CREATED'）情况就不同了。 
+        因此， 始终要调用 next(my_coro) 激活协程——也可以调用my_coro.send(None)，效果一样。
+    
+        如果创建协程对象后立即把 None 之外的值发给它， 会出现下述错误：
+            >>> my_coro = simple_coroutine()
+            >>> my_coro.send(1729)
+            Traceback (most recent call last):
+            File "<stdin>", line 1, in <module>
+            TypeError: can't send non-None value to a just-started generator    
+        
+        注意错误消息， 它表述得相当清楚。
+            最先调用 next(my_coro) 函数这一步通常称为“预激”（prime） 协程
+           （即，让协程向前执行到第一个 yield 表达式，准备好作为活跃的协程使用）。
+           
+        示例 16-2 产出两个值的协程：
+            
+            >>> def simple_coro2(a):
+            ... print('-> Started: a =', a)
+            ... b = yield a
+            ... print('-> Received: b =', b)
+            ... c = yield a + b
+            ... print('-> Received: c =', c)
+            ...
+            >>> my_coro2 = simple_coro2(14)
+            >>> from inspect import getgeneratorstate
+            >>> getgeneratorstate(my_coro2) ➊
+            'GEN_CREATED'
+            >>> next(my_coro2) ➋
+            -> Started: a = 14
+            14
+            >>> getgeneratorstate(my_coro2) ➌
+            'GEN_SUSPENDED'
+            >>> my_coro2.send(28) ➍
+            -> Received: b = 28
+            42
+            >>> my_coro2.send(99) ➎
+            -> Received: c = 99
+            Traceback (most recent call last):
+            File "<stdin>", line 1, in <module>
+            StopIteration
+            >>> getgeneratorstate(my_coro2) ➏
+            'GEN_CLOSED'       
+            
+            ❶ inspect.getgeneratorstate 函数指明， 处于 GEN_CREATED 状态（即协程未启动）。           
+            ❷ 向前执行协程到第一个 yield 表达式， 打印 -> Started: a = 14消息，然后产出 a 的值， 并且暂停， 等待为 b 赋值。
+            ❸ getgeneratorstate 函数指明， 处于 GEN_SUSPENDED 状态（即协程在 yield 表达式处暂停）。
+            ❹ 把数字 28 发给暂停的协程； 计算 yield 表达式， 得到 28， 然后把那个数绑定给 b。 
+              打印 -> Received: b = 28 消息， 产出 a + b 的值(42), 然后协程暂停，等待为 c 赋值。
+            ❺ 把数字 99 发给暂停的协程； 计算 yield 表达式， 得到 99， 然后把那个数绑定给 c。 
+              打印 -> Received: c = 99 消息， 然后协程终止，导致生成器对象抛出 StopIteration 异常。
+            ❻ getgeneratorstate 函数指明， 处于 GEN_CLOSED 状态（即协程执行结束） 。
+        
+        关键的一点是， 协程在 yield 关键字所在的位置暂停执行。 
+        前面说过， 在赋值语句中， = 右边的代码在赋值之前执行。 
+        因此， 对于 b =yield a 这行代码来说， 等到客户端代码再激活协程时才会设定 b 的值。 
+        这种行为要花点时间才能习惯， 不过一定要理解， 这样才能弄懂异步编程中 yield 的作用（后文探讨） 。    
+            
+        simple_coro2 协程的执行过程分为 3 个阶段:
+            (1) 调用 next(my_coro2)， 打印第一个消息， 然后执行 yield a， 产出数字 14。
+            (2) 调用 my_coro2.send(28)， 把 28 赋值给 b， 打印第二个消息， 然后执行 yield a + b， 产出数字 42。
+            (3) 调用 my_coro2.send(99)， 把 99 赋值给 c， 打印第三个消息， 协程终止。    
+            
+    16.3 示例： 使用协程计算移动平均值     
+    
+    
+    
+    
 
 
 "---------------------------------------------------------------------"
