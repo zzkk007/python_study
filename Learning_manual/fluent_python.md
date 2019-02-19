@@ -5276,10 +5276,58 @@
         因为在函数外部使用 yieldfrom（以及 yield） 会导致句法出错。
         
     16.7 使用yield from:
+        
+        首先要知道， yield from 是全新的语言结构。 它的作用比 yield 多很多， 
+        因此人们认为继续使用那个关键字多少会引起误解。 在其他语言中， 
+        类似的结构使用 await 关键字， 这个名称好多了， 因为它传达了至关重要的一点： 
+        在生成器 gen 中使用 yield from subgen()时， subgen 会获得控制权， 
+        把产出的值传给 gen 的调用方， 即调用方可以直接控制 subgen。 
+        与此同时， gen 会阻塞， 等待 subgen 终止。
     
-    
-    
-              
+        yield from 可用于简化 for 循环中的 yield 表达式。
+        例如：   
+             >>> def gen():
+            ...     for c in 'AB':
+            ...         yield c
+            ...     for i in range(1, 3):
+            ...         yield i
+            ...
+            >>> list(gen())
+            ['A', 'B', 1, 2]   
+            
+        可以改写为：
+            
+            >>> def gen():
+            ... yield from 'AB'
+            ... yield from range(1, 3)
+            ...
+            >>> list(gen())
+            ['A', 'B', 1, 2]
+                        
+        示例 16-16 使用 yield from 链接可迭代的对象:
+            
+            >>> def chain(*iterables):
+            ...     for it in iterables:
+            ...         yield from it
+            ...
+            >>> s = 'ABC'
+            >>> t = tuple(range(3))
+            >>> list(chain(s, t))
+            ['A', 'B', 'C', 0, 1, 2]    
+        
+        yield from x 表达式对 x 对象所做的第一件事是，调用 iter(x)，从中获取迭代器。 
+        因此， x 可以是任何可迭代的对象。
+        
+        可是， 如果 yield from 结构唯一的作用是替代产出值的嵌套 for 循环， 
+        这个结构很有可能不会添加到 Python 语言中。 yield from 结构的
+        本质作用无法通过简单的可迭代对象说明， 而要发散思维， 使用嵌套的生成器。
+        
+        yield from 的主要功能是打开双向通道， 把最外层的调用方与最内层
+        的子生成器连接起来， 这样二者可以直接发送和产出值， 还可以直接传
+        入异常， 而不用在位于中间的协程中添加大量处理异常的样板代码。 有
+        了这个结构， 协程可以通过以前不可能的方式委托职责。
+        
+           
 
 "---------------------------------------------------------------------"
 
