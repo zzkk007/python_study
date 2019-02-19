@@ -5114,11 +5114,172 @@
             (3) 调用 my_coro2.send(99)， 把 99 赋值给 c， 打印第三个消息， 协程终止。    
             
     16.3 示例： 使用协程计算移动平均值     
+        
+        示例 16-3 coroaverager0.py： 定义一个计算移动平均值的协程:
+            def averager():
+                total = 0.0
+                count = 0
+                average = None
+                while True: ➊
+                    term = yield average ➋
+                    total += term
+                    count += 1
+                    average = total/count
+                
+            ➊ 这个无限循环表明， 只要调用方不断把值发给这个协程， 
+              它就会一直接收值， 然后生成结果。 仅当调用方在协程上调用 .close() 方法，
+              或者没有对协程的引用而被垃圾回收程序回收时， 这个协程才会终止。
+            ➋ 这里的 yield 表达式用于暂停执行协程， 把结果发给调用方；
+               还用于接收调用方后面发给协程的值， 恢复无限循环。
+               
+        使用协程的好处是， total 和 count 声明为局部变量即可， 无需使用实例属性或闭包在多次调用之间保持上下文。        
+        
+        示例 16-4 coroaverager0.py： 示例 16-3 中定义的移动平均值协程
+            >>> coro_avg = averager() ➊
+            >>> next(coro_avg) ➋
+            >>> coro_avg.send(10) ➌
+            10.0
+            >>> coro_avg.send(30)
+            20.0
+            >>> coro_avg.send(5)
+            15.0    
+                    
+            ❶ 创建协程对象。
+            ❷ 调用 next 函数， 预激协程。
+            ❸ 计算移动平均值： 多次调用 .send(...) 方法， 产出当前的平均值。
+        
+        调用 next(coro_avg) 函数后， 协程会向前执行到 yield 表达式， 
+        产出 average 变量的初始值——None，因此不会出现在控制台中。 
+        此时， 协程在 yield 表达式处暂停， 等到调用方发送值。 
+        coro_avg.send(10) 那一行发送一个值， 激活协程，
+        把发送的值赋给 term， 并更新 total、 count 和 average 三个变量的值， 
+        然后开始 while 循环的下一次迭代， 产出 average 变量的值， 等待下一次为 term 变量赋值。
+        
+    16.4 预激协程的装饰器:
+        
+        如果不预激， 那么协程没什么用。 调用 my_coro.send(x) 之前， 
+        记住一定要调用 next(my_coro)。 为了简化协程的用法， 有时会使用一个预激装饰器。
+        
+        示例 16-5 coroutil.py： 预激协程的装饰器:
+        from functools import wraps
+        def coroutine(func):
+        
+        """装饰器： 向前执行到第一个`yield`表达式， 预激`func`"""
+        @wraps(func)
+        def primer(*args,**kwargs): ➊
+            gen = func(*args,**kwargs) ➋
+            next(gen) ➌
+            return gen ➍
+        return primer    
+         
+        ❶ 把被装饰的生成器函数替换成这里的 primer 函数；调用 primer 函数时,返回预激后的生成器。
+        ❷ 调用被装饰的函数， 获取生成器对象。
+        ❸ 预激生成器。
+        ❹ 返回生成器。    
+        
+    16.5 终止协程和异常处理:
+        
+        协程中未处理的异常会向上冒泡， 传给 next 函数或 send 方法的调用方（即触发协程的对象） 。
+        这两个方法是 throw 和 close 处理异常：
+        
+        generator.throw(exc_type[, exc_value[, traceback]])
+        
+            致使生成器在暂停的 yield 表达式处抛出指定的异常。 如果生成器处理了抛出的异常， 
+            代码会向前执行到下一个 yield 表达式， 而产出的值会成为调用 generator.throw 方法
+            得到的返回值。 如果生成器没有处理抛出的异常， 异常会向上冒泡， 传到调用方的上下文中。    
+            
+        generator.close()
+        
+            致使生成器在暂停的 yield 表达式处抛出 GeneratorExit 异常。
+            如果生成器没有处理这个异常， 或者抛出了 StopIteration 异常（通常是指运行到结尾） ， 
+            调用方不会报错。 如果收到 GeneratorExit 异常， 生成器一定不能产出值， 
+            否则解释器会抛出 RuntimeError 异常。生成器抛出的其他异常会向上冒泡， 传给调用方。   
+             
+        示例 16-8 coro_exc_demo.py： 学习在协程中处理异常的测试代码：
+            
+            class DemoException(Exception):
+                """为这次演示定义的异常类型。 """
+            def demo_exc_handling():
+                print('-> coroutine started')
+                while True:
+                    try:
+                        x = yield
+                    except DemoException: ➊
+                        print('*** DemoException handled. Continuing...')
+                    else: ➋
+                        print('-> coroutine received: {!r}'.format(x))
+                raise RuntimeError('This line should never run.') ➌
+            
+            ❶ 特别处理 DemoException 异常。
+            ❷ 如果没有异常， 那么显示接收到的值。
+            ❸ 这一行永远不会执行。
+        
+    16.6 让协程返回值：
+    
+        示例 16-13 coroaverager2.py： 定义一个求平均值的协程， 让它返回一个结果：  
+        from collections import namedtuple
+        Result = namedtuple('Result', 'count average')
+        
+        def averager():
+            total = 0.0
+            count = 0
+            average = None
+            while True:
+                term = yield
+                if term is None:
+                    break ➊
+                total += term
+                count += 1
+                average = total/count
+            return Result(count, average) ➋          
+        
+        ➊ 为了返回值， 协程必须正常终止； 因此， 这一版 averager 中有个条件判断，以便退出累计循环。
+        ➋ 返回一个 namedtuple， 包含 count 和 average 两个字段。 在Python 3.3 之前， 如果生成器返回值， 解释器会报句法错误。        
+        
+        示例 16-14 coroaverager2.py： 说明 averager 行为的 doctest
+        >>> coro_avg = averager()
+        >>> next(coro_avg)
+        >>> coro_avg.send(10) ➊
+        >>> coro_avg.send(30)
+        >>> coro_avg.send(6.5)
+        >>> coro_avg.send(None) ➋
+        Traceback (most recent call last):
+        ...
+        StopIteration: Result(count=3, average=15.5)    
+        
+        ❶ 这一版不产出值。
+        ❷ 发送 None 会终止循环， 导致协程结束， 返回结果。 一如既往， 
+          生成器对象会抛出 StopIteration 异常。 异常对象的 value 属性保存着返回的值
+        
+        示例 16-15 捕获 StopIteration 异常， 获取 averager 返回的值
+        
+        >>> coro_avg = averager()
+        >>> next(coro_avg)
+        >>> coro_avg.send(10)
+        >>> coro_avg.send(30)
+        >>> coro_avg.send(6.5)
+        >>> try:
+        ...     coro_avg.send(None)
+        ... except StopIteration as exc:
+        ...     result = exc.value
+        ...
+        >>> result
+        Result(count=3, average=15.5) 
+         
+        获取协程的返回值虽然要绕个圈子， 但这是 PEP 380 定义的方式， 
+        当我们意识到这一点之后就说得通了： yield from 结构会在内部自动捕获StopIteration 异常。 
+        这种处理方式与 for 循环处理 StopIteration异常的方式一样：
+        循环机制使用用户易于理解的方式处理异常。 
+        对yield from 结构来说， 解释器不仅会捕获 StopIteration 异常， 
+        还会把 value 属性的值变成 yield from 表达式的值。 
+        可惜， 我们无法在控制台中使用交互的方式测试这种行为， 
+        因为在函数外部使用 yieldfrom（以及 yield） 会导致句法出错。
+        
+    16.7 使用yield from:
     
     
     
-    
-
+              
 
 "---------------------------------------------------------------------"
 
