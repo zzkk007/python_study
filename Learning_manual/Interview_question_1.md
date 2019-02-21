@@ -1,4 +1,10 @@
 
+"""
+
+    https://www.cnblogs.com/apollo1616/category/1285283.html
+    
+"""
+
 1、 如何实现对 Python 列表去除并保持原先顺序？
         
     >>> l = ['cc', 'bbbb', 'afa', 'sss', 'bbbb', 'cc', 'shafa']
