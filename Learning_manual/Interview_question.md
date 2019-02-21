@@ -1150,12 +1150,12 @@
             
             d.  API的变化:
                 zip()、map()和filter()现在都返回迭代器，而不是列表
-                keys()、dic .items()和dic .values()现在返回“视图”，而不是列表
+                keys()、dic.items()和dic.values()现在返回“视图”，而不是列表
                 iterkeys()、dic .iteritems()和dic .itervalues()不再受支持
             
             e.  比较运算符。排序比较操作符(<，<=，>=，>)现在在操作数没有有意义的自然排序时引发类型错误异常。
                 这方面的一些后果包括:
-                            表达式1 < "，0 > None或len <= len不再有效
+                            表达式1 < "， 0 > None或len <= len不再有效
                             None < None现在会引发一个类型错误，而不是返回False
                             对异构列表进行排序不再有意义——所有元素必须相互比较。
        
