@@ -745,8 +745,9 @@
 
 3、1 and [""] or "False"
 
-	['']
-
+	结果为: ['']
+	
+	
 	and :逻辑与，只有当1 为真时，才是计算[""]
 
 	or : 逻辑或，只有当[""]为假时，才会执行"False"
@@ -989,15 +990,18 @@
 8、考虑下面情况，将得到什么结果？并解释为什么？
 
 	print "hello! %s" % u"中国"
+	    hello! 中国    
 		
 	print "hello ! %s" % "中国"
+	    hello ! 中国   
 
 	print u"hello ! %s" % "中国"
+	    UnicodeDecodeError: 'ascii' codec can't decode byte 0xe4 in position 0: ordinal not in range(128)
+	    
 
 9、用正则匹配一下ip地址:
 
 	localhost is 127.0.0.1
-
 
 
 10、一个列表中的元素有正有负，在该数组中找出一个连续的子数组，要求该连续子数组
