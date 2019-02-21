@@ -455,7 +455,7 @@
 		print(Parent.x, Child1.x, Child2.x)  # [1,1,1]
 		Child1.x = 2
 		print(Parent.x, Child1.x, Child2.x)  # [1,2,1]
-		Partent.x = 3
+		Parent.x = 3
 		print(Parent.x, Child1.x, Child2.x)  # [3,2,3]
 
 
