@@ -620,15 +620,13 @@
 		print(list1)			
 
 23、使用递归求两个数的最大公约数：
-
-	def gcd1(n,m):
-		if m > n:
-			n,m = m,n
-		hcf = 1
-		for i in range(1,m+1):
-			if((n%i == 0) and (m%i==0)):
-				hcf = i
-		return hcf
+    
+    a = 36
+	b = 21 
+	def maxCommon(a, b):
+		while b: 
+		    a,b = b, a%b
+		return a   # 这里返回 a 的原因是，a 已经为 a%b 了。
 
 
 	def gcd(n,m):
