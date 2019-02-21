@@ -502,7 +502,8 @@
 	def maxCommon(a, b):
 		while b: a,b = b, a%b
 		return a
-			    
+		
+	# 最小公倍数 = 两者乘积 // 最大公约数		    	    
 	def minCommon(a, b):
 		c = a*b
 		while b: a,b = b, a%b
