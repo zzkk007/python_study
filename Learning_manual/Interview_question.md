@@ -527,23 +527,27 @@
 
 
 17、输入一个整数，输出该数二进制表示中1的个数。其中负数用补码表示。
-
-	def getOneCount(num):
-		if num > 0:
-			count = b_num.count('1')
-				print(b_num)
-			    return count
-		elif num < 0:
-			b_num = bin(~num)
-			count = 8 - b_num.count('1')
-			           return count
-		else:
-			return 8
-							    
-	if __name__ == '__main__':
-		print(getOneCount(5))
-	    print(getOneCount(-5))
-	    print(getOneCount(0))
+    
+    def getOnecount(num):
+        if num > 0:
+            b_num = bin(num)
+            count = b_num.count('1')
+            print(b_num)
+            print(count)
+            return count
+    
+        elif num < 0:
+            b_num = bin(~num)
+            count = 8 - b_num.count('1')
+            print(b_num)
+            print(count)
+            return count
+        else:
+            return 8
+    
+    if __name__ == "__main__":
+        print(getOnecount(21))
+        print(getOnecount(0))
 
 
 18、使用递归把一个十进制数转换成二进制数：
