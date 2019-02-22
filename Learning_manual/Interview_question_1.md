@@ -308,4 +308,94 @@
         
 23、什么是装饰器?写一个装饰器,可以打印输出方法执行时长的信息.
 
+    装饰器本身是一个python函数,它可以让其他函数在不需要做任何变动的前提下增加额外功能.
+    import time
+    def timer(func):
+        def decor(*args):
+            start_time = time.time()
+            func(*args)
+            end_time = time.time()
+            d_time = end_time - start_time
+            print("run the func use:%s" % d_time)
+        return decor
+        
+    @timer
+    def func(str, count)
+        for i in range(count):
+            print("%d hello,%s!"%(i,str))
     
+    func("world", 100)
+    
+24、哪些情况下，y! = x - (x-y)会成立？
+    
+    x, y是两个不相等的非空集合
+    
+    >>> x = set([1,2,3,4])
+    >>> y = set([3,4,5,6])
+    >>> 
+    >>> x - y
+    {1, 2}
+    >>> 
+    >>> x - (x-y)
+    {3, 4}
+    >>> y
+    {3, 4, 5, 6}
+    >>> 
+
+25、用python实现"九九乘法表"，用两种不同的方式实现：
+
+    >>> [('{}*{}={}'.format(i,j,i*j) for i in range(1, j+1)) for j in range(1,10)] 
+    [<generator object <listcomp>.<genexpr> at 0x7f3db2cf33b8>, 
+    <generator object <listcomp>.<genexpr> at 0x7f3db2cf3200>, 
+    <generator object <listcomp>.<genexpr> at 0x7f3db2cf3258>, 
+    <generator object <listcomp>.<genexpr> at 0x7f3db2cf31a8>, 
+    <generator object <listcomp>.<genexpr> at 0x7f3db2a27e60>, 
+    <generator object <listcomp>.<genexpr> at 0x7f3db2a47ca8>, 
+    <generator object <listcomp>.<genexpr> at 0x7f3db2a47d00>, 
+    <generator object <listcomp>.<genexpr> at 0x7f3db2a47d58>, 
+    <generator object <listcomp>.<genexpr> at 0x7f3db2a47db0>]
+    
+    >>> [(['{}*{}={}'.format(i,j,i*j) for i in range(1, j+1)]) for j in range(1,10)]
+    [['1*1=1'], ['1*2=2', '2*2=4'], ['1*3=3', '2*3=6', '3*3=9'], ['1*4=4', '2*4=8', '3*4=12', '4*4=16'],
+     ['1*5=5', '2*5=10', '3*5=15', '4*5=20', '5*5=25'], 
+     ['1*6=6', '2*6=12', '3*6=18', '4*6=24', '5*6=30', '6*6=36'], 
+     ['1*7=7', '2*7=14', '3*7=21', '4*7=28', '5*7=35', '6*7=42', '7*7=49'], 
+     ['1*8=8', '2*8=16', '3*8=24', '4*8=32', '5*8=40', '6*8=48', '7*8=56', '8*8=64'], 
+     ['1*9=9', '2*9=18', '3*9=27', '4*9=36', '5*9=45', '6*9=54', '7*9=63', '8*9=72', '9*9=81']]
+    
+    
+    >>> print('\n'.join('  '.join( ['{}*{}={}'.format(i,j,i*j) for i in range(1,j+1)] ) for j in range(1,10) ))
+    1*1=1
+    1*2=2  2*2=4
+    1*3=3  2*3=6  3*3=9
+    1*4=4  2*4=8  3*4=12  4*4=16
+    1*5=5  2*5=10  3*5=15  4*5=20  5*5=25
+    1*6=6  2*6=12  3*6=18  4*6=24  5*6=30  6*6=36
+    1*7=7  2*7=14  3*7=21  4*7=28  5*7=35  6*7=42  7*7=49
+    1*8=8  2*8=16  3*8=24  4*8=32  5*8=40  6*8=48  7*8=56  8*8=64
+    1*9=9  2*9=18  3*9=27  4*9=36  5*9=45  6*9=54  7*9=63  8*9=72  9*9=81               
+    
+    另一种方式：
+        
+    for j in range(1, 10):
+        for i in range(1,j+1):
+            print(('{}*{}={}'.format(i, j, i * j)),end='')
+        print('')
+    
+    1*1=1 
+    1*2=2 2*2=4 
+    1*3=3 2*3=6 3*3=9 
+    1*4=4 2*4=8 3*4=12 4*4=16 
+    1*5=5 2*5=10 3*5=15 4*5=20 5*5=25 
+    1*6=6 2*6=12 3*6=18 4*6=24 5*6=30 6*6=36 
+    1*7=7 2*7=14 3*7=21 4*7=28 5*7=35 6*7=42 7*7=49 
+    1*8=8 2*8=16 3*8=24 4*8=32 5*8=40 6*8=48 7*8=56 8*8=64 
+    1*9=9 2*9=18 3*9=27 4*9=36 5*9=45 6*9=54 7*9=63 8*9=72 9*9=81  
+
+
+26、如何在Python中拷贝一个对象?并说明它们之间的区别：           
+
+    -深拷贝：完全拷贝一个副本，容器内部的元素地址都不一样
+    -浅拷贝：仅仅复制了容器中元素的地址 
+    
+27、   
