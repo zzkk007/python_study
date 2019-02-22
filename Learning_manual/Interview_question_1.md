@@ -640,6 +640,38 @@
     print(dic)
     # dictc = {'a':1,'b':5,'c':3,'d':9,'e':7,'m':9,'f':'hello','k':'world'}
     
+ 44、递归求反转字符串：
+
+    lst = []
+    def output(str, length):
+        if length == 0:
+            return lst
+        lst.append(str[length - 1])
+        output(str, length - 1)
+   
+    str = input('请输入一个字符串:')
+    output(str, len(str))
+    print('反转序列：',lst)
+ 
+ 45、已知有五位朋友在一起。第五位朋友他说自己比第4个人大2岁；
+    问第4个人岁数，他说比第3个人大2岁；
+    问第三个人，又说比第2人大两岁；
+    问第2个人，说比第一个人大两岁；
+    最后问第一个人，他说是10岁。
+    要求：求第5个人的年龄是多少。
+    
+    def age(n):
+        if n==1:
+            return 10
+        else:
+            return age(n-1)+2
+        print(age(5))
+ 
+ 
+ 
+ 
+ 
+ 
          
 44、1,2,3,4,5能组成多少个互不相同且无重复数字的三位数(程序实现)
      
