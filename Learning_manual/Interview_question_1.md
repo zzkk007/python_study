@@ -667,7 +667,11 @@
             return age(n-1)+2
         print(age(5))
  
- 
+
+46、python 闭包 closure 总结：
+    
+    
+     
  
  
  
