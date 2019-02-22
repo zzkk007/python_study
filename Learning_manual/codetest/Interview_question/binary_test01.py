@@ -1,5 +1,8 @@
 
-for j in range(1, 10):
-    for i in range(1,j+1):
-        print(('{}*{}={}'.format(i, j, i * j)),end=' ')
-    print('')
+list = [1, 2, 3, 4, 5]
+
+
+def getnum(num, li, length):
+    num1 = num
+    for i in range(len(li)):
+        num = num1 * 10 + li[i]
