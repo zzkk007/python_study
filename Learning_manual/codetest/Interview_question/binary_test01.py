@@ -1,8 +1,18 @@
+dicta = {'a':1,'b':2,'c':3,'d':4,'f':'hello'}
+dictb = {'b':3,'d':5,'e':7,'m':9,'k':'world'}
 
-list = [1, 2, 3, 4, 5]
+dic = {}
+for key1 in dicta:
+    for key2 in dictb:
+        if key1 == key2:
+            dic[key1] = dicta[key1] + dictb[key2]
 
+for a in dicta:
+    if a not in dic:
+        dic[a] = dicta[a]
 
-def getnum(num, li, length):
-    num1 = num
-    for i in range(len(li)):
-        num = num1 * 10 + li[i]
+for b in dictb:
+    if b not in dic:
+        dic[b] = dictb[b]
+print(dic)
+# dictc = {'a':1,'b':5,'c':3,'d':9,'e':7,'m':9,'f':'hello','k':'world'}
