@@ -758,6 +758,23 @@
         python的装饰器可以扩展closure的功能
     
     5. 获取闭合数值：
+        
+        最后还有一个友情提示，所有在外部函数定义的非本地变量，都可以被获取到。
+        所有的函数对象都有一个__closure__属性，如果它是一个闭包函数，那么它包含一个cell objects元组。
+        就上面的例子，我们知道time3和times5是闭包函数
+        
+        >>> make_multiplier_of.__closure__
+        >>> times3.__closure__
+        (<cell at 0x0000000002D155B8: int object at 0x000000001E39B6E0>,)
+        
+        
+        cell object有cell_contents属性，保存了闭合数值
+            >>> times3.__closure__[0].cell_contents
+            3
+            >>> times5.__closure__[0].cell_contents
+            5
+
+47、        
     
                  
             
