@@ -670,6 +670,103 @@
 
 46、python 闭包 closure 总结：
     
+    1。内嵌函数的非本地变量：
+        在另一个函数里面定义的函数，被称为内嵌函数，内嵌函数可以访问闭合范围(就是外部函数范围)的变量，
+        这些变量被称为非本地变量（nonllocal variable）
+        默认情况下，非本地变量是只读的，为了可以修改非本地变量，需要将它们声明为 nonlocal,如下列所示：
+        
+        def print_msg(msg):
+            """This is the outer enclosing function"""
+            def printer():
+                """This is the nested function"""
+                print(msg)
+            printer()
+            
+        print_msg("Hello")
+        Hello 
+    
+        可以看到，内嵌函数是printer()，可以访问非本地变量msg，msg定义在外部函数print_msg()里面。
+        
+    2. 定义一个闭包函数：
+        在上面的例子中，如果print_msg()返回print()函数，而不是调用它，会发生什么？这要求函数被这样定义
+        
+        def print_msg(msg):
+            """This is the outer enclosing function"""
+ 
+            def printer():
+                """This is the nested function"""
+                print(msg)
+ 
+            return printer # this got changed
+ 
+        # Now let's try calling this function.
+        # Output: Hello
+        another = print_msg("Hello")
+        another()    
+        
+        和非同寻常。
+        print_msg() 函数被通过传入 "Hello" 所调用，返回的函数被绑定为 another。
+        在调用 another() 的时候，我们对 print_msg() 函数已经完成调用了，但是“Hello”仍然被记住了。
+        这种将一些数据("Hello")附加到代码的技术，被称为 Python 里面的 closure.
+        闭合范围内的数据(非本地变量)能够一直被记住，即便它们已经脱离了闭合范围或者外部函数已经被从命名空间删除.
+        在python shell里面继续运行下面的代码，看看会发生什么.
+        
+        >>> del print_msg
+        >>> another()
+        Hello
+        >>> print_msg("Hello")
+        Traceback (most recent call last):
+        ...
+        NameError: name 'print_msg' is not defined
+        
+    3.怎样得到一个闭包函数：
+    
+        从上面的例子可以看出，当我们让内嵌函数引用一个非本地变量，就得到了一个python closure.
+        python closure必须满足以下三点标准：
+        1)必须有一个内嵌函数(函数里定义的函数）
+        2)内嵌函数必须引用一个定义在闭合范围内(外部函数里)的变量
+        3)外部函数必须返回内嵌函数            
+        
+    4. 什么时候使用closure：
+    
+        closure适合做什么？
+        closure可以减少使用全局变量和提供一定程度的数据隐藏. 
+        当一个类只有很少的方法(通常是一个)，closure可以提供一种更优雅的替代方案。
+        但如果类的属性或者方法开始增多，最好还是实现一个类。
+        下面是一个closure也许比类更好的一个例子。当然，到底哪个更好最终还是取决与你。    
+        
+        def make_multiplier_of(n):
+            def multiplier(x):
+                return x * n
+            return multiplier
+         
+        # Multiplier of 3
+        times3 = make_multiplier_of(3)
+         
+        # Multiplier of 5
+        times5 = make_multiplier_of(5)
+         
+        # Output: 27
+        print(times3(9))
+         
+        # Output: 15
+        print(times5(3))
+         
+        # Output: 30
+        print(times5(times3(2)))
+        
+        python的装饰器可以扩展closure的功能
+    
+    5. 获取闭合数值：
+    
+                 
+            
+        
+                
+        
+        
+        
+        
     
      
  

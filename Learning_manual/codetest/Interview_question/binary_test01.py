@@ -1,7 +1,10 @@
 
-def age(n):
-    if n==1:
-        return 10
-    else:
-        return age(n-1)+2
-print(age(5))
+def print_msg(msg):
+
+    def printer():
+        print(msg)
+    return printer
+
+another = print_msg("hello")
+
+another()
