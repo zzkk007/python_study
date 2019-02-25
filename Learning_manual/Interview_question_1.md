@@ -1028,9 +1028,74 @@
         print(b)     
         
 4、python递归的最大层数？     
- 
- 
- 
+    
+    
+    def fab(n):
+        if n == 1:
+            return 1
+        else:
+            return fab(n-1) + n
+
+    
+    print (fab(998))
+    498501
+    print (fab(999))
+    RecursionError: maximum recursion depth exceeded in comparison
+    #得到的最大数为998，以后就是报错了。     
+    
+    import sys
+    sys.setrecursionlimit(100000)
+
+    def foo(n):
+        print(n)
+        n += 1
+        foo(n)
+        
+    if __name__ == '__main__':
+    foo(1)
+
+    #得到的最大数字在3922-3929之间浮动，这个是和计算机有关系的，
+    将数字调到足够大了，已经大于系统堆栈，python已经无法支撑到太大的递归崩了。
+
+5、计算题：
+
+    >>> v = dict.fromkeys(['k1','k2'],[])
+    >>> v
+    {'k1': [], 'k2': []}
+    >>> 
+    >>> v['k1'].append(666)
+    >>> v
+    {'k1': [666], 'k2': [666]}
+    >>> 
+    >>> v['k1'] = 777
+    >>> v
+    {'k1': 777, 'k2': [666]}
+    >>> 
+    >>> 
+    >>> v = dict.fromkeys(['k1','k2'],[1])
+    >>> v
+    {'k1': [1], 'k2': [1]}
+    >>> v['k1'].append(622)
+    >>> v
+    {'k1': [1, 622], 'k2': [1, 622]}
+    >>> v['k2'].append(63) 
+    >>> v
+    {'k1': [1, 622, 63], 'k2': [1, 622, 63]}
+    >>> 
+    >>> v['k2'] = 777
+    >>> v
+    {'k1': [1, 622, 63], 'k2': 777} 
+
+6、求结果, 不明白
+
+    def num():
+        return [lambda x:i*x for i in range(4)]
+    print(m(2) for m in num())
+    # <generator object <genexpr> at 0x0000000000B2FA40> 为元祖
+    print(list(m(2) for m in num()))     
+    # [6, 6, 6, 6] 
+    
+    
  
          
      
