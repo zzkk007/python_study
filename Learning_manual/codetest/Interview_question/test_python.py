@@ -1,8 +1,7 @@
-
-def num(x):
-    yield [lambda x:i*x for i in range(4)]
-
-
-
+for x in range(1,5):
+    for y in range(1,5):
+        for z in range(1,5):
+                if (x!=y) and (y!=z) and (z!=x):
+                        print("%d%d%d" % (x, y, z))
 
 
