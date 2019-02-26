@@ -1466,12 +1466,59 @@
             class B(A):
                 def add(self, x):
                     super(B, self).add(x)          
+    
             
+20、如何判断是函数还是方法？
+
+    函数：
+        函数是封装了一些独立的功能，可以直接调用，python内置了许多函数，同时可以自建函数来使用。
+        
+    方法：
+        
+        方法和函数类似，同样封装了独立的功能，但是方法是需要通过对象来调用的，
+        表示针对这个对象要做的操作，使用时采用点方法。       
+
+21、IOError、AttributeError、ImportError、IndentationError、
+    IndexError、KeyError、SyntaxError、NameError分别代表什么异常：
+
+    IOError：输入输出异常
+    AttributeError：试图访问一个对象没有的属性
+    ImportError：无法引入模块或包，基本是路径问题
+    IndentationError：语法错误，代码没有正确的对齐
+    IndexError：下标索引超出序列边界
+    KeyError:试图访问你字典里不存在的键
+    SyntaxError:Python代码逻辑语法出错，不能执行
+    NameError:使用一个还未赋予对象的变量   
+
+22、提高python运行效率的方法：
+
+    使用生成器，因为可以节约大量内存
+    循环代码优化，避免过多重复代码的执行
+    核心模块用Cython  PyPy等，提高效率
+    多进程、多线程、协程
+    多个if elif条件判断，可以把最有可能先发生的条件放到前面写，这样可以减少程序判断的次数，提高效率    
+
+
+
+
+
+
+
+
 
 
 20、是否使用过functools中的函数？其作用是什么？：
 
-    
+    functools模块介绍：
+        
+        functools用于高阶函数：指那些作用于函数或者返回其他函数的函数。
+        通常情况下，只要是可以被当做函数调用的对象就是这个模块的目标。
+        
+    functools模块的功能：
+        
+            
+        
+        
 
     
 
