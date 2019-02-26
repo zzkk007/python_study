@@ -1136,6 +1136,97 @@
     
 9、三元运算规则以及应用场景：
 
+     三元运算符的功能与“if...else”流程语句一致，它在一行中书写，代码非常精练、执行效率更高。
+     
+    (expr1) ? (expr2) : (expr3);
+    
+        解释：如果条件“expr1”成立，则执行语句“expr2”，否则执行“expr3”。
+    
+    实现同样的功能，若使用条件流程语句，就需要书写多行代码： 
+    
+        if(expr1) {
+            expr2;
+        } else {
+            expr3;
+        }    
+
+10、Python自省：
+
+    自省就是面向对象的语言所写的程序在运行时,所能知道对象的类型。
+    简单一句就是运行时能够获得对象的类型.比如type(),dir(),getattr(),hasattr(),isinstance().        
+
+
+11、列举 Python2和Python3的区别？：
+    
+    (1). Print:
+    
+       在 Python 2 中， print 被视为一个语句而不是一个函数。
+       在使用 Python 3 时，print（）会被显式地视为一个函数。
+       
+    （2）整数的除法：
+    
+        debian:~$ python
+        Python 2.7.14 (default, May  2 2018, 15:37:08) 
+        [GCC 4.7.2] on linux2
+        Type "help", "copyright", "credits" or "license" for more information.
+        >>> 
+        >>> 
+        >>> 5 / 2
+        2
+        >>> 
+        >>> 
+        debian:~$ python3
+        Python 3.6.4 (default, May  2 2018, 15:27:32) 
+        [GCC 4.7.2] on linux
+        Type "help", "copyright", "credits" or "license" for more information.
+        >>> 
+        >>> 5/2
+        2.5
+        >>>     
+       
+    （3）支持 Unicode：
+    
+        Python 2 默认使用 ASCII 字母表，因此当您输入“Hello，Sammy！”时， Python 2 将以 ASCII 格式处理字符串。
+        Python 3 默认使用 Unicode，这节省了程序员多余的开发时间，并且您可以轻松地在程序中直接键入和显示更多的字符。   
+            
+    （4）后续发展：
+        
+         Python 3 和 Python 2 之间的最大区别不是语法上的，而是事实上 Python 2.7 将在 2020 年失去后续的支持，
+         Python 3 将继续开发更多的功能和修复更多的错误。
+        
+    （5）：
+    
+        long整数类型被Python3废弃，统一使用int
+        xrange()函数被 pytho3 废弃
+        raw_input()函数被 pytho3 废弃
+
+    
+12、文件操作时：xreadlines和readlines的区别？：
+
+    二者使用时相同，但返回类型不同，xreadlines返回的是一个生成器，readlines返回的是list
+    
+               
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
            
 
         
