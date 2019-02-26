@@ -1249,10 +1249,187 @@
     False
     >>>     
 
+16、常用字符串格式化哪几种？：
+
+    Python的字符串格式化常用的有三种：
+    第一种：最方便的
+    缺点：需一个个的格式化 
+        print('hello %s and %s'%('df','another df'))
+    
+    第二种：最好用的
+    优点：不需要一个个的格式化，可以利用字典的方式，缩短时间
+        print('hello %(first)s and %(second)s'%{'first':'df' , 'second':'another df'})
+    
+    第三种：最先进的
+    优点：可读性强
+        print('hello {first} and {second}'.format(first='df',second='another df'))    
+
+
+17、谈谈你对闭包的理解？：
+    
+    再说说闭包之前，先说一说什么是外函数，什么是内函数？
+        
+        外函数：函数A的内部定义了函数B，那么函数A就叫做外函数
+        内函数：函数B就叫做内函数        
+
+    什么是闭包？
+    
+        在一个外函数中定义了一个内函数，内函数里运用了外函数的临时变量，
+        并且外函数的返回值是内函数的引用。这样就构成了一个闭包。
+        
+    一般情况下，在我们认知当中，如果一个函数结束，函数的内部所有东西都会释放掉，还给内存，局部变量都会消失。
+    但是闭包是一种特殊情况，如果外函数在结束的时候发现有自己的临时变量将来会在内部函数中用到，
+    就把这个临时变量绑定给了内部函数，然后自己再结束。   
+
+        def outer(a):
+            b = 10
+            def inner():
+                print(a+b)
+            return inner
+        
+        if __name__ == '__main__':
+            demo = outer(5)
+            demo()
+            demo2 = outer(7)
+            demo2()
+
+
+18、os和sys模块的作用：
+    
+    sys模块主要是用于提供对python解释器相关的操作:
+    函数：
+        
+        sys.argv #命令行参数List，第一个元素是程序本身路径   
+        sys.path #返回模块的搜索路径，初始化时使用PYTHONPATH环境变量的值
+        sys.modules.keys() #返回所有已经导入的模块列表
+        sys.exc_info() #获取当前正在处理的异常类,exc_type、exc_value、exc_traceback当前处理的异常详细信息
+        sys.exit(n) #退出程序，正常退出时exit(0)
+        sys.version #获取Python解释程序的版本信息
+        sys.platform #返回操作系统平台名称
+        sys.stdout #标准输出
+        sys.stdin #标准输入
+        
+    常用功能:
+    
+        sys.arg 获取位置参数
+        print(sys.argv)
+        
+        执行该脚本，加参数的打印结果
+        python3 m_sys.py  1 2 3 4 5
+        
+        ['m_sys.py', '1', '2', '3', '4', '5']
+        可以发现 sys.arg返回的是整个位置参数，类似于shell的$0 $1...
+        sys.exit(n) 程序退出，n是退出是返回的对象
+        sys.version 获取python版本
+        >>> sys.version
+        '3.5.1 (v3.5.1:37a07cee5969, Dec  5 2015, 21:12:44) \n[GCC 4.2.1 (Apple Inc. build 5666) (dot 3)]'
+        
+        sys.path 返回模块的搜索路径列表,可通过添加自定义路径，来添加自定义模块
+        >>> sys.path
+        ['', '/Library/Frameworks/Python.framework/Versions/3.5/lib/python35.zip', 
+        '/Library/Frameworks/Python.framework/Versions/3.5/lib/python3.5', 
+        '/Library/Frameworks/Python.framework/Versions/3.5/lib/python3.5/plat-darwin', 
+        '/Library/Frameworks/Python.framework/Versions/3.5/lib/python3.5/lib-dynload', 
+        '/Library/Frameworks/Python.framework/Versions/3.5/lib/python3.5/site-packages']
+        
+        sys.platform 返回当前系统平台 linux平台返回linux，windows平台返回win32，MAC返回darwin
+        >>> sys.platform
+        'darwin
+        
+        sys.stdout.write() 输出内容
+        >>> sys.stdout.write('asd')
+        asd3
+        >>> sys.stdout.write('asd')
+        asd3
+        >>> sys.stdout.write('as')
+        as2   
+
+    
+    os模块:
+        
+        OS模块是Python标准库中的一个用于访问操作系统功能的模块，
+        使用OS模块中提供的接口，可以实现跨平台访问用于提供系统级别的操作.
+        
+        os.getcwd() 获取当前工作目录，即当前python脚本工作的目录路径
+        os.chdir(dirname) 改变当前脚本工作目录；相当于shell下cd
+        os.curdir 返回当前目录: ('.')
+        os.makedirs('dir1/dir2') 可生成多层递归目录
+        os.removedirs('dirname1') 若目录为空，则删除，并递归到上一级目录，如若也为空，则删除，依此类推
+        os.mkdir('dirname') 生成单级目录；相当于shell中mkdir dirname
+        os.rmdir('dirname') 删除单级空目录，若目录不为空则无法删除，报错；相当于shell中rmdir dirname
+        os.listdir('dirname') 列出指定目录下的所有文件和子目录，包括隐藏文件，并以列表方式打印
+        os.remove() 删除一个文件
+        os.rename(oldname,new) 重命名文件/目录
+        os.stat('path/filename') 获取文件/目录信息
+        os.sep 操作系统特定的路径分隔符，win下为\,Linux下为/
+        os.linesep 当前平台使用的行终止符，win下为\t\n,Linux下为\n
+        os.pathsep 用于分割文件路径的字符串
+        os.name 字符串指示当前使用平台。win->'nt'; Linux->'posix'
+        os.system(bash command) 运行shell命令，直接显示
+        os.environ 获取系统环境变量
+        
+        os.path.abspath(path) 返回path规范化的绝对路径
+        os.path.split(path) 将path分割成目录和文件名二元组返回
+        os.path.dirname(path) 返回path的目录。其实就是os.path.split(path)的第一个元素
+        os.path.basename(path) 返回path最后的文件名。如何path以／或\结尾，那么就会返回空值。即os.path.split(path)的第二个元素
+        os.path.exists(path) 如果path存在，返回True；如果path不存在，返回False
+        os.path.lexists  #路径存在则返回True,路径损坏也返回True
+        os.path.isabs(path) 如果path是绝对路径，返回True
+        os.path.isfile(path) 如果path是一个存在的文件，返回True。否则返回False
+        os.path.isdir(path) 如果path是一个存在的目录，则返回True。否则返回False
+        os.path.join(path1[, path2[, ...]]) 将多个路径组合后返回，第一个绝对路径之前的参数将被忽略
+        os.path.getatime(path) 返回path所指向的文件或者目录的最后存取时间
+        os.path.getmtime(path) 返回path所指向的文件或者目录的最后修改时间
+        os.path.commonprefix(list) #返回list(多个路径)中，所有path共有的最长的路径。
+        os.path.expanduser(path)  #把path中包含的"~"和"~user"转换成用户目录
+        os.path.expandvars(path)  #根据环境变量的值替换path中包含的”$name”和”${name}”
+        
+        os.access('pathfile',os.W_OK) 检验文件权限模式，输出True，False
+        os.chmod('pathfile',os.W_OK) 改变文件权限模式
+
+
+19、谈谈你对面向对象的理解？
+    
+    什么是封装？
+        
+        所谓的面向对象就是将我们的程序模块化，对象化，把具体事物的特性属性和通过这些属性来
+        实现一些动作的具体方法放到一个类里面，这就是封装。
+        封装是我们所说的面向对象编程的特征之一。    
+          
+    什么是继承？
+    
+        继承有点类似我们生物学上的遗传，就是子类的一些特征是来源于父类的，
+        面向对象里的继承也就是父类的相关的属性，可以被子类重复使用，子类
+        不必再自己的类里面重新定义一回，父类里面有的我们直接拿过来用就好了。
+        而对于自己类里面需要用到的新的属性和方法，子类就可以自己来扩展了。
+ 
+    什么是多态？     
+
+        多态就是我们要把父类中定义的方法在子类里面重新实现一遍，多态包含了重载和重写。
+        
+    什么是重写？
+        
+        重写很简单就是把子类从父亲类里继承下来的方法重新写一遍，这样，父类里相同的方法就被覆盖了。
+        
+    什么是重载？
+        
+        重载就是类里面相同方法名，不同形参的情况，可以是形参类型不同或者形参个数不同，或者形参顺序不同，
+        但是不能使返回值类型不同。
+            
+        
 
 
 
 
+
+
+
+
+
+
+
+
+    
 
 
 
