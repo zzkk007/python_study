@@ -1508,17 +1508,67 @@
         
     functools模块的功能：
         
+        partial：
             
-        
-        
+            用于创建一个偏函数，将默认参数包装一个可调用对象，返回结果也是可调用对象。
+            偏函数可以固定住原函数的部分参数，从而在调用时更简单。
 
+                from functools import partial
     
+                int2 = partial(int, base=8)
+                print(int2('123'))
+                # 83
+                
+        update_wrapper：
+        
+            使用 partial 包装的函数是没有__name__和__doc__属性的。
+            update_wrapper 作用：将被包装函数的__name__等属性，拷贝到新的函数中去。        
+        
+            
+            from functools import update_wrapper
+            def wrap2(func):
+                def inner(*args):
+                    return func(*args)
+                return update_wrapper(inner, func)
+            
+            @wrap2
+            def demo():
+                print('hello world')
+            
+            print(demo.__name__)
+            # demo
 
+        wraps：
+            
+            warps 函数是为了在装饰器拷贝被装饰函数的__name__。
+            就是在update_wrapper上进行一个包装
+            
+            from functools import wraps
+                def wrap1(func):
+                    @wraps(func)	# 去掉就会返回inner
+                    def inner(*args):
+                        print(func.__name__)
+                        return func(*args)
+                    return inner
+                
+                @wrap1
+                def demo():
+                    print('hello world')
+                
+                print(demo.__name__)
+                # demo
+        
+        reduce：
+            
+            在 Python2 中等同于内建函数 reduce
+            函数的作用是将一个序列归纳为一个输出
+            reduce(function, sequence, startValue)
+                        
+            from functools import reduce
 
-
-
-
-
+                l = range(1,50)
+                print(reduce(lambda x,y:x+y, l))
+                # 1225    
 
 
 
