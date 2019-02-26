@@ -1096,7 +1096,25 @@
     print(list(m(2) for m in num()))     
     # [6, 6, 6, 6] 
     
-    
+7、求结果：
+
+    >>> 1 or 3
+    1
+    >>> 
+    >>> 1 and 3
+    3
+    >>> 
+    >>> 0 and 2 and 1
+    0
+    >>> 
+    >>> 0 and 2 or 1
+    1
+    >>> 
+    >>> 0 and 2 or 1 or 4
+    1
+    >>>
+    >>> 0 or False and 1     
+    False     
  
          
      
