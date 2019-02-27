@@ -949,7 +949,8 @@
 
 1、Python解释器种类以及特点？
 
-    CPython：这个解释器是用C语言开发的，所以叫CPython，在命名行下运行python，就是启动CPython解释器，CPython是使用最广的Python解释器。       
+    CPython：这个解释器是用C语言开发的，所以叫CPython，
+    在命名行下运行python，就是启动CPython解释器，CPython是使用最广的Python解释器。       
     
     Jython：Jython是运行在Java平台上的Python解释器，可以直接把Python代码编译成Java字节码执行。
     
