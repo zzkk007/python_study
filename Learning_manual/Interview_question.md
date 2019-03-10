@@ -168,7 +168,36 @@
 
 		Lambda是一个匿名函数，因为是匿名，所以可读性变差了
 		有时候有多个Lambda嵌套（就像实例中的第3点一样），让程序变得难以理解
+		
+    表达式和语句：
+        Python 代码由表达式和语句组成，并由 Python 解释器负责执行。
 
+        其中，“表达式”是一个值，它的结果一定是一个 Python 对象。    
+        当 Python 解释器计算它时结果可以是任何对象。
+        常见了 Python 表达式操作符有：
+            算术运算符、比较运行符、逻辑运算符(or, and, not )、成员关系符(in, not in)、
+            对象实例测试符(is, not is)、位运算符(&、|、^、<<、>>)
+            
+        结果不是对象的代码则称为“语句”。它们表示的是一个"动作"而不是生产或者返回一个值。
+        常见的 Python 语句有：
+            赋值语句（=）
+            调用
+            print;打印对象
+            if/elif/else：条件判断
+            for/else：序列迭代
+            while/else：普通迭代
+            pass: 占位符
+            break
+            continue
+            def
+            return
+            yield
+            global
+            raise
+            import
+            from
+            等等
+            
 3、如何捕获异常，常用的异常机制有哪些？
 
 	如果我们没有对异常进行任何预防，那么在程序执行的过程中发生异常，就会中断程序，
@@ -290,10 +319,6 @@
 		这意味着收集器可以释放它们并回收内存空间了。剩下的活跃的对象则被移动到一个新的链表：一代链表。
 		Python的GC算法类似于Ruby所用的标记回收算法。周期性地从一个对象到另一个对象追踪
 		引用以确定对象是否还是活跃的，正在被程序所使用的，这正类似于Ruby的标记过程。
-		
-		
-
-	
 
 		分代回收的整体思想是：将系统中的所有内存块根据其存活时间划分为不同的集合，
 		每个集合就成为一个“代”，垃圾收集频率随着“代”的存活时间的增大而减小，
@@ -401,13 +426,19 @@
 				return list
 		    
 		list1 = extend_list(10)
+		print(list1)
+		    #list1 = [10]   
 		list2 = extend_list(123, [])
+		print(list2) 
+		    # list2 = [123]  
 		list3 = extend_list('a')
-	 
+	    print(list3) 
+	        # list3 = [10, 'a']
+	    
 		print(list1) 
 			#list1 = [10, 'a']
 		print(list2) 
-			# list2 = [123, []]
+			# list2 = [123]
 		print(list3) 
 			# list3 = [10, 'a']
 	
@@ -424,7 +455,7 @@
 		print(Parent.x, Child1.x, Child2.x)  # [1,1,1]
 		Child1.x = 2
 		print(Parent.x, Child1.x, Child2.x)  # [1,2,1]
-		Partent.x = 3
+		Parent.x = 3
 		print(Parent.x, Child1.x, Child2.x)  # [3,2,3]
 
 
@@ -471,7 +502,8 @@
 	def maxCommon(a, b):
 		while b: a,b = b, a%b
 		return a
-			    
+		
+	# 最小公倍数 = 两者乘积 // 最大公约数		    	    
 	def minCommon(a, b):
 		c = a*b
 		while b: a,b = b, a%b
@@ -495,23 +527,27 @@
 
 
 17、输入一个整数，输出该数二进制表示中1的个数。其中负数用补码表示。
-
-	def getOneCount(num):
-		if num > 0:
-			count = b_num.count('1')
-				print(b_num)
-			    return count
-		elif num < 0:
-			b_num = bin(~num)
-			count = 8 - b_num.count('1')
-			           return count
-		else:
-			return 8
-							    
-	if __name__ == '__main__':
-		print(getOneCount(5))
-	    print(getOneCount(-5))
-	    print(getOneCount(0))
+    
+    def getOnecount(num):
+        if num > 0:
+            b_num = bin(num)
+            count = b_num.count('1')
+            print(b_num)
+            print(count)
+            return count
+    
+        elif num < 0:
+            b_num = bin(~num)
+            count = 8 - b_num.count('1')
+            print(b_num)
+            print(count)
+            return count
+        else:
+            return 8
+    
+    if __name__ == "__main__":
+        print(getOnecount(21))
+        print(getOnecount(0))
 
 
 18、使用递归把一个十进制数转换成二进制数：
@@ -589,15 +625,13 @@
 		print(list1)			
 
 23、使用递归求两个数的最大公约数：
-
-	def gcd1(n,m):
-		if m > n:
-			n,m = m,n
-		hcf = 1
-		for i in range(1,m+1):
-			if((n%i == 0) and (m%i==0)):
-				hcf = i
-		return hcf
+    
+    a = 36
+	b = 21 
+	def maxCommon(a, b):
+		while b: 
+		    a,b = b, a%b
+		return a   # 这里返回 a 的原因是，a 已经为 a%b 了。
 
 
 	def gcd(n,m):
@@ -677,12 +711,15 @@
 "================================================================="
 
 1、列表a = [1,2,3,4,5,6,7,8,9], a[5:0:-2]值是多少？
-
-	[6,4,2]
-
+    
+    a[5:0:-2]
+	    [6,4,2]
+    
+    a[-5:0:-2]
+        [5,3]
 	从index=5 到index=0,每隔1位取一个值。
-
-
+    这个要看a[m,n,k], 要看m,n的值是正还是负，正是从前数索引，负是从后数索引。k 的值是步调和方向。
+    
 2、存在数组a = [1,2,3,[4,5,6]]进行如下计算，a,b,c,d的值各是多少？
 
 	b = a
@@ -708,8 +745,9 @@
 
 3、1 and [""] or "False"
 
-	['']
-
+	结果为: ['']
+	
+	
 	and :逻辑与，只有当1 为真时，才是计算[""]
 
 	or : 逻辑或，只有当[""]为假时，才会执行"False"
@@ -950,26 +988,67 @@
 
 
 8、考虑下面情况，将得到什么结果？并解释为什么？
-
+    
+    u"" 是 unicode 编码 
+    
 	print "hello! %s" % u"中国"
+	    hello! 中国    
 		
 	print "hello ! %s" % "中国"
+	    hello ! 中国   
 
 	print u"hello ! %s" % "中国"
+	    UnicodeDecodeError: 'ascii' codec can't decode byte 0xe4 in position 0: ordinal not in range(128)
+	    
 
 9、用正则匹配一下ip地址:
 
 	localhost is 127.0.0.1
-
+    
+    127.0.0.1
+        [0-9]{1,3}(\.[0-9]{1,3}){3}
 
 
 10、一个列表中的元素有正有负，在该数组中找出一个连续的子数组，要求该连续子数组
 	中各元素的和最大，这个连续子数组便被称作最大连续子数组，然后返回该和值即可。
-	比如，数组[2, 4, -7, 5, 2, -4, 3] 的最大连续子数组为[5, 2, -1, 2],最大连续
-	子数组的和是5 + 2 - 1 + 2 = 8
-
-
-
+	比如，数组[2, 4, -7, 5, 2, -1, 2, -4, 3] 的最大连续子数组为[5, 2, -1, 2],
+	最大连续子数组的和是5 + 2 - 1 + 2 = 8
+    
+        def maxSubArray(nums):
+            sum = 0
+            max_sub_sum = nums[0]
+            print("max_sub_sum:%d" % max_sub_sum)
+        
+            for num in nums:
+                sum += num
+                print("sum:%d" % sum)
+                if sum > max_sub_sum:
+                    max_sub_sum = sum
+                if sum < 0:
+                    sum = 0
+        
+            return max_sub_sum
+        
+        if __name__ == "__main__":
+        
+            arr = [2, 4, -7, 5, 2, -1, 2, -4, 3]
+        
+            print(maxSubArray(arr))
+                
+        输出结果为：
+            max_sub_sum:2
+            sum:2
+            sum:6
+            sum:-1
+            sum:5
+            sum:7
+            sum:6
+            sum:8
+            sum:4
+            sum:7
+            8
+                           
+        
 "---------------------------------------------------------------------------"
 
     1、为什么使用装饰器函数，举出一例
@@ -1071,12 +1150,12 @@
             
             d.  API的变化:
                 zip()、map()和filter()现在都返回迭代器，而不是列表
-                keys()、dic .items()和dic .values()现在返回“视图”，而不是列表
+                keys()、dic.items()和dic.values()现在返回“视图”，而不是列表
                 iterkeys()、dic .iteritems()和dic .itervalues()不再受支持
             
             e.  比较运算符。排序比较操作符(<，<=，>=，>)现在在操作数没有有意义的自然排序时引发类型错误异常。
                 这方面的一些后果包括:
-                            表达式1 < "，0 > None或len <= len不再有效
+                            表达式1 < "， 0 > None或len <= len不再有效
                             None < None现在会引发一个类型错误，而不是返回False
                             对异构列表进行排序不再有意义——所有元素必须相互比较。
        
