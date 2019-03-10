@@ -495,13 +495,59 @@ HTTP 和 HTTPS:
 
 		Session：通过在 服务器端 记录的信息确定用户的身份。
     
-    
-    
-    
-    
-    
-    
+    session与cookie之间的关系:
         
+        1、客户端与服务端请求响应的关系
+            USER（客户端） 请求 tomcat（服务器）, 属于HTTP请求。http请求是无状态的,
+            即每次服务端接收到客户端的请求时，都是一个全新的请求，
+            服务器并不知道客户端的历史请求记录；所以当用户从客户端请求一次登录后，登录成功，
+            再次进行请求时，因为tomcat不能识别这两次会话都是来自同一个浏览器，
+            即服务端不知道客户端的历史请求记录；就会再次弹出登录对话框。
+        
+        2、为了解决客户端与服务端会话同步问题。这便引出了下面几个概念：cookie、session。
+        
+            于是，我们便把服务器中产生的会话sessionID存储到客户端浏览器cookie中去。
+            在客户端存在周期为浏览器关闭时，消失。这样便解决了客户端请求服务端会话不同步问题。
+            
+        3、cookie是什么：
+        
+            一个HTTP cookie的（网络Cookie，浏览器cookie）是一小片数据的
+            一个服务器发送到用户的网络浏览器。
+            浏览器可以存储它并将其与下一个请求一起发送回同一服务器。
+            通常，它用于判断两个请求是否来自同一个浏览器 
+            - 例如，保持用户登录。它记住无状态 HTTP协议的有状态信息。
+       
+        4、 session是什么：
+        
+            客户端请求服务端，服务端（Tomcat）会为这次请求开辟一块内存空间，
+            这个对象便是Session对象， 存储结构为ConcurrentHashMap。
+
+            session的目的：弥补HTTP无状态特性，服务器可以利用session存储
+            客户端在同一个会话期间的一些操作记录。    
+
+        5、session的实现机制:
+        
+            服务器如何判断客户端发送过来的请求属于同一个会话？
+                用session id区分；session id 相同即认为是同一个会话；  
+                在tomcat中session id中用JSESSIONID来表示；
+            
+            服务器、客户端如何获取sessionID?SessionID在期间是如何传输的？
+                
+                ​服务器第一次接收到请求时，开辟了一块Session空间（创建了Session对象），
+                同时生成一个Session id，并通过响应头的Set-Cookie：“JSESSIONID=XXXXXXX”命令，
+                向客户端发送要求设置cookie的响应；
+                客户端收到响应后，在本机客户端设置了一个JSESSIONID=XXXXXXX的cookie信息，
+                该cookie的过期时间为浏览器会话结束；
+
+                接下来客户端每次向同一个网站发送请求时，请求头都会带上该cookie信息
+                （包含Session id）； 然后，服务器通过读取请求头中的Cookie信息，
+                获取名称为JSESSIONID的值，得到此次请求的Session id；
+ 
+                ​注意：服务器只会在客户端第一次请求响应的时候，在响应头上添加Set-Cookie：
+                “JSESSIONID=XXXXXXX”信息，接下来在同一个会话的第二第三次响应头里，
+                是不会添加Set- Cookie：“JSESSIONID=XXXXXXX”信息的； 
+                而客户端是会在每次请求头的cookie中带上JSESSIONID信息；
+
 "---------------------------------------------------------------------------------------"
 
 Python2 中的 urllib、URLlib2和 Python3中的urllib.request and urllib.error及第三方模块requests
