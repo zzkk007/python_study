@@ -400,14 +400,91 @@ HTTP 和 HTTPS:
         504	Gateway Time-out	充当网关或代理的服务器，未及时从远端服务器获取请求
         505	HTTP Version not supported	服务器不支持请求的HTTP协议的版本，无法完成处理
         
-        
-    
+
     HTTP 缓存：
-    
         
-    
-    
-       
+        通过网络获取内容即缓慢，成本又高，大的响应需要在客户端和服务器之间进行多次往返通信，
+        这拖延了浏览器可以使用和处理内容的时间，同时也增加了访问者的数据成本。
+        因此，缓存和重用以前获取的资源的能力成为优化性能很关键的一方面。
+        
+        与缓存相关的 HTTP 头部字段：
+            
+            http1.1的缓存方案
+            通用头部字段，即请求和响应都可以包含
+            
+            头部名称          说明
+            Cache-Control    控制缓存行为
+            Pragma	http1.0的字段，作用和Cache-Control大体相同
+            
+            Cache-Control作为请求头部：
+            
+                指令             参数              说明
+                no-cache         无                强制向源服务器再次验证
+                no-store         无                不缓存请求或相应的任何内容
+                max-age=[秒]     必需              相应的最大 Age 值
+                max-stale=[秒]   可省略             接受已过期的响应
+                min-fresh=[秒]   必需               期望在指定时间内的响应仍有效
+                no-transform	 无	               代理不可更改媒体类型
+                only-if-cached	 无	               从缓存获取资源
+                cache-extension	-	               新指令标记（token）
+        
+                Cache-Control: no-cache：
+                
+                    使用 no-cache 指令的目的是为了防止从缓存中返回过期的资源。 
+                    客户端发送的请求中如果包含 no-cache 指令，则表示客户端将不会接 收缓存过的响应。    
+                
+                Cache-Control: max-age=604800（单位：秒）：
+                    
+                    当客户端发送的请求中包含 max-age 指令时，如果判定缓存资源的缓 
+                    存时间数值比指定时间的数值更小，那么服务端就直接返回304，
+                    客户端会使用自己本地缓存的资源。 
+                    另外，当指定 max-age 值为 0，那么服务器就会使用ETag和modefied-time验证，
+                    来决定返回304还是200。
+        
+            Cache-Control作为响应头部：
+            
+                指令              参数            说明
+                public            无             可向任意方提供响应缓存
+                private           可省略          仅向特定用户返回响应
+                no-cache          可省略          缓存前必需先确定其有效性
+                no-store          无              不缓存请求或相应的任何内容
+                max-age=[秒]      必需            响应的最大Age值
+                s-maxage=[秒]     必需            公共缓存服务器响应的最大Age值
+                cache-extension                   新指令标记(token)
+                
+            Cache-Control: public
+                
+                当指定使用 public 指令时，则明确表明其他用户也可利用缓存。
+                
+            Cache-Control: private
+                
+                当指定 private 指令后，响应只以特定的用户作为对象。
+                
+            Cache-Control: no-cache
+                
+                如果服务器返回的响应中包含 no-cache 指令，那么缓存服务器不能对 资源进行缓存。
+                
+            Cache-Control: no-cache=Location
+            
+                由服务器返回的响应中，若报文首部字段 Cache-Control 中对 no-cache 
+                字段名具体指定参数值，那么客户端在接收到这个被指定参数值的首部字段对应的响应报文后，
+                就不能使用缓存。换言之，无参数值的首 部字段可以使用缓存。只能在响应指令中指定该参数。            
+            
+            Cache-Control: no-store
+            
+                当使用 no-store 指令时，暗示请求（和对应的响应）或响应中包含机密信息。
+                因此，该指令规定缓存不能在本地存储请求或响应的任一部分。
+            
+            Cache-Control: max-age=604800（单位：秒）
+                     
+                当客户端发送的请求中包含 max-age 指令时，如果判定缓存资源的缓 存时间数值比指定时间的数值更小，
+                那么客户端就不会发起请求，而是直接使用自己本地缓存的资源。
+            
+            Cache-Control: s-maxage=604800（单位 ：秒） 
+                
+                s-maxage 指令的功能和 max-age 指令的相同，
+                它们的不同点是 smaxage 指令只适用于供多位用户使用的公共缓存服务器 
+            
 	Cookie 和 Session：
 
 		服务器和客户端的交互仅限于请求/响应过程，结束之后便断开，在下一次请求时，服务器会认为新的客户端。
@@ -417,7 +494,14 @@ HTTP 和 HTTPS:
 		Cookie：通过在 客户端 记录的信息确定用户的身份。
 
 		Session：通过在 服务器端 记录的信息确定用户的身份。
-
+    
+    
+    
+    
+    
+    
+    
+        
 "---------------------------------------------------------------------------------------"
 
 Python2 中的 urllib、URLlib2和 Python3中的urllib.request and urllib.error及第三方模块requests
