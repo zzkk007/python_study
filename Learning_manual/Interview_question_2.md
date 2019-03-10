@@ -6,6 +6,20 @@
 
 """python"""
 
+    1、python 测试工具以及区别
+    
+    2、单元测试模块以及库
+    
+    3、functools 库
+    
+    4、python2 和 python3 的区别
+
+    5、协程
+    
+    6、单例模式
+    
+    7、装饰器
+    
 
 """MySQL"""
 
@@ -123,7 +137,10 @@
                    软件一般採用sql注入检測工具jsky，站点平台就有亿思站点安全平台检測工具。
                    MDCSOFT SCAN等。採用MDCSOFT-IPS能够有效的防御SQL注入。XSS攻击等。
 
-
+    
+    3、MySQL 常用的引擎，及其区别：
+    
+        
 
 
 
