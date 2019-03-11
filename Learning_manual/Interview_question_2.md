@@ -84,17 +84,29 @@
           
 
 
-2、单元测试模块以及库
-    
-3、functools 库
-    
-4、python2 和 python3 的区别
+2、单元测试模块以及库:
 
-5、协程
     
-6、单例模式
     
-7、装饰器
+3、functools.wraps:
+
+    def user_login_data(f):
+        def wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+        retrun wrapper      
+    
+        
+    
+    
+    
+    
+4、python2 和 python3 的区别:
+
+5、协程:
+    
+6、单例模式:
+    
+7、装饰器:
 
 
 8、下面是什么函数？
