@@ -20,6 +20,21 @@
 6、单例模式
     
 7、装饰器
+
+
+8、下面是什么函数？
+
+    # 这是一个求质数函数，除了 1 和 本身之外没有别的约数。
+    def g(n):
+        for i in range(2,n):
+            if n%i == 0:
+                return False
+        return True
+        
+    xlist = [x for x in range(1,20) if g(x)]
+    print(xlist)
+    #[1, 2, 3, 5, 7, 11, 13, 17, 19]
+       
     
 
 """MySQL"""
