@@ -7,7 +7,82 @@
 """python"""
 
 1、python 测试工具以及区别
+
+    a. pep8/pycodestyle:
     
+        PEP 8 是一种 Python 代码规范指南，目的是保持代码的一致性，可读性。
+        检查自己代码是否符合 PEP8 规范，一个的简单的工具就是：pep8
+        
+        安装： pip install pep8
+        在使用时发现 pep8 给出了一个警告：
+                
+            $ pep8 gkcx.py
+            /usr/local/lib/python3.5/dist-packages/pep8.py:2124: UserWarning:
+            
+            pep8 has been renamed to pycodestyle (GitHub issue #466)
+            Use of the pep8 tool will be removed in a future release.
+            Please install and use `pycodestyle` instead.    
+        
+        意思是 pep8 已被 pycodestyle 替代！
+        
+        安装：pip install pycodestyle
+        
+        使用：$ pycodestyle [file name or directory name]
+        $ pycodestyle gkcx.py
+    
+    b. Pyflakes:
+    
+        一个用于检查 Python 源文件错误的简单程序。
+        
+        Pyflakes 分析程序并检查各种错误。它通过解析源文件实现，无需导入它。
+        因此在模块中使用是安全的，没有任何副作用。
+        
+        不会检查代码风格
+        由于它是单独检查各个文件，因此它也相当的快，当然检查范围有一定的局限性。
+        
+        安装：pip install pyflakes
+        
+        使用：pyflakes [file name or directory name]
+        $ pyflakes gkcx.py           
+                    
+    c. Pylint:
+    
+        PyLint 是 Python 源代码分析器，可以分析 Python 代码中的错误，
+        查找不符合代码风格标准和有潜在问题的代码，是一个可以用于验证
+        多个文件的模块和包的工具。
+        
+        缺省情况下，PyLint 启用许多规则，它具有高度可配置性，
+        从代码内部处理程序控制它，另外，编写插件添加到自己的检查中是可能的。
+        
+        安装：pip install pylint
+        使用：pylint [options] module_or_package
+        $ pylint gkcx.py
+        
+        如果运行两次 Pylint，它会同时显示出当前和上次的运行结果，从而可以看出代码质量是否得到了改进。
+        
+        错误代码含义:
+        
+            C：惯例，违反了编码风格标准
+            R：重构，代码非常糟糕
+            W：警告，某些 Python 特定的问题
+            E：错误，很可能是代码中的错误
+            F：致命错误，阻止 Pylint 进一步运行的错误
+    
+    d. flake8:
+    
+        Flake8 是由 Python 官方发布的一款辅助检测 Python 代码是否规范的工具，
+        相对于目前热度比较高的 Pylint 来说，Flake8 检查规则灵活，支持集成额外插件，扩展性强。
+        Flake8 是对下面三个工具的封装：
+
+        PyFlakes：静态检查 Python 代码逻辑错误的工具。
+        Pep8： 静态检查 PEP8 编码风格的工具。
+        NedBatchelder’s McCabe ：静态分析 Python 代码复杂度的工具。
+        不光对以上三个工具的封装，Flake8还提供了扩展的开发接口。    
+        
+        安装： pip install flake8  
+        使用:  基本使用方法：flake8 [file name or directory name]
+          
+
 
 2、单元测试模块以及库
     
