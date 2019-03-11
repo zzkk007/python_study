@@ -172,7 +172,14 @@
     
 3、MySQL 常用的引擎，及其区别：
     
+    MyISAM:
         
+        
+    
+    InnoDB:
+    
+    Memory:
+              
 
 
 
