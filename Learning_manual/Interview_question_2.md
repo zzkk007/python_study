@@ -139,8 +139,58 @@
             
      
     
-3、functools.wraps 库
+3、functools.wraps 库：
+
+    python装饰器中functools.wraps的作用详解
     
+    　　# 定义一个最简单的装饰器
+    　　def user_login_data(f):
+    　　　　def wrapper(*args, **kwargs):
+    　　　　　　return f(*args, **kwargs)
+    　　　　return wrapper
+    
+    　　# 用装饰器装饰以下两个函数　　
+    　　@user_login_data
+    　　def num1():
+    　　　　print("aaa")
+    
+    　　@user_login_data
+    　　def num2():
+    　　　　print("bbbb")
+  
+    　　if __name__ == '__main__':
+    　　　　print(num1.__name__)
+    　　　　print(num2.__name__)       
+        
+    以上代码的输出结果为：wrapper、wrapper。
+    
+    由此函数使用装饰器时,函数的函数名即 __name__已经被装饰器改变.
+    一般定义装饰器的话可以不用考虑这点,但是如果多个函数被两个装饰器装饰时就报错,
+    因为两个函数名一样,第二个函数再去装饰的话就报错.
+
+    解决方案就是引入  functools.wraps  ,以上代码的解决如下: 
+    
+        def user_login_data(f):
+            @functools.wraps(f)
+            def wrapper(*args, **kwargs):
+                return f(*args, **kwargs)
+                
+            return wrapper      
+    
+    增加@functools.wraps(f), 可以保持当前装饰器去装饰的函数的 __name__ 的值不变
+    以上输出结果就是:
+        num1
+        num2
+        
+    Python装饰器（decorator）在实现的时候，有一些细节需要被注意。
+    例如，被装饰后的函数其实已经是另外一个函数了（函数名等函数属性会发生改变）。
+    这样有时候会对程序造成一些不便。
+    
+    所以，Python的functools包中提供了一个叫wraps的decorator来消除这样的副作用。
+    写一个decorator的时候，最好在实现之前加上functools的wrap，
+    它能保留原有函数的名称和docstring。
+        
+   
 4、python2 和 python3 的区别
 
 5、协程
