@@ -1,15 +1,18 @@
 from time import ctime, sleep
 
-def timefun(func):
-    def wrappedfunc():
-        print("%s called at %s"%(func.__name__, ctime()))
-        return func()
-    return wrappedfunc
 
-@timefun
-def getInfo():
-    return '----hahah---'
+def timefunc_age(pre="hello"):
+    def timefunc(func):
+        def wrappedfunc():
+            print("%s called at %s %s" % (func.__name__, ctime(), pre))
+            return func()
+        return  wrappedfunc
+    return timefunc
 
 
-print(getInfo())
+@timefunc_age('world')
+def foo():
+    print('I am foo')
+
+foo()
 

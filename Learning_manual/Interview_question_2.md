@@ -545,9 +545,27 @@
         一般情况下为了让装饰器更通用，可以有return
 
 10、装饰器带参数：
+    
+    装饰器带参数,在原有装饰器的基础上，设置外部变量
+    
+    from time import ctime, sleep
+    
+    def timefunc_age(pre="hello"):
+        def timefunc(func):
+            def wrappedfunc():
+                print("%s called at %s %s"%(func.__name__,ctime(), pre)) 
+                return func()
+            return wrappedfunc
+        return timefunc
+        
+    @timefunc_age('world') 
+    def too():
+        print("I am too")          
+   
+    too()
+   
 
             
-        
         
 
 11、下面是什么函数？
