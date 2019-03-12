@@ -436,6 +436,41 @@
         锁级别为表锁，不支持事务。    
 
 
+4、数据库常用到的函数：
+    
+    数据处理函数/单行处理函数：
+        
+        Lower		转换小写
+        upper		转换大写
+        substr		取子串（substr(被截取的字符串,起始下标,截取的长度)）
+        length		取长度
+        trim		去空格
+        str_to_date	将字符串转换成日期
+        date_format	格式化日期
+        format		设置千分位
+        round		四舍五入
+        rand()		生成随机数
+        Ifnull		可以将null转换成一个具体值
+        now()		获得当前时间    
+    
+    聚合：为了快速得到统计数据，提供了5个聚合函数：
+    
+        1、count( *)表示计算总行数，括号中写星与列名，结果是相同的
+		    select count( *) from students;
+
+        2、max(列)表示求此列的最大值
+            select max(id) from student where gender = 0;
+    
+        3、min(列)表示求此列的最小值
+            select min(id) from student where isdelete = 0;
+    
+        4、sum(列)表示求此列的和
+            select sum(id) from student where gender =1;
+    
+        5、avg(列)求此列的平均值
+            select avg(id) from students where isdelete=0 and gender=0;     
+    
+    
 """other"""
 
 1、RESTful api:
