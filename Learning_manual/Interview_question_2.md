@@ -266,11 +266,291 @@
   
 6、单例模式:
 
+    单例是什么：
+
+        确保某一个类只有一个实例，而且自行实例化并向整个系统提供这个实例，这个类称为单例类，
+        单例模式是一种对象创建型模式。	
+
+
+    创建单例-保证只有1个对象:
+
+        # 实例化一个单例
+        class Singleton(object):
+            __instance = None
+    
+            def __new__(cls, age, name):
+                
+                #如果类数字能够__instance没有或者没有赋值
+                #那么就创建一个对象，并且赋值为这个对象的引用，保证下次调用这个方法时
+                #能够知道之前已经创建过对象了，这样就保证了只有1个对象
+                
+                if not cls.__instance:
+                        cls.__instance = object.__new__(cls)
+                
+                return cls.__instance
+    
+    
+        a = Singleton(18, "dongGe")
+        b = Singleton(8, "dongGe")
+    
+        id(a)
+            140298627282200
+        id(b)
+            140298627282200
+    
+        a.age = 19
+        print(b.age)
+            19
+    
+
+
+    创建单例时，只执行1次__init__方法:
+
+        # 实例化一个单例
+        class Singleton(object):	
+            __instance = None
+            __first_init = False
+            
+            def __new__(cls, age, name):
+                if not cls.__instance:
+                    cls.__instance = object.__new__(cls)
+                return cls.__instance
+    
+            def __init__(self, age, name):
+                if not self.__first_init:
+                    self.age = age
+                    self.name = name
+                    Singleton.__first_init = True
+    
+        a = Singleton(18, "dongGe")
+        b = Singleton(8, "dongGe")
+    
+        print(id(a))
+            140298627282200
+        print(id(b))
+            140298627282200
+    
+    
+        print(a.age)
+            18
+        print(b.age)
+            18
+    
+        a.age = 19
+        print(b.age)
+            19
+
+    想创建单例必须使用__new__，代表要实例化的类。
+    __init__只能保证一个实例参数一致，并不能保证一个实例。
     
 7、装饰器：
+        
+    def w1(func):
+        def inner():
+        
+            # 验证1
+            # 验证2
+            # 验证3
+            func()
+        return inner
+    
+    @w1
+    def f1():
+        print('f1')
+    
+    Python 解释器就会从上到下解释代码，步骤如下：
+    
+        (1) def w1(func):  ==> 将 w1 函数加载到内存
+        (2) @w1
+        
+    没错，从表面上看解释器仅仅会解释这两句代码，因为函数在没有被调用之前起内部代码不会被执行。
+    从表面上看解释器着实会执行这两句，但是 @w1 这一句代码里却有大文章， 
+    @函数名 是python的一种语法糖。        
+            
+    上例@w1内部会执行一下操作：
+        
+        执行 w1 函数，并将 @w1 下面的函数作为 w1 函数的参数，即：@w1 等价于 w1(f1)
+        内部会执行：
+            
+            def inner():
+                # 验证 1
+                # 验证 2
+                # 验证 3
+                f1()  # func 是参数，此时 func 等于 f1
+            #返回的 inner，inner代表的是函数，非执行函数,
+            #其实就是将原来的 f1 函数塞进另外一个函数中。    
+            return inner
+    
 
+8、再议装饰器：
+    
+    #定义函数：完成包裹数据
+    def makeBold(fn):
+        def wrapped():
+            return "<b>" + fn() + "</b>"
+        return wrapped
+    
+    #定义函数：完成包裹数据
+    def makeItalic(fn):
+        def wrapped():
+            return "<i>" + fn() + "</i>"
+        return wrapped
+    
+    @makeBold
+    def test1():
+        return "hello world-1"
+    
+    @makeItalic
+    def test2():
+        return "hello world-2"
+    
+    @makeBold
+    @makeItalic
+    def test3():
+        return "hello world-3"
+    
+    print(test1()))
+    print(test2()))
+    print(test3()))              
+    
+    运行结果:
+        
+        <b>hello world-1</b>
+        <i>hello world-2</i>
+        <b><i>hello world-3</i></b>            
+                                 
+    装饰器(decorator)功能:
+    
+        引入日志
+        函数执行时间统计
+        执行函数前预备处理
+        执行函数后清理功能
+        权限校验等场景
+        缓存    
+                         
+9、装饰器示例：
 
-8、下面是什么函数？
+    例1:无参数的函数：
+    
+    from time import ctime, sleep
+  
+    def timefun(func):
+        def wrappedfunc():
+            print("%s called at %s"%(func.__name__,ctime()))   
+            func()
+        return wrappedfunc
+    
+    @timefun
+    def foo():
+        pront("I am foo")
+        
+    foo()
+    sleep(2)
+    foo()
+    
+    上面的代码理解装饰器执行行为可以理解成:
+        
+        #foo先作为参数赋值给func后,foo接收指向timefun返回的wrappedfunc
+        foo = timefunc(foo)
+        
+        #调用foo(),即等价调用wrappedfunc()
+        foo()
+        
+    例2:被装饰的函数有参数:
+    
+        from time import ctime, sleep
+
+        def timefun(func):
+            def wrappedfunc(a, b):
+                print("%s called at %s"%(func.__name__, ctime()))
+                print(a, b)
+                func(a, b)
+            return wrappedfunc
+        
+        @timefun
+        def foo(a, b):
+            print(a+b)
+        
+        foo(3,5)
+        sleep(2)
+        foo(2,4)        
+    
+    例3:被装饰的函数有不定长参数:
+    
+        from time import ctime, sleep
+
+        def timefun(func):
+            def wrappedfunc(*args, **kwargs):
+                print("%s called at %s"%(func.__name__, ctime()))
+                func(*args, **kwargs)
+            return wrappedfunc
+        
+        @timefun
+        def foo(a, b, c):
+            print(a+b+c)
+        
+        foo(3,5,7)
+        sleep(2)
+        foo(2,4,9)    
+                    
+    例4:装饰器中的return:
+    
+        from time import ctime, sleep
+
+        def timefun(func):
+            def wrappedfunc():
+                print("%s called at %s"%(func.__name__, ctime()))
+                func()
+            return wrappedfunc         
+         
+        @timefun
+        def foo():
+            print("I am foo")
+        
+        @timefun
+        def getInfo():
+            return '----hahah---'                          
+        
+        foo()
+        sleep(2)
+        foo()   
+        
+        print(getInfo())
+        
+        执行结果：
+            foo called at Fri Nov  4 21:55:35 2016
+            I am foo
+            foo called at Fri Nov  4 21:55:37 2016
+            I am foo
+            
+            getInfo called at Fri Nov  4 21:55:37 2016
+            None
+        
+        如果修改装饰器为return func()，则运行结果： 
+            def timefun(func):
+                def wrappedfunc():
+                    print("%s called at %s"%(func.__name__, ctime()))
+                    return func()
+                return wrappedfunc           
+            
+        执行结果：
+                
+                foo called at Fri Nov  4 21:55:57 2016
+                I am foo
+                foo called at Fri Nov  4 21:55:59 2016
+                I am foo
+                getInfo called at Fri Nov  4 21:55:59 2016
+                ----hahah---
+            
+        一般情况下为了让装饰器更通用，可以有return
+
+10、装饰器带参数：
+
+            
+        
+        
+
+11、下面是什么函数？
 
     # 这是一个求质数函数，除了 1 和 本身之外没有别的约数。
     def g(n):
@@ -284,7 +564,19 @@
     #[1, 2, 3, 5, 7, 11, 13, 17, 19]
        
        
-9、产生一个混合密码：
+12、产生一个混合密码：
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
                  
 """MySQL"""
 
