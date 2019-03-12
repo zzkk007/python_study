@@ -86,7 +86,73 @@
 
 2、单元测试模块以及库
     
-3、functools 库
+    单元测试是用来对一个模块、一个函数或者一个类来进行正确性检验的测试工作。
+    
+    比如函数 abs()，我们可以编写出以下几个测试用例：
+        
+        a. 输入正数，比如 1、1.2、0.99, 期待返回值与输入相同。
+        
+        b. 输入负数，比如 -1、-1.2、-0.99，期待返回值与输入相反。
+        
+        c. 输入 0 ，期待返回 0；
+        
+        d. 输入非法值类型，比如 None、[]、{}，期待抛出 TypeError。
+        
+    把上面的测试用例放到一个测试模块里，就是一个完整的单元测试。
+    如果单元测试通过，说明我们测试的这个函数能够正常工作，如果单元测试不通过，
+    要么函数有bug，要么测试条件输入不正确，总之，需要修复单元测试能够通过。
+    
+    单元测试通过后有什么意义呢？如果我们对 abs() 函数代码做了修改，只需要
+    再跑一遍单元测试，如果通过，说明我们的修改不会对 abs()函数原有的行为造成
+    影响，如果测试不通过，说明我们的修改和原有行为不一致，要么修改代码，要么修改测试。
+    
+    我们来编写一个 Dict 类，这个类的行为和 dict 一致，但是可以通过属性来访问，
+    用起来就像下面这样：
+        >>> d = Dict(a=1, b=2)
+        >>> d['a']
+        1
+        >>> d.a
+        1
+    
+    mydict.py 代码如下：
+    
+        class Dict(dict):
+            
+            def __init__(self, **kw):
+                super().__init__(**kw)
+                
+            def __getattr__(self, key):
+                try:
+                    retrun self[key]
+                except KeyError:
+                    raise AttributeError("Dict object has no attribute %s" % key)
+            
+            def __setattr__(self, key, value):
+                self[key] = value
+                        
+    为了编写单元测试，我们需要引入 Python 自带的 unittest 模块，编写 mydict_test.py 如下：
+        
+        import unittest
+        from mydict import Dict
+        
+        class TestDict(unittest.TestCase):
+            
+        
+        
+        
+                          
+          
+    
+    
+    
+    
+    
+    
+    
+    
+         
+    
+3、functools.wraps 库
     
 4、python2 和 python3 的区别
 
