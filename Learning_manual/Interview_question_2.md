@@ -137,20 +137,7 @@
         
         class TestDict(unittest.TestCase):
             
-        
-        
-        
-                          
-          
-    
-    
-    
-    
-    
-    
-    
-    
-         
+     
     
 3、functools.wraps 库
     
