@@ -581,18 +581,31 @@
        
 12、产生一个混合密码：
   
+    >>> import string
+    >>> dir(string)
+    ['Formatter', 'Template', '_ChainMap', '_TemplateMetaclass', '__all__', '__builtins__', 
+    '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', 
+    '_re', '_string', 'ascii_letters', 'ascii_lowercase', 'ascii_uppercase', 
+    'capwords', 'digits', 'hexdigits', 'octdigits', 'printable', 'punctuation', 'whitespace']
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-                 
+    >>> string.ascii_letters
+    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    >>> string.hexdigits
+    '0123456789abcdefABCDEF'
+    >>> string.ascii_uppercase
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 
+    >>> string.punctuation
+    '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~' 
+    >>> string.printable
+    '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n\r\x0b\x0c'
+    
+    >>> ss =random.sample(string.printable, 8)
+    >>> ss
+    ['&', ':', 'A', '}', '%', 'b', 'V', 'B']
+    >>> "".join(ss)
+    '&:A}%bVB'
+    
+              
 """MySQL"""
 
 1、MySQL 查询优化:
