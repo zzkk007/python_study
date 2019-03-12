@@ -193,11 +193,63 @@
    
 4、python2 和 python3 的区别:
     
-    
+    (1). Print:
 
+       在 Python 2 中， print 被视为一个语句而不是一个函数。
+       在使用 Python 3 时，print（）会被显式地视为一个函数。
+       
+    （2）整数的除法：
     
-
+        debian:~$ python
+        Python 2.7.14 (default, May  2 2018, 15:37:08) 
+        [GCC 4.7.2] on linux2
+        Type "help", "copyright", "credits" or "license" for more information.
+        >>> 
+        >>> 
+        >>> 5 / 2
+        2
+        >>> 
+        >>> 
+        debian:~$ python3
+        Python 3.6.4 (default, May  2 2018, 15:27:32) 
+        [GCC 4.7.2] on linux
+        Type "help", "copyright", "credits" or "license" for more information.
+        >>> 
+        >>> 5/2
+        2.5
+        >>>     
+       
+    （3）支持 Unicode：
+    
+        Python 2 默认使用 ASCII 字母表，因此当您输入“Hello，Sammy！”时， Python 2 将以 ASCII 格式处理字符串。
+        Python 3 默认使用 Unicode，这节省了程序员多余的开发时间，并且您可以轻松地在程序中直接键入和显示更多的字符。   
+            
+    （4）后续发展：
+        
+         Python 3 和 Python 2 之间的最大区别不是语法上的，而是事实上 Python 2.7 将在 2020 年失去后续的支持，
+         Python 3 将继续开发更多的功能和修复更多的错误。
+        
+    （5）父类调用：
+   
+        Python 3 可以使用直接使用 super().xxx 代替 super(Class, self).xxx 
+    
+    
+    （6）API的变化:
+        
+        zip()、map()和filter()现在都返回迭代器，而不是列表
+        keys()、dic.items()和dic.values()现在返回“视图”，而不是列表
+        iterkeys()、dic .iteritems()和dic .itervalues()不再受支持   
+        
+    (7)
+        long整数类型被Python3废弃，统一使用int
+        xrange()函数被 pytho3 废弃
+        raw_input()函数被 pytho3 废弃        
+    
 5、协程:
+
+    迭代器和生成器：
+    
+    
     
 6、单例模式:
 
