@@ -341,7 +341,9 @@
             需要牢记的第一条就是dict的key必须是不可变对象        
                 
         set:
-        
+            
+            set 和 dict 类似，也是一组 key 的集合，但不存储 value。由于key不能重复，所以，在set中，没有重复的key。   
+            
                     
                 
                 
