@@ -252,5 +252,41 @@
                 print('True')
                 
         只要x是非零数值、非空字符串、非空list等，就判断为True，否则为False。        
-                    
+                            
+        input：  
+            
+            >>> birth = input('birth:')
+            birth:200
+            >>> if birth < 200:
+            ...     print('00 before')
+            ... else:
+            ...     print('00 after')
+            ... 
+            Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+            TypeError: '<' not supported between instances of 'str' and 'int'
+            
+            这是因为 input() 返回的数据类型是str, str 不能直接和整数比较，
+            必须先把 str 转换成整数，Python 提供了 int() 函数来完成这个事。
+            
+            s = input('birth: ')
+            birth = int(s)
+            if birth < 2000:
+                print('00前')
+            else:
+                print('00后')     
+                
+            但是，如果输入abc呢？又会得到一个错误信息：
+          >>> aa = int(input('birth:')) 
+          birth:abc
+          Traceback (most recent call last):
+           File "<stdin>", line 1, in <module>
+          ValueError: invalid literal for int() with base 10: 'abc'
+            
+          因为int()函数发现一个字符串并不是合法的数字时就会报错，程序就退出了。    
+    
+    7、循环:
+    
         
+    
+                
