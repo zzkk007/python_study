@@ -75,12 +75,102 @@
         
     4、Python 的字符串：
     
-             
+        在最新的 Python 3 版本中，字符串是以 Unicode 编码的，也就是说，Python 字符串支持多语言：
+            
+            >>>print('包含中文的str')
+            包含中文的str
+        
+        对于单个字符的编码，Python 提供了 ord() 函数获取字符的整数表示，chr()函数把编码转换成对于字符。
+            >>> ord('中')    
+            20013
+            >>> 
+            >>> ord('A')
+            65
+            >>> 
+            >>> chr(66)
+            'B'
+            >>> chr(20014)
+            '丮'
+            >>>      
+        
+        如果知道字符的整数编码，还可以用十六进制这么写 str：
+            >>> ord('中')    
+            20013
+            >>> 
+            >>> chr(20013)
+            '中'
+            >>> 
+            >>> hex(20013)
+            '0x4e2d'
+            >>> 
+            >>> '\u4e2d'
+            '中'
+            >>> 
+        两种写法完全等价。
         
         
-         
+        由于 Python 的字符串类型是 str, 在内存中以 Unicode 表示，一个字符串对应若干个字节。
+        如果要在网络上传输，或者保存到磁盘上，就需要把 str 变成以字节为单位的 bytes。
         
+        Python 对 bytes 类型的数据用带 b 前缀的单引号或双引号表示：
+            
+            x = b'ABC'
         
+        要注意区分 'ABC' 和 b'ABC'，前者是 str, 后者虽然内容显示和前者一样，但 bytes 的每个字符都只占用一个字节。
+        
+        以 Unicode 表示的 str 通过 encode() 方法可以编码为指定的 bytes, 例如：
+        
+            >>> 'ABC'.encode('ASCII')
+            b'ABC'
+            >>> 
+            >>> 'ABC'.encode('utf-8')
+            b'ABC'
+            >>> 
+            >>> 
+            >>> '中文'.encode('utf-8')
+            b'\xe4\xb8\xad\xe6\x96\x87'
+            >>> 
+            >>> '中文'.encode('ASCII')
+            Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+            UnicodeEncodeError: 'ascii' codec can't encode characters in position 0-1: ordinal not in range(128)
+            >>> 
+                           
+        纯英文的 str 可以用 ASCII 编码为 bytes, 内容是一样的，含有中文的 str 可以用 UTF-8 编码为 bytes。
+        含有中文的str无法用ASCII编码，因为中文编码的范围超过了ASCII编码的范围，Python会报错。
+        在bytes中，无法显示为ASCII字符的字节，用\x##显示。
+        
+        反过来，如果我们从网络或者磁盘上读取了字节流，那么读到的数据是 bytes。
+        要把 bytes 变成 str，就需要用 decode() 方法。
+            
+            >>> b'ABC'.decode('ascii')
+            'ABC'
+            >>> b'\xe4\xb8\xad\xe6\x96\x87'.decode('utf-8')
+            '中文'
+        如果bytes中包含无法解码的字节，decode()方法会报错：
+
+            >>> b'\xe4\xb8\xad\xff'.decode('utf-8')
+            Traceback (most recent call last):
+              ...
+            UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 3: invalid start byte    
+                     
+        如果bytes中只有一小部分无效的字节，可以传入errors='ignore'忽略错误的字节：
+            
+            >>> b'\xe4\xb8\xad\xff'.decode('utf-8', errors='ignore')
+            '中'
+        
+        len()函数计算的是str的字符数，如果换成bytes，len()函数就计算字节数：
+            
+            >>> len(b'ABC')
+            3
+            >>> len(b'\xe4\xb8\xad\xe6\x96\x87')
+            6
+            >>> len('中文'.encode('utf-8'))
+            6   
+        
+        可见，1个中文字符经过UTF-8编码后通常会占用3个字节，而1个英文字符只占用1个字节。            
+        在操作字符串时，我们经常遇到 str 和 bytes 的互相转换，为了避免乱码问题，
+        应当坚持使用 UTF-8 编码对 str 和 bytes 进行转换。
         
         
         
