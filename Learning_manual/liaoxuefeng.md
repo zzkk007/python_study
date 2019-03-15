@@ -229,6 +229,28 @@
         
         理解了“指向不变”后，要创建一个内容也不变的 tuple 怎么做，那就是必须保证tuple中
         的每个元素本身也是不变的。
+    
+    6、条件判断：
+    
+        if 语句执行有一个特点，它是从上往下判断，如果在某个判断上是 True, 把该判断对应的
+        语句执行后，就忽略掉剩下的 elif 和 else, 所以，为什么下面程序的打印结果是 teenager：
         
-        
+            >>> age = 20
+            >>> if age>6:
+            ...     print('teenager')
+            ... elif age==20:
+            ...     print('adult')
+            ... else:
+            ...     print('kid')
+            ... 
+            teenager
+            >>>        
+            
+        if判断条件还可以简写，比如写：
+
+            if x:    
+                print('True')
+                
+        只要x是非零数值、非空字符串、非空list等，就判断为True，否则为False。        
+                    
         
