@@ -345,9 +345,252 @@
         set:
             
             set 和 dict 类似，也是一组 key 的集合，但不存储 value。由于key不能重复，
-            所以，在set中，没有重复的key。   
+            所以，在set中，没有重复的key。
             
+            要创建一个 set, 需要提供一个 list 作为输入集合：
+            >>> s = set([1, 2, 3])
+            >>> s
+            {1, 2, 3}
+            
+            注意：传入的参数 [1, 2, 3]是一个 list, 而显示的 {1, 2, 3}只是告诉你这个 set 内部
+            有 1, 2, 3 这 3 个元素，显示的顺序也不表示 set 是有序的。
+            
+            set和dict的唯一区别仅在于没有存储对应的value，但是，set的原理和dict一样，所以，同样不可以放入可变对象。
+       
+            
+"""02| 函数 """            
                     
+    1、调用函数：
+        函数就是最基本的一种代码抽象的方式。
+        调用函数的时候，如果传入的参数数量不对，会报 TypeError 的错误，
+        并且 Python 会明确的告诉你：abs() 有且只有 1 个参数，但给出了两个：
+        >>> abs(1, 2)
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+        TypeError: abs() takes exactly one argument (2 given)
+        
+        如果传入的参数数量是对的，但参数类型不能被函数所接受，也会报TypeError的错误，
+        并且给出错误信息：str是错误的参数类型：                         
+        >>> abs('a')
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+        TypeError: bad operand type for abs(): 'str'        
+        
+        数据类型转换：
+        
+            >>> bool(1)
+            True
+            >>> bool('')
+            False            
+                            
+        函数名其实就是指向一个函数对象的引用，完全可以把函数名赋值给一个变量，
+        相当于给这个函数起一个“别名”
+        >>> a = abs
+        >>> a(-1)
+        1
+                
+    2、定于函数：
+        
+        注意，函数体内部的语句在执行时，一旦执行到 return 时，函数就执行完毕，并将结果返回。
+        因此，函数内部通过条件判断和循环可以实现非常复杂的逻辑。
+        
+        如果没有 return 语句，函数执行完毕后也会返回结果，只是结果为 None, return None, 可以简写return。
+        
+        空函数：
+            如果想定义一个什么事也不做的空函数，可以用 pass 语句：
+            def nop():
+                pass
+                
+            pass 语句什么都不做，那有什么用？实际上 pass 可以用来作为占位符，
+            比如现在还没有想好怎么写函数的代码，可以先放一个 pass,让代码能运行
+            起来，比如：
+           
+                if age >= 18:
+                    pass
+                
+            缺少 pass, 代码运行就会出现语法错误。
+            
+            定义函数时，需要确定函数名和参数个数；
+
+        如果有必要，可以先对参数的数据类型做检查；
+        
+            isinstance:
+                def my_abs(x):
+                    if not isinstance(x, (int, float)):
+                        raise TypeError('bad operand type')
+                    if x >= 0:
+                        return x
+                    else:
+                        return -x
+            type():
+            
+                ip_port = ['219.135.164.245', 3128]
+                if type(ip_port) is list:
+                    print('list数组')
+                else:
+                    print('其他类型')
+            
+            isinstance() 和 type() 的区别在于：
+            type()不会认为子类是一种父类类型
+            isinstance()会认为子类是一种父类类型       
+            
+            class A:
+                pass
+            
+            class B(A):
+                pass
+            
+            isinstance(A(), A)  # returns True
+            type(A()) == A      # returns True
+            isinstance(B(), A)    # returns True
+            type(B()) == A        # returns False
+            
+        
+        函数体内部可以用return随时返回函数结果；
+        函数执行完毕也没有return语句时，自动return None。
+        函数可以同时返回多个值，但其实就是一个tuple。      
+    
+    3、参数调用：                    
+                
+        函数如下：
+            
+            def add_end(L=[]):
+                L.append('END')
+                return L            
+            
+            >>> add_end()
+            ['END', 'END']
+            >>> add_end()
+            ['END', 'END', 'END']        
+                
+        默认参数是[]，但是函数似乎每次都“记住了”上次添加了'END'后的list。
+        
+        原因解释如下：
+        
+            Python函数在定义的时候，默认参数L的值就被计算出来了，即[]，
+            因为默认参数L也是一个变量，它指向对象[]，每次调用该函数，如果改变了L的内容，
+            则下次调用时，默认参数的内容就变了，不再是函数定义时的[]了。            
+                
+        定义默认参数要牢记一点：默认参数必须指向不变对象。
+        要修改上面的例子，我们可以用None这个不变对象来实现：
+            
+            def add_end(L=None):
+                if L is None:
+                    L = []
+                L.append('END')
+                return L        
+                
+        Python的函数具有非常灵活的参数形态，既可以实现简单的调用，又可以传入非常复杂的参数。
+
+        默认参数一定要用不可变对象，如果是可变对象，程序运行时会有逻辑错误！
+        要注意定义可变参数和关键字参数的语法：
+        *args是可变参数，args接收的是一个tuple；
+        **kw是关键字参数，kw接收的是一个dict。
+        
+        以及调用函数时如何传入可变参数和关键字参数的语法：
+        可变参数既可以直接传入：func(1, 2, 3)，又可以先组装list或tuple，再通过*args传入：func(*(1, 2, 3))；
+        关键字参数既可以直接传入：func(a=1, b=2)，又可以先组装dict，再通过**kw传入：func(**{'a': 1, 'b': 2})。
+        使用*args和**kw是Python的习惯写法，当然也可以用其他参数名，但最好使用习惯用法。
+        命名的关键字参数是为了限制调用者可以传入的参数名，同时可以提供默认值。
+        定义命名的关键字参数在没有可变参数的情况下不要忘了写分隔符*，否则定义的将是位置参数。        
+    
+    4、递归函数：
+    
+        使用递归函数需要注意防止栈溢出。在计算机中，函数调用听过栈(stack)这种数据结构实现，
+        每进入一个函数调用，栈就会加上一层栈帧，每当函数返回，栈就会减一层栈帧。
+        由于栈的大小不是无限的，所以，递归函数调用次数过多，会导致栈溢出。
+        
+        解决递归调用栈溢出的方法是通过尾递归优化，事实上尾递归和循环的效果是一样的，所以，
+        把循环看成是一种特殊的尾递归函数也是可以的。
+        
+        尾递归是指，在函数返回的时候，调用自身本身，并且，return 语句不包含表达式。
+        这样，编译器或者解释器就可以把尾递归做优化，使递归本身无论调用多少次，
+        都只占用一个栈帧，不会出现栈溢出的情况。
+        
+        举个例子，我们来计算阶乘n! = 1 x 2 x 3 x ... x n，用函数fact(n)表示，可以看出：
+        fact(n)用递归的方式写出来就是：
+
+            def fact(n):
+                if n==1:
+                    return 1
+                return n * fact(n - 1)
+            
+        由于 fact(n) 函数由于 return n*fact(n - 1) 引入了乘法表达式，所以就不是尾递归。
+        要改成尾递归方式，需要多一点代码，主要是把每一步的乘积传入到递归函数中：
+        
+            def fact(n):
+                return fact_iter(n, 1)
+            
+            def fact_inter(num, product):
+                if num == 1:
+                    return product
+                return fact_inter(n-1, num*product)
+                 
+        可以看到，return fact_iter(num - 1, num * product)仅返回递归函数本身，
+        num - 1和num * product在函数调用前就会被计算，不影响函数调用。    
+        
+        遗憾的是，大多数编程语言没有针对尾递归做优化，Python解释器也没有做优化，
+        所以，即使把上面的fact(n)函数改成尾递归方式，也会导致栈溢出。    
+            
+            
+            
+            
+            
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+                
+                
+                
+                    
+          
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 
                 
                 
