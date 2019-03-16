@@ -706,14 +706,115 @@
             既然变量可以指向函数，函数的参数能接收变量，那么一个函数就可以接收另一个函数作为参数，这种函数就称之为高阶函数。
             把函数作为参数传入，这样的函数称为高阶函数，函数式编程就是指这种高度抽象的编程范式。
         
+        （4）map/reduct:
+            
+            map() 函数接收两个参数，一个是函数，一个是 Iterable，map 将传入的函数依次作用到序列的每个元素，
+            并把结果作为新的 Iterator 返回。
+            
+            >>> def f(x):
+            ...     return x * x
+            ...
+            >>> r = map(f, [1, 2, 3, 4, 5, 6, 7, 8, 9])
+            >>> list(r)
+            [1, 4, 9, 16, 25, 36, 49, 64, 81]
+            
+            map()传入的第一个参数是f，即函数对象本身。由于结果r是一个Iterator，Iterator是惰性序列，
+            因此通过list()函数让它把整个序列都计算出来并返回一个list。
+            
+            >>> list(map(str, [1, 2, 3, 4, 5, 6, 7, 8, 9]))
+            ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+            
+            reduce 把一个函数作用在一个序列[x1, x2, x3, x4, ...]上，这个函数必须接收两个参数，
+            reduce 把结果继续和序列的下一个元素做累积计算，其效果就是：
+            
+                reduct(f, [x1, x2, x3, x4]) = f(f(f(x1, x2), x3), x4)
+            
+            比方说一个序列求和，就可以用 reduce 实现：
+                
+                >>> form functools import reduce
+                >>> def add(x, y):
+                ... return x + y
+                ...
+                >>> reduce(add, [1, 3, 5, 7, 9])
+                25
+            当然求和运算可以直接用Python内建函数sum()，没必要动用reduce。
+               
+            把序列[1, 3, 5, 7, 9]变换成整数13579，reduce就可以派上用场：    
+                
+                >>> from functools import reduce
+                >>> def fn(x, y):
+                ...     return x*10 + y
+                
+                >>>reduce(fn, [1, 3, 5, 7, 9])
+                13579    
+    
+            对上面的例子稍加改动，配合map()，我们就可以写出把str转换为int的函数：
+                
+                from functools import reduce
+
+                DIGITS = {'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9}
+                
+                def str2int(s):
+                    def fn(x, y):
+                        return x * 10 + y
+                    def char2num(s):
+                        return DIGITS[s]
+                    return reduce(fn, map(char2num, s))    
+                            
+            还可以用lambda函数进一步简化成：
+                
+                from functools import reduce
+                DIGITS = {'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9}
+               
+                def char2num(s):
+                    return DIGITS[s]
+                
+                def str2int(s):
+                    return reduce(lambda x, y: x * 10 + y, map(char2num, s))
         
+        (5) filter:
         
+            和 map() 类似，filter() 也接收一个函数和一个序列，和 map() 不同的是
+            filter() 把传入的函数依次作用每个元素，然后返回值是 True 还是 False
+            决定保留还是丢弃该元素。
+            
+            在一个 list 中，删除偶数，只保留奇数，可以这么写：
+                def is_odd(n):
+                    return n%2 == 1:
+                    
+                list(filter(is_odd, [1, 2, 4, 5, 6, 9, 10, 15]))
+                结果是：[1, 5, 9, 15]
+            
+            把一个序列中的空字符串删掉，可以这么写：    
+                
+                def not_empty(s):
+                    return s and s.strip()
+                
+                list(filter(not_empty, ['A', '', 'B', None, 'C', '  ']))
+                # 结果: ['A', 'B', 'C']
+            可见用filter()这个高阶函数，关键在于正确实现一个“筛选”函数。
+            注意到filter()函数返回的是一个Iterator，也就是一个惰性序列，
+            所以要强迫filter()完成计算结果，需要用list()函数获得所有结果并返回list。
+            
+        (6) sorted:
         
-        
-        
-        
-        
-        
+            Python内置的sorted()函数就可以对list进行排序：
+            >>> sorted([36, 5, -12, 9, -21])
+            [-21, -12, 5, 9, 36]
+            
+            此外，sorted() 函数也是一个高级函数，它还可以接收一个 key 函数来实现
+            自定义的排序，例如按绝对值大小排序：
+            
+            >>> sorted([36, 5, -12, 9, -21], key=abs)
+            [5, 9, -12, -21, 36]   
+            
+            key 指定的函数将作用于 list 的每一个元素上，并根据 key 函数返回的结果进行排序。
+            
+            要进行反向排序，不必改动key函数，可以传入第三个参数reverse=True：
+            >>> sorted(['bob', 'about', 'Zoo', 'Credit'], key=str.lower, reverse=True)
+            ['Zoo', 'Credit', 'bob', 'about']
+            
+            sorted()也是一个高阶函数。用sorted()排序的关键在于实现一个映射函数。
         
         
         
