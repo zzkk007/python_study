@@ -589,7 +589,71 @@
         
     3、列表生成式：    
         
+        列表生成式即 List Comprehensions, 是 Python 内置非常简单却强大的可以用来创建 list 的生成式。
+        运用列表生成式，可以写出非常简洁的代码。
+        运用列表生成式，可以快速生成list，可以通过一个list推导出另一个list，而代码却十分简洁。
         
+    4、生成器：
+    
+        通过列表生成式，可以直接创建一个列表，但是由于内存容量限制，而且创建一个很大的列表，不仅仅
+        占用很大存储空间，如果我们仅仅访问前面几个元素，那么后面大多数元素所占的空间就白白浪费。
+        所以，如果列表元素可以按照某种算法推算出来，那么我们是否可以在循环的过程中不断推算出后续的元素呢？
+        这样就不必完整的list,从而节省大量的空间，在Python 中，这种一边循环一边计算的机制，称为生成器：generator。
+        
+    5、迭代器：
+    
+        可以直接用于 for 循环的数据类型是可迭代对象有以下几种：
+        一类是集合数据类型，如：list、tuple、dict、set、str等。
+        一类是 generator，包括生成器和带 yield 的generator function。
+        可以使用isinstance()判断一个对象是否是Iterable对象：  
+            
+            >>> from collections import Iterable
+            >>> isinstance([], Iterable)
+            True
+            >>> isinstance({}, Iterable)
+            True
+            >>> isinstance('abc', Iterable)
+            True
+            >>> isinstance((x for x in range(10)), Iterable)
+            True
+            >>> isinstance(100, Iterable)
+            False    
+        
+        而生成器不但可以作为 for 循环，还可以被 next() 函数不断调用
+        并返回下一个值，直到最后抛出 StopIteration 错误表示无法继续
+        返回下一个值了。
+        
+        可以被 next() 函数调用并不断返回下一个值的对象称为迭代器:Iterator。
+        可以使用 isinstance() 判断一个对象是否是 Iterator 对象：
+            
+            >>> from collections import Iterator
+            >>> isinstance((x for x in range(10)), Iterator)
+            True
+            >>> isinstance([], Iterator)
+            False
+            >>> isinstance({}, Iterator)
+            False
+            >>> isinstance('abc', Iterator)
+            False
+                    
+        生成器都是Iterator对象，但list、dict、str虽然是Iterable，却不是Iterator。
+        把list、dict、str等Iterable变成Iterator可以使用iter()函数：
+            
+            >>> isinstance(iter([]), Iterator)
+            True
+            >>> isinstance(iter('abc'), Iterator)
+            True
+              
+        为什么list、dict、str等数据类型不是Iterator？
+            因为 Python 的 Iterator 对象表示的是一个数据流，Iterator 对象
+            可以被 next() 函数调用并不断返回下一个数据，直到没有数据时抛出
+            StopIteration 错误。可以把这个数据流看作是一个有序序列，但我们
+            不能提前知道序，列的长度，只能不断通过 next() 函数实现按需计算下一个
+            数据，所以 Iterator 的计算是惰性的，只有在需要返回下一个数据时它才会计算。
+            
+            Iterator甚至可以表示一个无限大的数据流，例如全体自然数。
+            而使用list是永远不可能存储全体自然数的。
+            
         
         
         
