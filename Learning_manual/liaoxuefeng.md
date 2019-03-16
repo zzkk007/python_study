@@ -531,19 +531,63 @@
         
         遗憾的是，大多数编程语言没有针对尾递归做优化，Python解释器也没有做优化，
         所以，即使把上面的fact(n)函数改成尾递归方式，也会导致栈溢出。    
+       
             
+"""03| 高级特性 """
+
+    在Python中，代码不是越多越好，而是越少越好。代码不是越复杂越好，而是越简单越好。
+    基于这一思想，我们来介绍Python中非常有用的高级特性，1行代码能实现的功能，决不写5行代码。
+    请始终牢记，代码越少，开发效率越高。
+                
+    1、切片:
+    
+        经常取指定索引范围的操作，用循环十分繁琐，因此，Python提供了切片（Slice）操作符，
+        能大大简化这种操作。        
+        有了切片操作，很多地方循环就不再需要了。Python的切片非常灵活，一行代码就可以实现很多行循环才能完成的操作。    
             
+    2、迭代：
+    
+        如果给定一个 list 或 tuple, 我们可以通过 for 循环来遍历这个 list 或 tuple, 这种遍历我们称为迭代(Iteration)。
+        在 Python 中，迭代是通过 for ... in 来完成的，而很多语言比如C语言，迭代 list 。
+        可以看出，Python 的 for 循环抽象程度要高于 C 的 for 循环，因为 Python 的 for 循环不仅可以用在 list 或tuple上，
+        还可以作用在其他可迭代对象上。
+        
+        list这种数据类型虽然有下标，但很多其他数据类型是没有下标的，但是，只要是可迭代对象，
+        无论有无下标，都可以迭代，比如dict就可以迭代：
             
+            >>> d = {'a':1, 'b':2, 'c':3}
+            >>> for key in d:
+                    print(key)
+            a
+            b
+            c
             
+            因为dict的存储不是按照list的方式顺序排列，所以，迭代出的结果顺序很可能不一样。
+            默认情况下，dict迭代的是key。如果要迭代value，可以用for value in d.values()，
+            如果要同时迭代key和value，可以用for k, v in d.items()。
             
+            所以，当我们使用for循环时，只要作用于一个可迭代对象，for循环就可以正常运行，
+            而我们不太关心该对象究竟是list还是其他数据类型。
+        
+            那么，如何判断>>> isinstance('abc', Iterable) # str是否可迭代
+                True
+                >>> isinstance([1,2,3], Iterable) # list是否可迭代
+                True
+                >>> isinstance(123, Iterable) # 整数是否可迭代
+                False一个对象是可迭代对象呢？方法是通过 collections 模块的 iterable类型判断：
+                >>> from collections import Iterable
+                
+        Python内置的enumerate函数可以把一个list变成索引-元素对，这样就可以在for循环中同时迭代索引和元素本身：
+            
+            >>> for i, value in enumerate(['A', 'B', 'C']):
+            ...     print(i, value)
+            ...
+            0 A
+            1 B
+            2 C
         
         
-        
-        
-        
-        
-        
-        
+    3、列表生成式：    
         
         
         
