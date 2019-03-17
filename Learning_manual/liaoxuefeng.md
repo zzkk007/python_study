@@ -1144,13 +1144,118 @@
             'Bart Simpson'
     
     
+    3、继承和多态：
     
-        
-        
+        class Animal(object):
+            def run(self):
+                print('Animal is running...')
     
+        class Dog(Animal):
+
+            def run(self):
+                print('Dog is running...')
+        
+        class Cat(Animal):
+        
+            def run(self):
+                print('Cat is running...')
+        
+        当子类和父类都存在相同的 run() 方法时，我们说，子类的run()方法覆盖了父类的run()
+        在代码运行的时候，总是调用子类的run()，这样，我们就获得了继承的另一个好处：多态。
+        
+        要理解什么是多态，我们首先要对数据类型再作一点说明。当我们定义一个 class 的时候，
+        我们实际上是定义了一种数据类型。我们定的数据类型和python自带的数据类型，list、str没什么两样。
+            
+            a = list()
+            b = Animal()
+            c = Dog()
+        
+        判断一个变量是否是某个数据类型用 isinstance()判断：
+        
+            >>> isinstance(a, list)
+            True
+            >>> isinstance(b, Animal)
+            True
+            >>> isinstance(c, Dog)
+            True   
+            >>> isinstance(c, Animal)
+            True 
+                        
+        看了 c 不仅仅是 Dog, C 还是 Animal!
+        在继承关系中，如果一个实例的数据类型是某个子类，那它的数据类型也可以被看作是父类。
+        但是，反过来就不行：
+            
+            >>> b = Animal()
+            >>> isinstance(b, Dog)
+            False
+        
+        Dog可以看成Animal，但Animal不可以看成Dog。                 
+        
+        要理解多态的好处，我们需要再编写一个函数，这个函数接收一个 Animal 类型的变量：
+        
+            def run_twice(animal):
+                animal.run()
+                animal.run()
+        当我们传入 Animal 的实例时，run_twice() 就打印出：
+        
+            >>> run_twice(Animal())
+            Animal is running...
+            Animal is running...        
+                                       
+        当我们传入 Dog 的实例时，run_twice() 就打印出：
+        
+            >>> run_twice(Dog()):
+            Dog is running...
+            Dog is running...
+                    
+            class Tortoise(Animal):
+                def run(self):
+                    print('Tortoise is running slowly...')        
                 
+            >>> run_twice(Tortoise())
+            Tortoise is running slowly...
+            Tortoise is running slowly...    
+            
+        你会发现，新增一个 Animal 的子类，函数 run_twice() 必须做任何修改，任何依赖 Animal
+        作为参数的函数或者方法都可以不加修改的正常运行，原因就是多态。
+        
+        多态的好处就是，当我们需要传入Dog、Cat、Tortoise……时，我们只需要接收Animal类型就可以了，
+        因为Dog、Cat、Tortoise……都是Animal类型，然后，按照Animal类型进行操作即可。    
+            
+        多态的意思就是对于一个变量，只需要知道他是 Animal 类型，无需确切的知道它的子类型，就可以
+        放心地调用 run() 方法，而具体调用的run() 方法是作用在 Animal、Dog、Cat对象上，由运行时
+        该对象的确切类型决定，这就是多态的真正威力：调用方只管调用，不管细节，当我们新增一种Animal
+        的子类时，只要确保 run() 方法编写正确，不要管原来的代码是如何调用的。
+        这就是著名的“开闭” 原则：
+            对扩展开发：允许新增 Animal 子类
+            对修改封闭：不需要修改依赖 Animal 类型的 run_twice() 等函数。
                 
-                
-                
-                
+        静态语言 vs 动态语言：
+        
+            对于静态语言（java）来说，如果需要传入 Animal 类型，则传入的对象必须是 Animal 
+            类型或者子类,否则，将无法调用 run() 方法。
+            
+            对于Python这样的动态语言来说，则不一定需要传入 Animal 类型，我们只需要保证传入
+            的对象有一个 run() 方法就可以了:
+            
+                class Timer(object):
+                    def run(self):
+                        print('Start...')    
+            
+            这就是动态语言的“鸭子类型”，它并不要求严格的继承体系，
+            一个对象只要“看起来像鸭子，走起路来像鸭子”，那它就可以被看做是鸭子。        
+            
+            Python的“file-like object“就是一种鸭子类型。
+            对真正的文件对象，它有一个read()方法，返回其内容。
+            但是，许多对象，只要有read()方法，都被视为“file-like object“。
+            许多函数接收的参数就是“file-like object“，你不一定要传入真正的文件对象，
+            完全可以传入任何实现了read()方法的对象。 
+            
+            
+            
+            
+            
+            
+            
+              
                 
