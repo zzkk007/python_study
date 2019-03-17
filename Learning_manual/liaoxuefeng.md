@@ -1075,22 +1075,73 @@
         通过在实例上调用方法，我们就直接操作了对象内部的数据，但无需知道方法内部的实现细节。  
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    2、访问限制：
         
+        在Class内部，可以有属性和方法，而外部代码可以通过直接调用实例变量的方法来操作数据，
+        这样，就隐藏了内部的复杂逻辑。
+        
+        但是，从前面定义的 Student 类的定义来看，外部代码还是可以自由地修改一个实例的 name，score 属性。
+        
+            >>> bart = Student('Bart Simpson', 59)
+            >>> bart.score
+            59
+            >>> bart.score = 99
+            >>> bart.score
+            99
+        
+        如果要让内部属性不被外部访问，可以把属性的名称前加上两个下划线__，
+        在 Python 中，实例的变量名如果以__开头，就变成了一个私有变量(Prive)
+        只要在内部可以使用，外部不能访问。
+        
+            class Student(object):
+
+                def __init__(self, name, score):
+                    self.__name = name
+                    self.__score = score
+            
+                def print_score(self):
+                    print('%s: %s' % (self.__name, self.__score))
+        
+        改完后，对于外部代码来说，没什么变动，但是已经无法从外部访问
+        实例变量.__name和实例变量.__score了：
     
+            >>> bart = Student('Bart Simpson', 59)
+            >>> bart.__name
+            Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+            AttributeError: 'Student' object has no attribute '__name'
     
+        这样就确保了外部代码不能随意修改对象内部的状态，这样通过访问限制的保护，代码更加健壮。
+        但是如果外部代码要获取name和score怎么办？
+        可以给Student类增加get_name和get_score这样的方法：
+            
+            class Student(object):
+                ...
+            
+                def get_name(self):
+                    return self.__name
+            
+                def get_score(self):
+                    return self.__score
+                
+                def set_score(self, score):
+                    self.__score = score
+         
+        最后注意下面的这种错误写法：
+        
+            >>> bart = Student('Bart Simpson', 59)
+            >>> bart.get_name()
+            'Bart Simpson'
+            >>> bart.__name = 'New Name' # 设置__name变量！
+            >>> bart.__name
+            'New Name'
     
-    
-    
-    
+        表面上看，外部代码“成功”地设置了__name变量，但实际上这个__name变量
+        和class内部的__name变量不是一个变量！内部的__name变量已经被Python解释器
+        自动改成了_Student__name，而外部代码给bart新增了一个__name变量。不信试试：
+        
+            >>> bart.get_name() # get_name()内部返回self.__name
+            'Bart Simpson'
     
     
     
