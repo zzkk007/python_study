@@ -1396,4 +1396,46 @@
             请注意，在Python这类动态语言中，根据鸭子类型，有read()方法，
             不代表该fp对象就是一个文件流，它也可能是网络流，也可能是内存中的一个字节流，
             但只要read()方法返回的是有效的图像数据，就不影响读取图像的功能。            
+    
+    5、实例属性和类属性：
+    
+        由于 Python 是动态语言，根据类创建的实例可以任意绑定属性。
+        给实例绑定属性的方法是通过实例变量，或者通过 self 变量：
         
+            class Student(object):
+                def __init__(self, name):
+                    self.name = name
+            
+            s = Student('Bob')
+            s.score = 90
+                
+        但是，如果 Student 类本身需要绑定一个属性，可以直接在 Class 中定义属性
+        这种属性是类属性，归 Student 类所有：
+        
+            class Student(object):
+                name = 'Student'
+                
+            >>> class Student(object):
+            ...     name = 'Student'
+            ...
+            >>> s = Student() # 创建实例s
+            >>> print(s.name) # 打印name属性，因为实例并没有name属性，所以会继续查找class的name属性
+            Student
+            >>> print(Student.name) # 打印类的name属性
+            Student
+            >>> s.name = 'Michael' # 给实例绑定name属性
+            >>> print(s.name) # 由于实例属性优先级比类属性高，因此，它会屏蔽掉类的name属性
+            Michael
+            >>> print(Student.name) # 但是类属性并未消失，用Student.name仍然可以访问
+            Student
+            >>> del s.name # 如果删除实例的name属性
+            >>> print(s.name) # 再次调用s.name，由于实例的name属性没有找到，类的name属性就显示出来了
+            Student
+            
+        在编写程序的时候，千万不要对实例属性和类属性使用相同的名字，
+        因为相同名称的实例属性将屏蔽掉类属性，但是当你删除实例属性后，
+        再使用相同的名称，访问到的将是类属性。
+        
+        实例属性属于各个实例所有，互不干扰；
+        类属性属于类所有，所有实例共享一个属性；
+        不要对实例属性和类属性使用相同的名字，否则将产生难以发现的错误。
