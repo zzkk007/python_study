@@ -1251,11 +1251,43 @@
             许多函数接收的参数就是“file-like object“，你不一定要传入真正的文件对象，
             完全可以传入任何实现了read()方法的对象。 
             
+        class Animal(object):
+
+            def run(self):
+                print("Animal run ...")
+        
+        class Dog(Animal):
+            def run(self):
+                print("Dog run ...")
+        
+        class Cat(Animal):
+            def run(self):
+                print("Cat run ...")
+        
+        class duck(object):
+            def run(self):
+                print("duck run ...")
+        
+        
+        def two_func(Animal):
+            Animal.run()
+            Animal.run()
+        
+        two_func(Animal())
+        two_func(Dog())
+        two_func(duck())    
             
-            
-            
-            
-            
+        运行结果：    
+            Animal run ...
+            Animal run ...
+            Dog run ...
+            Dog run ...
+            duck run ...
+            duck run ...           
+                    
+    4、获取对象信息：
+    
+                          
             
               
                 
