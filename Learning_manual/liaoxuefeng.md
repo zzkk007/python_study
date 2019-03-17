@@ -994,10 +994,41 @@
     
     在Python中，所有数据类型都可以视为对象，当然也可以自定义对象。自定义的对象
     数据类型就是面向对象中的类(class)的概念。
+    
+    我们以一个例子来说明面向过程和面向对象在程序流程上的不同之处：
+    假设我们要处理学生的成绩表，为了表示一个学生的成绩，
+    面向过程的程序可以用一个dict表示：
+        std1 = { 'name': 'Michael', 'score': 98 }
+        std2 = { 'name': 'Bob', 'score': 81 }    
+    而处理学生成绩可以通过函数实现，比如打印学生的成绩：
+        def print_score(std):
+            print('%s: %s' % (std['name'], std['score']))            
         
+    如果采用面向对象的程序设计思想，我们首先考虑的不是程序的执行流程，
+    而是  Student 这种数据类型应该被视为一个对象，这个对象拥有 name 和 score
+    这两个属性(Property)。如果要打印一个学生的成绩，首先必须创建出这个学生对应的对象
+    然后，给这个对象发一个 print_score 消息，让对象自己把自己的数据打印出来。
+        class Student(object):
+            def __init__(self, name, score):
+                self.name = name
+                self.score = score
+                
+            def print_score(self):
+                print("%s:%s"%(self.name, self.score))
+                 
+    给对象发消息实际上就是调用对象对象的关联函数，我们称之为对象的方法(Method)
+    面向对象的程序写出来像这样：
     
+        bart = Student('Bart Simson', 60)
+        bart.print_score()             
+                
+    面向对象的抽象程度比函数要高，因为一个 Class 即包含数据，又包含操作数据的方法。
+              
+    1、类和实例：
     
+              
     
+     
     
     
     
