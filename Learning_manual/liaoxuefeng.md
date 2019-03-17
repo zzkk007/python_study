@@ -1287,7 +1287,113 @@
                     
     4、获取对象信息：
     
-                          
+        当我们拿到一个对象的引用时，如何知道这个对象是什么类型，有哪些方法？
+        
+        使用 type():
+           
+            但是type()函数返回的是什么类型呢？它返回对应的Class类型。
+            如果我们要在if语句中判断，就需要比较两个变量的type类型是否相同：
             
-              
+            >>> type(123)==type(456)
+            True
+            >>> type(123)==int
+            True
+            >>> type('abc')==type('123')
+            True
+            >>> type('abc')==str
+            True
+            >>> type('abc')==type(123)
+            False
+                          
+            判断基本数据类型可以直接写int，str等，
+            但如果要判断一个对象是否是函数怎么办？可以使用types模块中定义的常量：    
                 
+                >>> import types
+                >>> def fn():
+                ...     pass
+                ...
+                >>> type(fn)==types.FunctionType
+                True
+                >>> type(abs)==types.BuiltinFunctionType
+                True
+                >>> type(lambda x: x)==types.LambdaType
+                True
+                >>> type((x for x in range(10)))==types.GeneratorType
+                True      
+        
+        使用 isinstance:
+        
+            >>> isinstance(a, list)
+            True
+            >>> isinstance(b, Animal)
+            True
+            >>> isinstance(c, Dog)
+            True   
+            >>> isinstance(c, Animal)
+            True 
+            
+            >>> isinstance([1, 2, 3], (list, tuple))
+            True
+            >>> isinstance((1, 2, 3), (list, tuple))
+            True            
+            总是优先使用isinstance()判断类型，可以将指定类型及其子类“一网打尽”。
+        
+        使用 dir():
+        
+            如果要获得一个对象的所有属性和方法，可以使用dir()函数。
+            它返回一个包含字符串的list，比如，获得一个str对象的所有属性和方法
+            >>> dir('ABC')
+            ['__add__', '__class__',..., '__subclasshook__', 'capitalize', 'casefold',..., 'zfill']
+            
+            仅仅把属性和方法列出来是不够的，配合getattr()、setattr()以及hasattr()，
+            我们可以直接操作一个对象的状态：
+                
+                >>> class MyObject(object):
+                    def __init__(self):
+                        self.x = 9
+                    def power(self):
+                        return self.x * self.x
+            紧接着，可以测试该对象的属性：
+            
+                >>> hasattr(obj, 'x') # 有属性'x'吗？
+                True
+                >>> obj.x
+                9
+                >>> hasattr(obj, 'y') # 有属性'y'吗？
+                False
+                >>> setattr(obj, 'y', 19) # 设置一个属性'y'
+                >>> hasattr(obj, 'y') # 有属性'y'吗？
+                True
+                >>> getattr(obj, 'y') # 获取属性'y'
+                19
+                >>> obj.y # 获取属性'y'
+                19
+            
+            如果试图获取不存在的属性，会抛出AttributeError的错误：
+                
+                >>> getattr(obj, 'z') # 获取属性'z'
+                Traceback (most recent call last):
+                  File "<stdin>", line 1, in <module>
+                AttributeError: 'MyObject' object has no attribute 'z'       
+                
+        通过内置的一系列函数，我们可以对任意一个Python对象进行剖析，拿到其内部的数据。要注意的是，
+        只有在不知道对象信息的时候，我们才会去获取对象信息。
+        如果可以直接写：
+            sum = obj.x + obj.y
+        就不要写：
+            sum = getattr(obj, 'x') + getattr(obj, 'y')
+                
+        一个正确的用法的例子如下：
+            
+            def readImage(fp):
+                if hasattr(fp, 'read'):
+                    return readData(fp)
+                return None        
+            
+            假设我们希望从文件流fp中读取图像，我们首先要判断该fp对象是否存在read方法，
+            如果存在，则该对象是一个流，如果不存在，则无法读取。hasattr()就派上了用场。
+
+            请注意，在Python这类动态语言中，根据鸭子类型，有read()方法，
+            不代表该fp对象就是一个文件流，它也可能是网络流，也可能是内存中的一个字节流，
+            但只要read()方法返回的是有效的图像数据，就不影响读取图像的功能。            
+        
