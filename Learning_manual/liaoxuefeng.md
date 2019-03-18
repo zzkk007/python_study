@@ -2515,8 +2515,86 @@
     总之，异步IO的复杂度远远高于同步IO。
     
     1、文件读写：
-    
+        
+        读写文件是最常见的 IO 操作。
+        
+        在磁盘上读写文件的功能都是由操作系统提供的，现代操作系统不允许普通的程序直接操作磁盘，
+        所以，读写文件就是请求操作系统打开一个文件对象(通常称为文件描述符)，然后，通过操作系统
+        提供的接口从这个文件对象中读取数据(读文件)，或者把数据写入这个文件对象(写文件)。
+        
+        调用read()会一次性读取文件的全部内容，如果文件有10G，内存就爆了，
+        所以，要保险起见，可以反复调用read(size)方法，每次最多读取size个字节的内容。
+        另外，调用readline()可以每次读取一行内容，
+        调用readlines()一次读取所有内容并按行返回list。因此，要根据需要决定怎么调用。
+        
+        字符编码：
+            要读取非 UTF-8 编码的文本文件，需要给 open() 函数传入 encoding参数：
+            >>> f = open('/Users/michael/gbk.txt', 'r', encoding='gbk')
+            >>> f.read()
+            '测试'
+              
+            遇到有些编码不规范的文件，你可能会遇到UnicodeDecodeError，
+            因为在文本文件中可能夹杂了一些非法编码的字符。
+            遇到这种情况，open()函数还接收一个errors参数，表示如果遇到编码错误后如何处理。
+            最简单的方式是直接忽略：    
+            >>> f = open('/Users/michael/gbk.txt', 'r', encoding='gbk', errors='ignore')
             
-    
-                       
+    2、StringIo 和 BytesIO
+        
+        StringIO:
+            
+            很多时候，数据读写不一定是文件，也可以在内存中读写。
+            StringIO顾名思义就是在内存中读写str。
+            要把str写入StringIO，我们需要先创建一个StringIO，然后，像文件一样写入即可：   
+            
+                >>> from io import StringIO
+                >>> f = StringIO()
+                >>> f.write('hello')
+                5
+                >>> f.write(' ')
+                1
+                >>> f.write('world!')
+                6
+                >>> print(f.getvalue())
+                hello world!
+            
+            getvalue()方法用于获得写入后的str。
+            要读取StringIO，可以用一个str初始化StringIO，然后，像读文件一样读取：
+                           
+                >>> from io import StringIO
+                >>> f = StringIO('Hello!\nHi!\nGoodbye!')
+                >>> while True:
+                ...     s = f.readline()
+                ...     if s == '':
+                ...         break
+                ...     print(s.strip())
+                ...
+                Hello!
+                Hi!
+                Goodbye!    
                 
+        BytesIO:
+        
+            StringIO操作的只能是str，如果要操作二进制数据，就需要使用BytesIO。
+            BytesIO实现了在内存中读写bytes，我们创建一个BytesIO，然后写入一些bytes：
+            
+                >>> from io import BytesIO
+                >>> f = BytesIO()
+                >>> f.write('中文'.encode('utf-8'))
+                6
+                >>> print(f.getvalue())
+                b'\xe4\xb8\xad\xe6\x96\x87'    
+                
+            请注意：写入的不是 str,而是经过 UTF-8 编码的 bytes。
+            和StringIO类似，可以用一个bytes初始化BytesIO，然后，像读文件一样读取：
+                
+                >>> from io import BytesIO
+                >>> f = BytesIO(b'\xe4\xb8\xad\xe6\x96\x87')
+                >>> f.read()
+                b'\xe4\xb8\xad\xe6\x96\x87'    
+                
+    3、操作文件和目录:
+    
+        
+    
+        
