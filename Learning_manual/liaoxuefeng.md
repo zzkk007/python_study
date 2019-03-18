@@ -2594,7 +2594,32 @@
                 b'\xe4\xb8\xad\xe6\x96\x87'    
                 
     3、操作文件和目录:
-    
         
-    
+        Python内置的os模块也可以直接调用操作系统提供的接口函数。
         
+        >>> import os
+        >>> os.name # 操作系统类型
+        'posix'
+        >>> os.uname() # 获取详细的系统信息
+        posix.uname_result(sysname='Linux', nodename='debian', release='3.2.0-4-amd64', 
+        version='#1 SMP Debian 3.2.54-2', machine='x86_64')
+        
+        >>> os.environ # 操作系统中定义的环境变量
+        >>> os.environ.get('PATH') # 要获取某个环境变量的值  
+        
+        看看如何利用Python的特性来过滤文件。比如我们要列出当前目录下的所有目录:
+        >>> [x for x in os.listdir('.') if os.path.isdir(x)]
+        要列出所有的.py文件，也只需一行代码：
+        >>> [x for x in os.listdir('.') if os.path.isfile(x) and os.path.split(x)[1]=='.py']
+        
+        但是复制文件的函数居然在os模块中不存在！原因是复制文件并非由操作系统提供的系统调用。
+        幸运的是shutil模块提供了copyfile()的函数，你还可以在shutil模块中找到很多实用函数，
+        它们可以看做是os模块的补充。
+        
+        Python的os模块封装了操作系统的目录和文件操作，要注意这些函数有的在os模块中，有的在os.path模块中。
+        
+    4、序列化:
+        
+        
+           
+           
