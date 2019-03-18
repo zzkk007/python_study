@@ -2159,6 +2159,246 @@
             但是int(s)返回0，在计算10 / 0时出错，至此，找到错误源头。 
             出错的时候，一定要分析错误的调用栈信息，才能定位错误的位置。    
                 
-    2、        
+    2、调试：
+    
+        (1) print()
+        
+        (2)断言:
             
+            def foo(s):
+                n = int(s)
+                assert n!=0,'n is zero!'
+                return 10/n
+                
+            def main():
+                foo('0')
+                
+            assert 的意思是，表达式 n != 0 应该是 True, 否则，根据程序运行的逻辑，后面的代码肯定出错。
+            程序中如果到处充斥着assert，和print()相比也好不到哪去。
+            不过，启动Python解释器时可以用-O参数来关闭assert：
+                $ python -O err.py
+                Traceback (most recent call last):
+                  ...
+                ZeroDivisionError: division by zero   
+            
+            关闭后，你可以把所有的assert语句当成pass来看。                          
+        
+        (3)logging
+        
+        (4)pdb:
+            
+            是启动Python的调试器pdb，让程序以单步方式运行，可以随时查看运行状态。
+            我们先准备好程序：   
+                # err.py
+                s = '0'
+                n = int(s)
+                print(10 / n)   
+            
+            然后启动：
+                
+                $ python -m pdb err.py
+                > /Users/michael/Github/learn-python3/samples/debug/err.py(2)<module>()
+                -> s = '0'    
+                        
+            以参数-m pdb启动后，pdb定位到下一步要执行的代码-> s = '0'。输入命令l来查看代码：
+                
+                (Pdb) l
+                  1     # err.py
+                  2  -> s = '0'
+                  3     n = int(s)
+                  4     print(10 / n)    
+            
+            输入命令n可以单步执行代码：
+                
+                (Pdb) n
+                > /Users/michael/Github/learn-python3/samples/debug/err.py(3)<module>()
+                -> n = int(s)
+                (Pdb) n
+                > /Users/michael/Github/learn-python3/samples/debug/err.py(4)<module>()
+                -> print(10 / n)   
+                
+            任何时候都可以输入命令p 变量名来查看变量：
+                
+                (Pdb) p s
+                '0'
+                (Pdb) p n
+                0  
+                    
+            输入命令q结束调试，退出程序：
+                (Pdb) q    
+                    
+            这种通过pdb在命令行调试的方法理论上是万能的，但实在是太麻烦了，
+            如果有一千行代码，要运行到第999行得敲多少命令啊。    
+                
+        (5) pdb.set_trace():
+            
+            这个方法也是用pdb，但是不需要单步执行，我们只需要import pdb，
+            然后，在可能出错的地方放一个pdb.set_trace()，就可以设置一个断点：           
+                # err.py
+                import pdb
+                
+                s = '0'
+                n = int(s)
+                pdb.set_trace() # 运行到这里会自动暂停
+                print(10 / n)    
+            
+            运行代码，程序会自动在pdb.set_trace()暂停并进入pdb调试环境，
+            可以用命令p查看变量，或者用命令c继续运行：    
+               
+                $ python err.py 
+                > /Users/michael/Github/learn-python3/samples/debug/err.py(7)<module>()
+                -> print(10 / n)
+                (Pdb) p n
+                0
+                (Pdb) c
+                Traceback (most recent call last):
+                  File "err.py", line 7, in <module>
+                    print(10 / n)
+                ZeroDivisionError: division by zero   
+                    
+    3、单元测试：
+        
+        单元测试是用来对一个模块、一个函数或者一个类来进行正确性检验的测试工作。
+    
+        比如函数 abs()，我们可以编写出以下几个测试用例：
+            
+            a. 输入正数，比如 1、1.2、0.99, 期待返回值与输入相同。
+            
+            b. 输入负数，比如 -1、-1.2、-0.99，期待返回值与输入相反。
+            
+            c. 输入 0 ，期待返回 0；
+            
+            d. 输入非法值类型，比如 None、[]、{}，期待抛出 TypeError。
+            
+        把上面的测试用例放到一个测试模块里，就是一个完整的单元测试。
+        如果单元测试通过，说明我们测试的这个函数能够正常工作，如果单元测试不通过，
+        要么函数有bug，要么测试条件输入不正确，总之，需要修复单元测试能够通过。
+        
+        单元测试通过后有什么意义呢？如果我们对 abs() 函数代码做了修改，只需要
+        再跑一遍单元测试，如果通过，说明我们的修改不会对 abs()函数原有的行为造成
+        影响，如果测试不通过，说明我们的修改和原有行为不一致，要么修改代码，要么修改测试。
+        
+        我们来编写一个 Dict 类，这个类的行为和 dict 一致，但是可以通过属性来访问，
+        用起来就像下面这样：
+            >>> d = Dict(a=1, b=2)k
+            >>> d['a']
+            1
+            >>> d.a
+            1
+        
+        mydict.py 代码如下：
+        
+            class Dict(dict):
+                
+                def __init__(self, **kw):
+                    super().__init__(**kw)
+                    
+                def __getattr__(self, key):
+                    try:
+                        retrun self[key]
+                    except KeyError:
+                        raise AttributeError("Dict object has no attribute %s" % key)
+                
+                def __setattr__(self, key, value):
+                    self[key] = value
+                            
+        为了编写单元测试，我们需要引入 Python 自带的 unittest 模块，编写 mydict_test.py 如下：
+        mydict_test.py:
+             
+            import unittest
+            
+            from mydict import  Dict
+            
+            class TestDict(unittest.TestCase):
+            
+                def test_init(self):
+                    d = Dict(a=1, b='test')
+                    self.assertEqual(d.a, 1)
+                    self.assertEqual(d.b, 'test')
+                    self.assertTrue(isinstance(d, dict))
+            
+                def test_key(self):
+                    d = Dict()
+                    d['key'] = 'value'
+                    self.assertEqual(d.key,'value')
+            
+                def test_attr(self):
+                    d = Dict()
+                    d.key = 'value'
+                    self.assertTrue('key' in d)
+                    self.assertEqual(d['key'], 'value')
+            
+                def test_keyerror(self):
+                    d = Dict()
+                    with self.assertRaises(KeyError):
+                        value = d['empty']
+            
+                def test_attrerror(self):
+                    d = Dict()
+                    with self.assertRaises(AttributeError):
+                        value = d.empty
+        
+        编写单元测试时，我们需要编写一个测试类，从unittest.TestCase继承。
+        以 test 开头的方法就是测试方法，不以 test 开头的方法不认为是测试方法，测试的时候不会被执行。
+        
+        对于每一个类测试都需要编写一个 test_xxx() 方法，由于 unittest.TestCase 提供了很多内置的条件判断，
+        我们需要调用这些方法就可以断言输出是否是我们所期望的，最常用的断言是 assertEqual():
+        
+            self.assertEqual(abs(-1), 1) # 断言函数返回的结果与1相等
+            
+        另一种重要的断言就是期待抛出指定类型的Error，比如通过d['empty']访问不存在的key时，
+        断言会抛出KeyError：
+            
+            with self.assertRaises(KeyError):
+                value = d['empty']            
+        
+        而通过d.empty访问不存在的key时，我们期待抛出AttributeError：
+            
+            with self.assertRaises(AttributeError):
+                value = d.empty       
+        
+        运行单元测试:
+        
+            一旦编写好单元测试，我们就可以运行单元测试。
+            最简单的运行方式是在mydict_test.py的最后加上两行代码：     
+            
+            if __name__ == '__main__':
+                unittest.main()
+        
+        另一种方法是在命令行通过参数-m unittest直接运行单元测试：
+            
+            $ python -m unittest mydict_test
+            .....
+            ----------------------------------------------------------------------
+            Ran 5 tests in 0.000s
+            
+            OK     
+        
+        setUp与tearDown:
+        
+            可以在单元测试中编写两个特殊的setUp()和tearDown()方法。
+            这两个方法会分别在每调用一个测试方法的前后分别被执行。    
+            
+            setUp()和tearDown()方法有什么用呢？设想你的测试需要启动一个数据库，
+            这时，就可以在setUp()方法中连接数据库，在tearDown()方法中关闭数据库，
+            这样，不必在每个测试方法中重复相同的代码：
+            
+            class TestDict(unittest.TestCase):
+    
+                def setUp(self):
+                    print('setUp...')
+            
+                def tearDown(self):
+                    print('tearDown...')    
+
+            单元测试可以有效地测试某个程序模块的行为，是未来重构代码的信心保证。
+            单元测试的测试用例要覆盖常用的输入组合、边界条件和异常。
+            单元测试代码要非常简单，如果测试代码太复杂，那么测试代码本身就可能有bug。
+            单元测试通过了并不意味着程序就没有bug了，但是不通过程序肯定有bug。
+             
+    
+    
+    4、文档测试：
+    
+                       
                 
