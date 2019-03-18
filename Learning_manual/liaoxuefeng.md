@@ -2752,4 +2752,21 @@
                 
                 >>> json_str = '{"age": 20, "score": 88, "name": "Bob"}'
                 >>> print(json.loads(json_str, object_hook=dict2student))
-                <__main__.Student object at 0x10cd3c190>    
+                <__main__.Student object at 0x10cd3c190> 
+                
+                
+
+"""09| 进程和线程"""
+    
+    1、多进程：
+    
+    2、多线程：
+    
+    3、ThreadLocal：
+    
+    4、进程 VS 线程：
+    
+    5、分布式进程：
+    
+    
+                          
