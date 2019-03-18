@@ -2395,8 +2395,96 @@
             单元测试的测试用例要覆盖常用的输入组合、边界条件和异常。
             单元测试代码要非常简单，如果测试代码太复杂，那么测试代码本身就可能有bug。
             单元测试通过了并不意味着程序就没有bug了，但是不通过程序肯定有bug。
-             
+    
     4、文档测试：
+        当我们编写注释时，如果写上这样的注释：
+            def abs(n):
+                '''
+                Function to get absolute value of number.
+            
+                Example:
+            
+                >>> abs(1)
+                1
+                >>> abs(-1)
+                1
+                >>> abs(0)
+                0
+                '''
+                return n if n >= 0 else (-n)
+        
+        无疑更明确地告诉函数的调用者该函数的期望输入和输出。
+        并且，Python内置的“文档测试”（doctest）模块可以直接提取注释中的代码并执行测试。   
+        doctest严格按照Python交互式命令行的输入和输出来判断测试结果是否正确。
+        只有测试异常的时候，可以用...表示中间一大段烦人的输出。               
+        
+        让我们用doctest来测试上次编写的Dict类：     
+            # mydict2.py
+            class Dict(dict):
+                '''
+                Simple dict but also support access as x.y style.
+            
+                >>> d1 = Dict()
+                >>> d1['x'] = 100
+                >>> d1.x
+                100
+                >>> d1.y = 200
+                >>> d1['y']
+                200
+                >>> d2 = Dict(a=1, b=2, c='3')
+                >>> d2.c
+                '3'
+                >>> d2['empty']
+                Traceback (most recent call last):
+                    ...
+                KeyError: 'empty'
+                >>> d2.empty
+                Traceback (most recent call last):
+                    ...
+                AttributeError: 'Dict' object has no attribute 'empty'
+                '''
+                def __init__(self, **kw):
+                    super(Dict, self).__init__(**kw)
+            
+                def __getattr__(self, key):
+                    try:
+                        return self[key]
+                    except KeyError:
+                        raise AttributeError(r"'Dict' object has no attribute '%s'" % key)
+            
+                def __setattr__(self, key, value):
+                    self[key] = value
+            
+            if __name__=='__main__':
+                import doctest
+                doctest.testmod()       
+        
+        运行python mydict2.py：
+        什么输出也没有。这说明我们编写的doctest运行都是正确的。
+        如果程序有问题，比如把__getattr__()方法注释掉，再运行就会报错：
+            $ python mydict2.py
+            **********************************************************************
+            File "/Users/michael/Github/learn-python3/samples/debug/mydict2.py", line 10, in __main__.Dict
+            Failed example:
+                d1.x
+            Exception raised:
+                Traceback (most recent call last):
+                  ...
+                AttributeError: 'Dict' object has no attribute 'x'
+            **********************************************************************
+            File "/Users/michael/Github/learn-python3/samples/debug/mydict2.py", line 16, in __main__.Dict
+            Failed example:
+                d2.c
+            Exception raised:
+                Traceback (most recent call last):
+                  ...
+                AttributeError: 'Dict' object has no attribute 'c'
+            **********************************************************************
+            1 items had failures:
+               2 of   9 in __main__.Dict
+            ***Test Failed*** 2 failures.
+
+"""08| """
     
         
     
