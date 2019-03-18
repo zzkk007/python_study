@@ -1439,3 +1439,184 @@
         实例属性属于各个实例所有，互不干扰；
         类属性属于类所有，所有实例共享一个属性；
         不要对实例属性和类属性使用相同的名字，否则将产生难以发现的错误。
+        
+        
+"""06| 面向对象高级编程"""
+
+    数据封装、继承和多态只是面向对象程序设计汇总最基本的三个概念。
+    在 Python 中，面向对象还有很多高级特性，允许我们写出非常强大的功能。
+    多重继承、定制类、元类等概念。
+    
+    1、使用 __slots__:
+        
+        正常情况下，当我们定义一个 class, 创建了一个 class 的实例后，我们
+        可以给该实例绑定任何属性和方法，这就是动态语言的灵活性。先定义 class:
+        
+            class Student(object):
+                pass         
+            
+        然后，尝试给实例绑定一个属性：
+            
+            >>> s = Student()
+            >>> s.name = 'Jack'
+            >>> print(s.name)
+            Jack
+            >>> 
+        
+        还可以尝试给实例绑定一个方法：
+            
+            >>> def set_age(self, age):  #定义一个函数作为实例方法
+            ...     self.age = age
+            ... 
+            >>> 
+            >>> from types import MethodType
+            >>> 
+            >>> s.set_age = MethodType(set_age,s) # 给实例绑定一个方法
+            >>> s.set_age(23)
+            >>> s.age
+            23
+            >>>     
+        
+        但是，给一个实例绑定的方法，对另一个实例是不起作用的：
+        
+            >>> s2 = Student() # 创建新的实例
+            >>> s2.set_age(25) # 尝试调用方法
+            Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+            AttributeError: 'Student' object has no attribute 'set_age'       
+
+        为了给所有实例都绑定方法，可以给class 绑定方法：
+        
+            >>> def set_score(self, score):
+                self.score = score
+            >>> Student.set_score = set_score
+            
+        通常情况下，set_score 方法可以直接定义在 class中，但动态绑定允许我们在程序运行过程中
+        动态的给 class 加上功能，这在静态语言中很难实现。
+        
+        使用__slots__:
+        
+            但是，如果我们想限制实例的属性，只允许对 Student 实例添加 name 和 age 属性。
+            为了达到这个目的，Python 允许在定义 class 的时候，定义一个特殊的 __slots__ 变量，
+            来限制该 class 实例能添加的属性。
+    
+            >>> class Student(object):
+            ...     __slots__ = ('name','age') # 用 tuple 定义允许绑定的属性名称
+            ... 
+            >>> 
+            >>> s = Student()
+            >>> s.name = 'Jack'
+            >>> s.age = 20
+            >>> s.score = 99
+            Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+            AttributeError: 'Student' object has no attribute 'score'
+            >>> 
+            >>> class GraduateStudent(Student):
+            ...     pass
+            ... 
+            >>> g = GraduateStudent()
+            >>> g.score = 99
+            >>> 
+            >>> g.score
+            99
+            >>> 
+            
+        除非在子类中也定义__slots__，这样，子类实例允许定义的属性就是自身的__slots__加上父类的__slots__。    
+            
+    2、使用 @property:
+    
+        在绑定属性时，如果我们直接把属性暴露出去，虽然写起了很简单，但是，没办法检查参数，导致可以随意更改：
+        
+            s = Student()
+            s.score = 999
+        
+        这显然不合逻辑，为了限制 score 的范围，可以通过一个 set_score() 方法来设置成绩，再通过一个 get_score()
+        来获取成绩，这样，在 set_score() 方法里，就可以检查参数：
+        
+            class Student(object):
+                def get_score(self):
+                    return self._score
+                
+                def set_score(self, value):
+                    if not isinstance(value, int):
+                        raise ValuError('score must be an integer!')
+                    
+                    if value < 0 or value > 100:
+                        raise ValueError('score must between 0~100!')
+                    self._score = value
+              
+        但是，上面的调用方法又略显复杂，没有直接用属性这么直接简单。
+        有没有既能检查参数，又可以用类似属性这样简单的方式来访问类的变量呢？
+        Python 内置了 @property 装饰器就是负责把一个方法变成属性调用的：
+        
+            class Student(object):
+
+                @property
+                def score(self):
+                    return self.__score
+            
+                @score.setter
+                def score(self, value):
+                    if not isinstance(value, int):
+                        raise ValueError('score must bu integer')
+            
+                    if value < 0 or value > 100:
+                        raise ValueError('score must between o ~ 100')
+            
+                    self.__score = value
+
+        @property的实现比较复杂，我们先考察如何使用。
+        把一个 getter 方法变成属性，只需要加上 @property 就可以了，此时，@property 本身又创建了另一个
+        装饰器 @socre.setter, 负责把一个 setter 方法变成属性赋值，于是，我们就拥有了一个可控的属性操作：
+        
+            >>> s = Student()
+            >>> s.score = 60 # OK，实际转化为s.set_score(60)
+            >>> s.score # OK，实际转化为s.get_score()
+            60
+            >>> s.score = 9999
+            Traceback (most recent call last):
+              ...
+            ValueError: score must between 0 ~ 100!   
+
+        注意到这个神奇的 @property, 我们在对实例属性操作的时候，就知道这个属性不可能直接暴露的，
+        而是通过 getter 和 setter 方法来来实现的。 
+        
+        还可以定义只读属性，只定义getter 方法，不定义 setter 方法就是一个只读属性：
+            
+            class Student(object):
+                @property
+                def birth(self):
+                    return self._birth
+                
+                @birth.setter
+                def bitrh(self, value):
+                    self._bitrh = value
+                
+                @property
+                def age(self):
+                    return 2019 - self._birth
+            
+        上面的 birth 是可读写属性，而 age 就是一个只读属性。
+        
+        @property广泛应用在类的定义中，可以让调用者写出简短的代码，
+        同时保证对参数进行必要的检查，这样，程序运行时就减少了出错的可能性。    
+        
+    3、多重继承：
+    
+                       
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
