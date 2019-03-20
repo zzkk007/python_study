@@ -3647,4 +3647,123 @@
                 
 """12| 第三方模块"""
 
+    1、Pillow:
+        
+        PIL：Python Imaging Library，已经是Python平台事实上的图像处理标准库了。
+        PIL功能非常强大，但API却非常简单易用。                   
+        
+        由于PIL仅支持到Python 2.7，加上年久失修，于是一群志愿者在PIL的基础上
+        创建了兼容的版本，名字叫Pillow，支持最新Python 3.x，又加入了许多新特性，
+        因此，我们可以直接安装使用Pillow。
+        
+        安装Pillow:
             
+            如果安装了Anaconda，Pillow就已经可用了。否则，需要在命令行下通过pip安装：
+            $ pip install pillow
+        
+        操作图像:
+        
+            from PIL import Image
+
+            # 打开一个jpg图像文件，注意是当前路径:
+            im = Image.open('test.jpg')
+            # 获得图像尺寸:
+            w, h = im.size
+            print('Original image size: %sx%s' % (w, h))
+            # 缩放到50%:
+            im.thumbnail((w//2, h//2))
+            print('Resize image to: %sx%s' % (w//2, h//2))
+            # 把缩放后的图像用jpeg格式保存:
+            im.save('thumbnail.jpg', 'jpeg')        
+                            
+        其他功能如切片、旋转、滤镜、输出文字、调色板等一应俱全。
+        
+        PIL的ImageDraw提供了一系列绘图方法，让我们可以直接绘图。比如要生成字母验证码图片：
+        
+            from PIL import Image, ImageDraw, ImageFont, ImageFilter
+
+                import random
+                
+                # 随机字母:
+                def rndChar():
+                    return chr(random.randint(65, 90))
+                
+                # 随机颜色1:
+                def rndColor():
+                    return (random.randint(64, 255), random.randint(64, 255), random.randint(64, 255))
+                
+                # 随机颜色2:
+                def rndColor2():
+                    return (random.randint(32, 127), random.randint(32, 127), random.randint(32, 127))
+                
+                # 240 x 60:
+                width = 60 * 4
+                height = 60
+                image = Image.new('RGB', (width, height), (255, 255, 255))
+                # 创建Font对象:
+                font = ImageFont.truetype('Arial.ttf', 36)
+                # 创建Draw对象:
+                draw = ImageDraw.Draw(image)
+                # 填充每个像素:
+                for x in range(width):
+                    for y in range(height):
+                        draw.point((x, y), fill=rndColor())
+                # 输出文字:
+                for t in range(4):
+                    draw.text((60 * t + 10, 10), rndChar(), font=font, fill=rndColor2())
+                # 模糊:
+                image = image.filter(ImageFilter.BLUR)
+                image.save('code.jpg', 'jpeg')        
+        
+        如果运行的时候报错：
+
+            IOError: cannot open resource
+        这是因为PIL无法定位到字体文件的位置，可以根据操作系统提供绝对路径，比如：
+        
+            '/Library/Fonts/Arial.ttf'
+            
+        要详细了解PIL的强大功能，请请参考Pillow官方文档：
+
+            https://pillow.readthedocs.org/  
+            
+            
+    2、chardet：
+        
+        字符串编码一直是令人非常头疼的问题，尤其是处理不规范的第三方网页的时候，
+        虽然 Python 提供了 Unicode 表示的 str 和 bytes 两种数据类型，并且
+        可以通过 encode() 和 decode() 方法转换，但是，在不知道编码的情况下
+        对 bytes 做 decode() 不好做。
+        
+        对于未知编码的bytes，要把它转换成str，需要先“猜测”编码。
+        猜测的方式是先收集各种编码的特征字符，根据特征字符判断，就能有很大概率“猜对”。
+        
+        当然，我们肯定不能从头自己写这个检测编码的功能，这样做费时费力。
+        chardet这个第三方库正好就派上了用场。用它来检测编码，简单易用。
+        
+        安装chardet：
+
+            如果安装了Anaconda，chardet就已经可用了。否则，需要在命令行下通过pip安装：
+            $ pip install chardet
+            
+        使用chardet：
+        
+            当我们拿到一个 bytes 时，就可以对其检测编码，用 chardet 检测编码，只需要一行代码：
+            
+            >>> chardet.detect(b'Hello, world!')
+            {'encoding': 'ascii', 'confidence': 1.0, 'language': ''}
+            检测出的编码是ascii，注意到还有个confidence字段，表示检测的概率是1.0（即100%）。 
+        
+        我们来试试检测GBK编码的中文：
+            
+            >>> data = '离离原上草，一岁一枯荣'.encode('gbk')
+            >>> chardet.detect(data)
+            {'encoding': 'GB2312', 'confidence': 0.7407407407407407, 'language': 'Chinese'}
+        
+        检测的编码是GB2312，注意到GBK是GB2312的超集，两者是同一种编码，
+        检测正确的概率是74%，language字段指出的语言是'Chinese'。
+        
+    3、psutil：
+    
+            
+        
+        
