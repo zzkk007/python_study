@@ -3764,6 +3764,186 @@
         
     3、psutil：
     
+        用Python来编写脚本简化日常的运维工作是Python的一个重要用途。
+        在Linux下，有许多系统命令可以让我们时刻监控系统运行的状态，
+        如ps，top，free等等。要获取这些系统信息，Python可以通过subprocess模块调用并获取结果。
+        但这样做显得很麻烦，尤其是要写很多解析代码。    
+        
+        在Python中获取系统信息的另一个好办法是使用psutil这个第三方模块。
+        顾名思义，psutil = process and system utilities，
+        它不仅可以通过一两行代码实现系统监控，还可以跨平台使用，
+        支持Linux／UNIX／OSX／Windows等，是系统管理员和运维小伙伴不可或缺的必备模块。
             
+        安装psutil
+
+            如果安装了Anaconda，psutil就已经可用了。否则，需要在命令行下通过pip安装：
+            $ pip install psutil
+            
+        获取CPU信息：
+            
+            >>> import psutil
+            >>> psutil.cpu_count() # CPU逻辑数量
+            4
+            >>> psutil.cpu_count(logical=False) # CPU物理核心
+            2
+            # 2说明是双核超线程, 4则是4核非超线程    
         
+        统计CPU的用户／系统／空闲时间：
         
+            >>> psutil.cpu_times()
+            scputimes(user=10963.31, nice=0.0, system=5138.67, idle=356102.45)  
+            
+        再实现类似top命令的CPU使用率，每秒刷新一次，累计10次：
+            
+            >>> for x in range(10):
+            ...     psutil.cpu_percent(interval=1, percpu=True)
+            ... 
+            [14.0, 4.0, 4.0, 4.0]
+            [12.0, 3.0, 4.0, 3.0]
+            [8.0, 4.0, 3.0, 4.0]
+            [12.0, 3.0, 3.0, 3.0]
+            [18.8, 5.1, 5.9, 5.0]
+            [10.9, 5.0, 4.0, 3.0]
+            [12.0, 5.0, 4.0, 5.0]
+            [15.0, 5.0, 4.0, 4.0]
+            [19.0, 5.0, 5.0, 4.0]
+            [9.0, 3.0, 2.0, 3.0]
+        
+        获取内存信息：
+            >>> psutil.virtual_memory()
+            >>> psutil.swap_memory() 
+        
+        获取磁盘信息：
+            
+            >>> psutil.disk_partitions() # 磁盘分区信息
+            >>> psutil.disk_usage('/') # 磁盘使用情况
+            >>> psutil.disk_io_counters() # 磁盘IO
+            
+        获取网络信息：
+        
+            >>> psutil.net_io_counters() # 获取网络读写字节／包的个数
+            >>> psutil.net_if_addrs() # 获取网络接口信息
+            >>> psutil.net_if_stats() # 获取网络接口状态
+                   
+        获取进程信息：
+        
+            >>> psutil.pids() # 所有进程ID
+            [3865, 3864, 3863, 3856, 3855, 3853, 3776, ..., 45, 44, 1, 0]
+            >>> p = psutil.Process(3776) # 获取指定进程ID=3776，其实就是当前Python交互环境
+            >>> p.name() # 进程名称
+            'python3.6'
+            >>> p.exe() # 进程exe路径
+            '/Users/michael/anaconda3/bin/python3.6'
+            >>> p.cwd() # 进程工作目录
+            '/Users/michael'
+            >>> p.cmdline() # 进程启动的命令行
+            ['python3']
+            >>> p.ppid() # 父进程ID
+            3765
+            >>> p.parent() # 父进程
+            <psutil.Process(pid=3765, name='bash') at 4503144040>
+            >>> p.children() # 子进程列表
+            []
+            >>> p.status() # 进程状态
+            'running'
+            >>> p.username() # 进程用户名
+            'michael'
+            >>> p.create_time() # 进程创建时间
+            1511052731.120333
+            >>> p.terminal() # 进程终端
+            '/dev/ttys002'
+            >>> p.cpu_times() # 进程使用的CPU时间
+            pcputimes(user=0.081150144, system=0.053269812, children_user=0.0, children_system=0.0)
+            >>> p.memory_info() # 进程使用的内存
+            pmem(rss=8310784, vms=2481725440, pfaults=3207, pageins=18)
+            >>> p.open_files() # 进程打开的文件
+            []
+            >>> p.connections() # 进程相关网络连接
+            []
+            >>> p.num_threads() # 进程的线程数量
+            1
+            >>> p.threads() # 所有线程信息
+            [pthread(id=1, user_time=0.090318, system_time=0.062736)]
+            >>> p.environ() # 进程环境变量
+            {'SHELL': '/bin/bash', 'PATH': '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:...', 'PWD': '/Users/michael', 'LANG': 'zh_CN.UTF-8', ...}
+            >>> p.terminate() # 结束进程
+            Terminated: 15 <-- 自己把自己结束了           
+                            
+            
+        psutil使得Python程序获取系统信息变得易如反掌。
+
+        psutil还可以获取用户信息、Windows服务等很多有用的系统信息，
+        具体请参考psutil的官网：https://github.com/giampaolo/psutil    
+      
+    4、virtualenv:
+              
+        在开发Python应用程序的时候，系统安装的Python3只有一个版本：3.4。
+        所有第三方的包都会被pip安装到Python3的site-packages目录下。          
+        
+        如果我们要同时开发多个应用程序，那这些应用程序都会共用一个Python，
+        就是安装在系统的Python 3。如果应用A需要jinja 2.7，而应用B需要jinja 2.6怎么办？        
+        
+        这种情况下，每个应用可能需要各自拥有一套“独立”的Python运行环境。
+        virtualenv就是用来为一个应用创建一套“隔离”的Python运行环境。        
+        
+        首先，我们用pip安装virtualenv：
+            
+            $ pip3 install virtualenv
+            
+        然后，假定我们要开发一个新的项目，需要一套独立的Python运行环境，可以这么做：
+        第一步，创建目录：
+            
+            Mac:~ michael$ mkdir myproject
+            Mac:~ michael$ cd myproject/
+            Mac:myproject michael$   
+            
+        第二步，创建一个独立的Python运行环境，命名为venv：
+        
+            Mac:myproject michael$ virtualenv --no-site-packages venv
+            Using base prefix '/usr/local/.../Python.framework/Versions/3.4'
+            New python executable in venv/bin/python3.4
+            Also creating executable in venv/bin/python
+            Installing setuptools, pip, wheel...done.         
+                
+            命令virtualenv就可以创建一个独立的Python运行环境，
+            我们还加上了参数--no-site-packages，这样，
+            已经安装到系统Python环境中的所有第三方包都不会复制过来，
+            这样，我们就得到了一个不带任何第三方包的“干净”的Python运行环境。    
+        
+        新建的Python环境被放到当前目录下的venv目录。
+        有了venv这个Python环境，可以用source进入该环境：            
+            
+            Mac:myproject michael$ source venv/bin/activate
+            (venv)Mac:myproject michael$             
+                
+
+"""13| 图形界面"""
+
+    Python支持多种图形界面的第三方库，包括：
+        
+        Tk、wxWidgets、Qt、GTK         
+                    
+    但是Python自带的库是支持Tk的Tkinter,使用Tkinter，无需安装任何包，就可以直接使用。
+    
+    Tkinter:
+
+        我们来梳理一下概念：
+        
+        我们编写的Python代码会调用内置的Tkinter，Tkinter封装了访问Tk的接口；
+        Tk是一个图形库，支持多个操作系统，使用Tcl语言开发；
+        Tk会调用操作系统提供的本地GUI接口，完成最终的GUI。
+        所以，我们的代码只需要调用Tkinter提供的接口就可以了。       
+        
+        Python内置的Tkinter可以满足基本的GUI程序的要求.
+        如果是非常复杂的GUI程序，建议用操作系统原生支持的语言和库来编写。
+    
+    turtle:
+        
+        在1966年，Seymour Papert和Wally Feurzig发明了一种专门给儿童学习编程的语言——LOGO语言，
+        它的特色就是通过编程指挥一个小海龟（turtle）在屏幕上绘图。
+
+        海龟绘图（Turtle Graphics）后来被移植到各种高级语言中，
+        Python内置了turtle库，基本上100%复制了原始的Turtle Graphics的所有功能。
+        
+    
+    
