@@ -26,3 +26,21 @@ manager.start()
 task = manager.get_task_queue()
 result = manager.get_result_queue()
 
+# 放几个任务进去
+
+for i in range(10):
+
+    n = random.randint(0, 10000)
+    print('Put task %d..' % n)
+    task.put(n)
+
+# 从result 队列中读取结果
+print('Try get results ...')
+for  j in range(10):
+    r = result.get(timeout = 10)
+    print('Result:%s'% r)
+
+#关闭
+manager.shutdown()
+print('master exit ...')
+
