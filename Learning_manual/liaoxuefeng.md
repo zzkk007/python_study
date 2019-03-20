@@ -3431,14 +3431,216 @@
         可见使用hmac和普通hash算法非常类似。hmac输出的长度和原始哈希算法的长度一致。
         需要注意传入的key和message都是bytes类型，str类型需要首先编码为bytes。
         
+    7、itertools:
+    
+        Python的内建模块itertools提供了非常有用的用于操作迭代对象的函数。
+        首先，我们看看itertools提供的几个“无限”迭代器：
         
         
+        count():
+        
+            >>> import itertools
+            >>> natuals = itertools.count(1)
+            >>> for n in natuals:
+            ...     print(n)
+            ...
+            1
+            2
+            3
+            ...        
+        
+            因为count()会创建一个无限的迭代器，
+            所以上述代码会打印出自然数序列，根本停不下来，只能按Ctrl+C退出。    
+        
+        cycle():
+        
+            cycle() 会把传入的一个序列无限重复下去：
             
+            >>> import itertools
+            >>> cs = itertools.cycle('ABC') # 注意字符串也是序列的一种
+            >>> for c in cs:
+            ...     print(c)
+            ...
+            'A'
+            'B'
+            'C'
+            'A'
+            'B'
+            'C'
+            ...
+            同样停不下来。        
+                
             
+        repeat():
             
+            repeat()负责把一个元素无限重复下去，不过如果提供第二个参数就可以限定重复次数：
             
+            >>> ns = itertools.repeat('A', 3)
+            >>> for n in ns:
+            ...     print(n)
+            ...
+            A
+            A
+            A        
             
+        无限序列只有在for迭代时才会无限地迭代下去，如果只是创建了一个迭代对象，
+        它不会事先把无限个元素生成出来，事实上也不可能在内存中创建无限多个元素。        
             
+        无限序列虽然可以无限迭代下去，
+        但是通常我们会通过takewhile()等函数根据条件判断来截取出一个有限的序列：                 
             
-                      
-                          
+            >>> natuals = itertools.count(1)
+            >>> ns = itertools.takewhile(lambda x: x <= 10, natuals)
+            >>> list(ns)
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]                     
+            
+        itertools提供的几个迭代器操作函数更加有用：
+        
+        chain():
+        
+            chain() 可以把一组可迭代对象串联起来，形成一个更大的迭代器：
+            
+            >>> for c in itertools.chain('ABC', 'XYZ'):
+            ...     print(c)
+            # 迭代效果：'A' 'B' 'C' 'X' 'Y' 'Z'
+            
+        groupby():
+            
+            groupby() 把迭代器中相邻的重复元素挑出来放在一起：
+            
+            >>> for key, group in itertools.groupby('AAABBBCCAAA'):
+            ...     print(key, list(group))
+            ...
+            A ['A', 'A', 'A']
+            B ['B', 'B', 'B']
+            C ['C', 'C']
+            A ['A', 'A', 'A']
+    
+        itertools模块提供的全部是处理迭代功能的函数，
+        它们的返回值不是list，而是Iterator，只有用for循环迭代的时候才真正计算。        
+    
+    8、contextlib:
+        
+        在Python中，读写文件这样的资源要特别注意，必须在使用完毕后正确关闭它们。
+        正确关闭文件资源的一个方法是使用try...finally：  
+        
+            try:
+                f = open('/path/to/file', 'r')
+                f.read()
+            finally:
+                if f:
+                    f.close()     
+        
+        写try...finally非常繁琐。Python的with语句允许我们非常方便地使用资源，
+        而不必担心资源没有关闭，所以上面的代码可以简化为：
+            
+            with open('/path/to/file', 'r') as f:
+                f.read()                   
+            
+        并不是只有 open() 函数返回的 fp 对象才能使用 with 语句，实际上，
+        只有正确实现了上下文管理，就可以用 with 语句。
+        
+        实现上下文管理是通过 __enter__ 和 __exit__ 这两个方法实现的。
+            
+            class Query(object):
+
+                def __init__(self, name):
+                    self.name = name
+            
+                def __enter__(self):
+                    print('Begin')
+                    return self
+            
+                def __exit__(self, exc_type, exc_value, traceback):
+                    if exc_type:
+                        print('Error')
+                    else:
+                        print('End')
+            
+                def query(self):
+                    print('Query info about %s...' % self.name)        
+        
+        这样我们就可以把自己写的资源对象用于 with 语句：
+            
+            with Query('Bob') as q:
+                q.query()
+                
+        @contextmanager:
+            
+            编写__enter__和__exit__仍然很繁琐，因此Python的
+            标准库contextlib提供了更简单的写法，上面的代码可以改写如下：    
+            
+                from contextlib import contextmanager
+    
+                class Query(object):
+                
+                    def __init__(self, name):
+                        self.name = name
+                
+                    def query(self):
+                        print('Query info about %s...' % self.name)
+                
+                @contextmanager
+                def create_query(name):
+                    print('Begin')
+                    q = Query(name)
+                    yield q
+                    print('End')
+                
+            @contextmanager这个decorator接受一个generator，
+            用yield语句把with ... as var把变量输出出去，
+            然后，with语句就可以正常地工作了：
+                
+                with create_query('Bob') as q:
+                    q.query()    
+                    
+            很多时候，我们希望在某段代码执行前后自动执行特定代码，
+            也可以用@contextmanager实现。例如：
+            
+                @contextmanager
+                def tag(name):
+                    print("<%s>" % name)
+                    yield
+                    print("</%s>" % name)
+                
+                with tag("h1"):
+                    print("hello")
+                    print("world")  
+                    
+            上述代码执行结果为：
+
+                <h1>
+                hello
+                world
+                </h1> 
+                
+            代码的执行顺序是：
+
+                with语句首先执行yield之前的语句，因此打印出<h1>；
+                yield调用会执行with语句内部的所有语句，因此打印出hello和world；
+                最后执行yield之后的语句，打印出</h1>。
+                因此，@contextmanager让我们通过编写generator来简化上下文管理。     
+                
+        @closing:
+        
+            如果一个对象没有实现上下文，我们就不能把它用于with语句。
+            这个时候，可以用closing()来把该对象变为上下文对象。例如，用with语句使用urlopen()：    
+            
+                from contextlib import closing
+                from urllib.request import urlopen
+                
+                with closing(urlopen('https://www.python.org')) as page:
+                    for line in page:
+                        print(line)    
+            
+            closing也是一个经过@contextmanager装饰的generator，
+            这个generator编写起来其实非常简单：
+            
+                @contextmanager
+                def closing(thing):
+                    try:
+                        yield thing
+                    finally:
+                        thing.close()
+                        
+            它的作用就是把任意对象变为上下文对象，并支持with语句。 
