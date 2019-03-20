@@ -3279,33 +3279,157 @@
             Counter实际上也是dict的一个子类，上面的结果可以看出，字符'g'、'm'、'r'各出现了两次，
             其他字符各出现了一次。            
             
+    3、 base64:
+        
+        base64 是一种用 64 个字符表示任意二进制数据的方法。
+        
+        用记事本打开exe、jpg、pdf这些文件时，我们都会看到一大堆乱码，
+        因为二进制文件包含很多无法显示和打印的字符，所以，
+        如果要让记事本这样的文本处理软件能处理二进制数据，
+        就需要一个二进制到字符串的转换方法。
+        
+        Base64 是一种罪常见的二进制编码方法。
+        
+        Base64 的原理很简单，首先，准备一个包含 64 个字符的数组。
+        ['A', 'B', 'C', ... 'a', 'b', 'c', ... '0', '1', ... '+', '/']
+        
+        然后，对二进制数据进行处理，每3个字节一组，一共是 3x8=24 bit，划为4组，
+        每组正好 6 个bit。这样我们就得到 4 个数字作为索引，然后查表，获得对应的4个字符，
+        就是编码后的字符串。
+        
+        所以，Base64编码会把3字节的二进制数据编码为4字节的文本数据，长度增加33%，
+        好处是编码后的文本数据可以在邮件正文、网页等直接显示。
+        
+        如果要编码的二进制数据不是3的倍数，最后会剩下1个或2个字节怎么办？
+        Base64用\x00字节在末尾补足后，再在编码的末尾加上1个或2个=号，
+        表示补了多少字节，解码的时候，会自动去掉。
+        
+        Python内置的base64可以直接进行base64的编解码：
             
+            >>> import base64
+            >>> base64.b64encode(b'binary\x00string')
+            b'YmluYXJ5AHN0cmluZw=='
+            >>> base64.b64decode(b'YmluYXJ5AHN0cmluZw==')
+            b'binary\x00string'   
+                            
             
-            
+        由于标准的 Base64 编码后可能出现 + 和 /，在 URL 中就不能直接作为参数，
+        所以又有一种“url safe” 的base64 编码，其实就是把字符 + 和 / 分别变成了 - 和 _。
+        
+            >>> base64.b64encode(b'i\xb7\x1d\xfb\xef\xff')
+            b'abcd++//'
+            >>> base64.urlsafe_b64encode(b'i\xb7\x1d\xfb\xef\xff')
+            b'abcd--__'
+            >>> base64.urlsafe_b64decode('abcd--__')
+            b'i\xb7\x1d\xfb\xef\xff'                
                
+        Base64是一种通过查表的编码方法，不能用于加密，即使使用自定义的编码表也不行。
+        Base64适用于小段内容的编码，比如数字证书签名、Cookie的内容等。
         
+    4、struct:
+    
+        准确地将，Python 没有专门处理字节的数据类型，但由于 b'str'可以表示字节，
+        所以，字节数组=二进制str。而在 c 语言中，我们可以很方便地用 struct、union
+        来处理字节，以及字节和 int, float的转换。
         
+        在Python中，比方说要把一个32位无符号整数变成字节，也就是4个长度的bytes，
+        你得配合位运算符这么写：
+           
+            >>> n = 10240099
+            >>> b1 = (n & 0xff000000) >> 24
+            >>> b2 = (n & 0xff0000) >> 16
+            >>> b3 = (n & 0xff00) >> 8
+            >>> b4 = n & 0xff
+            >>> bs = bytes([b1, b2, b3, b4])
+            >>> bs
+            b'\x00\x9c@c'    
+            
+        非常麻烦。如果换成浮点数就无能为力了。
         
+        好在Python提供了一个struct模块来解决bytes和其他二进制数据类型的转换。
+        struct的pack函数把任意数据类型变成bytes：
+                
+            >>> import struct
+            >>> struct.pack('>I', 10240099)
+            b'\x00\x9c@c'
         
+        pack的第一个参数是处理指令，'>I'的意思是：
+        >表示字节顺序是big-endian，也就是网络序，I表示4字节无符号整数。
+                
+        unpack把bytes变成相应的数据类型：
+            
+            >>> struct.unpack('>IH', b'\xf0\xf0\xf0\xf0\x80\x80')
+            (4042322160, 32896)    
         
+        根据>IH的说明，后面的bytes依次变为I：4字节无符号整数和H：2字节无符号整数。
         
+    5、hashlib:
         
+        摘要算法简介：
+            摘要算法又称哈希算法，散列算法。它通过一个函数，把任意长度的数据转换为一个
+            长度固定的字符串。
+            
+            摘要算法就是通过摘要函数f()对任意长度的数据data计算出固定长度的摘要digest，
+            目的是为了发现原始数据是否被人篡改过。
+            
+            摘要算法之所以能指出数据是否被篡改过，就是因为摘要函数是一个单向函数，
+            计算f(data)很容易，但通过digest反推data却非常困难。
+            而且，对原始数据做一个bit的修改，都会导致计算出的摘要完全不同。
         
+        我们以常见的摘要算法MD5为例，计算出一个字符串的MD5值：
         
+            import hashlib
+
+            md5 = hashlib.md5()
+            md5.update('how to use md5 in python hashlib?'.encode('utf-8'))
+            print(md5.hexdigest())    
         
+        计算结果如下：
+            d26a53750bc40b38b65a520292f69306
         
+        如果数据量很大，可以分块多次调用update()，最后计算的结果是一样的：
+            import hashlib
+
+            md5 = hashlib.md5()
+            md5.update('how to use md5 in '.encode('utf-8'))
+            md5.update('python hashlib?'.encode('utf-8'))
+            print(md5.hexdigest())
+            
+        MD5是最常见的摘要算法，速度很快，生成结果是固定的128 bit字节，通常用一个32位的16进制字符串表示。
         
+    6、hmac:
+    
+        通过哈希算法，我们可以验证一段数据是否有效，方法就是对比该数据的哈希值。
+        例如，判断用户口令是否正确，我们用保存在数据库中的password_md5对比计算md5(password)的结果，
+        如果一致，用户输入的口令就是正确的。    
         
+        为了防止黑客通过彩虹表根据哈希值反推原始口令，在计算哈希的时候，不能仅针对原始输入计算，
+        需要增加一个salt来使得相同的输入也能得到不同的哈希，这样，大大增加了黑客破解的难度。
+
+        如果salt是我们自己随机生成的，通常我们计算MD5时采用md5(message + salt)。
+        但实际上，把salt看做一个“口令”，加salt的哈希就是：计算一段message的哈希时，
+        根据不通口令计算出不同的哈希。要验证哈希值，必须同时提供正确的口令。
         
+        这实际上就是Hmac算法：Keyed-Hashing for Message Authentication。
+        它通过一个标准算法，在计算哈希的过程中，把key混入计算过程中。
         
+        和我们自定义的加salt算法不同，Hmac算法针对所有哈希算法都通用，无论是MD5还是SHA-1。
+        采用Hmac替代我们自己的salt算法，可以使程序算法更标准化，也更安全。
         
+        Python自带的hmac模块实现了标准的Hmac算法。我们来看看如何使用hmac实现带key的哈希。
+        我们首先需要准备待计算的原始消息message，
+        随机key，哈希算法，这里采用MD5，使用hmac的代码如下：
+            
+            >>> import hmac
+            >>> message = b'Hello, world!'
+            >>> key = b'secret'
+            >>> h = hmac.new(key, message, digestmod='MD5')
+            >>> # 如果消息很长，可以多次调用h.update(msg)
+            >>> h.hexdigest()
+            'fa4ee7d173f2d97ee79022d1a7355bcf'    
         
-        
-        
-        
-        
-        
-        
+        可见使用hmac和普通hash算法非常类似。hmac输出的长度和原始哈希算法的长度一致。
+        需要注意传入的key和message都是bytes类型，str类型需要首先编码为bytes。
         
         
         
