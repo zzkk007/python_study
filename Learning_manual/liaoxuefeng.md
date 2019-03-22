@@ -4246,10 +4246,55 @@
 
     2、 HTML 简介：
         
+        HTML 文档是一系列的 Tag 组成，最外层的 Tag 是<html>。
+        规范的HTML也包含<head>...</head>和<body>...</body>
+        由于HTML是富文档模型，所以，还有一系列的Tag用来表示链接、图片、表格、表单等等。
         
+        CSS是Cascading Style Sheets（层叠样式表）的简称，CSS用来控制HTML里的所有元素如何展现。
         
+        JavaScript是为了让HTML具有交互性而作为脚本语言添加的，
+        JavaScript既可以内嵌到HTML中，也可以从外部链接到HTML中。
+               
+        如果要学习Web开发，首先要对HTML、CSS和JavaScript作一定的了解。HTML定义了页面的内容，CSS来控制页面元素的样式，而JavaScript负责页面的交互逻辑。
+
+        讲解HTML、CSS和JavaScript就可以写3本书，对于优秀的Web开发人员来说，
+        精通HTML、CSS和JavaScript是必须的，这里推荐一个在线学习网站w3schools：
+
+        http://www.w3schools.com/
+        以及一个对应的中文版本：
+        http://www.w3school.com.cn/
+
+        当我们用Python或者其他语言开发Web应用时，我们就是要在服务器端动态创建出HTML，
+        这样，浏览器就会向不同的用户显示出不同的Web页面。
         
     3、 WSGI 接口：
+        
+        了解了 HTTP 协议和 HTML 文档，我们其实就明白了一个 Web 应用的本质就是：
+            a. 浏览器发送一个 HTTP 请求
+            b. 服务器接收到请求，生产一个 HTML 文档
+            c. 服务器把 HTML 文档作为 HTTP 响应的 Body 发送给浏览器
+            d. 浏览器收到 HTTP 响应，从 HTTP Body 取出 HTML 文档并显示。
+        
+        所以，最简单的 Web 应用就是把 HTML 用文件保存好，用一个现成的 HTTP 服务器软件
+        接收用户请求，从文件中读取 HTML, 返回，Apache, Nginx, Lighttpd 等这些常见
+        的静态服务器都是干这件事情的。
+        
+        如果要动态生成 HTML, 就需要把上述步骤自己来实现，不过，接收 HTTP 请求，
+        解析HTTP请求、发送HTTP响应都是苦力活，如果我们自己来写这些底层代码，
+        还没开始写动态HTML呢，就得花个把月去读HTTP规范。      
+        
+        正确的做法是底层代码由专门的服务器软件实现，我们用Python专注于生成HTML文档。
+        因为我们不希望接触到TCP连接、HTTP原始请求和响应格式，所以，需要一个统一的接口，
+        让我们专心用Python编写Web业务。
+        
+        这个接口就是WSGI： Web Server Gateway Interface。
+        
+        WSGI 接口定义非常简单，它只要求 Web 开发者实现一个函数，就可以响应 HTTP 请求，
+        
+            def application(environ, start_response):
+                    
+            
+             
     
     4、 使用模板：
     
