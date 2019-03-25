@@ -4447,7 +4447,84 @@
             Web框架都提供了自己的API来实现这些功能。Flask通过request.form['name']来获取表单的内容。
                               
     5、 使用模板：
-    
+        
+        Web 框架把我们从 WSGI 中拯救了出来，现在，我们只需要不断地编写函数，带上 URL,
+        就可以继续Web APP 开发了。
+        
+        但是，Web App 不仅仅是处理逻辑，展示给用户的页面也非常重要。
+        在函数中返回一个包含HTML的字符串，简单的页面还可以，但是，想想
+        想想新浪首页的6000多行的HTML，你确信能在Python的字符串中正确地写出来么？     
+        
+        俗话说得好，不懂前端的Python工程师不是好的产品经理。有Web开发经验的同学都明白，
+        Web App最复杂的部分就在HTML页面。HTML不仅要正确，还要通过CSS美化，
+        再加上复杂的JavaScript脚本来实现各种交互和动画效果。总之，生成HTML页面的难度很大。
+        
+        由于在Python代码里拼字符串是不现实的，所以，模板技术出现了。
+        
+        使用模板，我们需要预先准备一个 HTML 文档，这个HTML 文档不是普通的 HTML,
+        而是嵌入了一些变量和指令，然后，根据我们传入的数据，替换后，得到最终的 HTML,
+        发送给用户：
+            
+            浏览器请求:  GET /Michael        
+            
+            app.py:     @app.route('/<name>')
+                        def home(name):
+                            return render_template('home.html', name=name)
+                           
+            模板:       <html>
+                        <body>
+                            <p>Hello, {{name}}!</p>
+                        </body>
+                        </html>
+                        
+            用户看到：   <html>
+                        <body>
+                            <p>Hello, Michael! </p>
+                        </body>
+                        </html>
+           
+        这就是传说中的 MVC: Model-View-Controller, 中文名“模型-视图-控制器”
+        
+        Python 处理 URL 的函数就是C：Controller, Controller 负责业务逻辑，
+        比如检查用户名是否存在，取出用户信息等。    
+        
+        包含变量 {{name}} 的模板就是 V：View, View 负责显示逻辑，通过简单的替换这些变量
+        View 最终输出的就是用户看到的HTML。
+        
+        MVC 中的 Model 在哪，Model 是用来传给 View 的，这样 View 在替换变量的时候，就可以
+        从 Model 中取出相应的数据。
+        上面的例子中，Model就是一个dict：
+        { 'name': 'Michael' }
+        
+        只是因为Python支持关键字参数，很多Web框架允许传入关键字参数，
+        然后，在框架内部组装出一个dict作为Model。
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+          
+        
+        
+        
+        
         
     
     
