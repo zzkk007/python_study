@@ -4768,13 +4768,171 @@
                 “子程序就是协程的一种特例。”    
         
     2、asyncio:
+        
+        asyncio 是 Python 3.4 版本引入的标准库，直接内置了对异步IO的支持。
+        asyncio 的编程模型就是一个消息循环。我们从 asyncio 模块中直接获取一个 EventLoop 的引用
+        然后把需要执行的协程扔到 EventLoop 中执行，就实现了异步 IO.
+        
+        用asyncio实现Hello world代码如下：
+        
+            import asyncio
+
+            @asyncio.coroutine
+            def hello():
+                print("Hello world!")
+                # 异步调用asyncio.sleep(1):
+                r = yield from asyncio.sleep(1)
+                print("Hello again!")
+            
+            # 获取EventLoop:
+            loop = asyncio.get_event_loop()
+            # 执行coroutine
+            loop.run_until_complete(hello())
+            loop.close()    
+                    
+        @asyncio.coroutine把一个generator标记为coroutine类型，
+        然后，我们就把这个coroutine扔到EventLoop中执行。
     
+        hello()会首先打印出Hello world!，然后，yield from语法可以让我们方便地调用另一个generator。
+        由于asyncio.sleep()也是一个coroutine，所以线程不会等待asyncio.sleep()，
+        而是直接中断并执行下一个消息循环。当asyncio.sleep()返回时，
+        线程就可以从yield from拿到返回值（此处是None），然后接着执行下一行语句。
+
+        把asyncio.sleep(1)看成是一个耗时1秒的IO操作，在此期间，主线程并未等待，
+        而是去执行EventLoop中其他可以执行的coroutine了，因此可以实现并发执行。
+    
+        我们用Task封装两个coroutine试试：
+            
+            import threading
+            import asyncio
+            
+            @asyncio.coroutine
+            def hello():
+                print('Hello world! (%s)' % threading.currentThread())
+                yield from asyncio.sleep(1)
+                print('Hello again! (%s)' % threading.currentThread())
+            
+            loop = asyncio.get_event_loop()
+            tasks = [hello(), hello()]
+            loop.run_until_complete(asyncio.wait(tasks))
+            loop.close()    
+        
+        观察执行过程：
+
+            Hello world! (<_MainThread(MainThread, started 140735195337472)>)
+            Hello world! (<_MainThread(MainThread, started 140735195337472)>)
+            (暂停约1秒)
+            Hello again! (<_MainThread(MainThread, started 140735195337472)>)
+            Hello again! (<_MainThread(MainThread, started 140735195337472)>)    
+        
+        由打印的当前线程名称可以看出，两个coroutine是由同一个线程并发执行的。
+        如果把asyncio.sleep()换成真正的IO操作，则多个coroutine就可以由一个线程并发执行。
+        
+        我们用asyncio的异步网络连接来获取sina、sohu和163的网站首页：
+            import asyncio
+
+            @asyncio.coroutine
+            def wget(host):
+                print('wget %s...' % host)
+                connect = asyncio.open_connection(host, 80)
+                reader, writer = yield from connect
+                header = 'GET / HTTP/1.0\r\nHost: %s\r\n\r\n' % host
+                writer.write(header.encode('utf-8'))
+                yield from writer.drain()
+                while True:
+                    line = yield from reader.readline()
+                    if line == b'\r\n':
+                        break
+                    print('%s header > %s' % (host, line.decode('utf-8').rstrip()))
+                # Ignore the body, close the socket
+                writer.close()
+            
+            loop = asyncio.get_event_loop()
+            tasks = [wget(host) for host in ['www.sina.com.cn', 'www.sohu.com', 'www.163.com']]
+            loop.run_until_complete(asyncio.wait(tasks))
+            loop.close()
+                        
+        可见3个连接由一个线程通过coroutine并发完成。
+        
+        asyncio提供了完善的异步IO支持；
+        异步操作需要在coroutine中通过yield from完成；
+        多个coroutine可以封装成一组Task然后并发执行。
+        
+        
+        
     3、async/await:
     
+        用asyncio提供的@asyncio.coroutine可以把一个generator标记为coroutine类型，
+        然后在coroutine内部用yield from调用另一个coroutine实现异步操作。
+
+        为了简化并更好地标识异步IO，从Python 3.5开始引入了新的语法async和await，
+        可以让coroutine的代码更简洁易读。   
+        
+        请注意，async和await是针对coroutine的新语法，要使用新的语法，只需要做两步简单的替换：
+
+            把@asyncio.coroutine替换为async；
+            把yield from替换为await。
+        
+        让我们对比一下上一节的代码：
+
+            @asyncio.coroutine
+            def hello():
+                print("Hello world!")
+                r = yield from asyncio.sleep(1)
+                print("Hello again!")
+        用新语法重新编写如下：
+
+            async def hello():
+                print("Hello world!")
+                r = await asyncio.sleep(1)
+                print("Hello again!")   
+        
+        Python从3.5版本开始为asyncio提供了async和await的新语法；
+        注意新语法只能用在Python 3.5以及后续版本，如果使用3.4版本，则仍需使用上一节的方案。
+        
     4、aiohttp:
     
+        asyncio可以实现单线程并发IO操作。如果仅用在客户端，发挥的威力不大。
+        如果把asyncio用在服务器端，例如Web服务器，由于HTTP连接就是IO操作，
+        因此可以用单线程+coroutine实现多用户的高并发支持。
+
+        asyncio实现了TCP、UDP、SSL等协议，aiohttp则是基于asyncio实现的HTTP框架。
+        我们先安装aiohttp：
+            pip install aiohttp   
+        
+        然后编写一个HTTP服务器，分别处理以下URL：
+
+            / - 首页返回b'<h1>Index</h1>'；
+            /hello/{name} - 根据URL参数返回文本hello, %s!。
+            
+        代码如下：
+        
+            import asyncio
+
+            from aiohttp import web
+            
+            async def index(request):
+                await asyncio.sleep(0.5)
+                return web.Response(body=b'<h1>Index</h1>')
+            
+            async def hello(request):
+                await asyncio.sleep(0.5)
+                text = '<h1>hello, %s!</h1>' % request.match_info['name']
+                return web.Response(body=text.encode('utf-8'))
+            
+            async def init(loop):
+                app = web.Application(loop=loop)
+                app.router.add_route('GET', '/', index)
+                app.router.add_route('GET', '/hello/{name}', hello)
+                srv = await loop.create_server(app.make_handler(), '127.0.0.1', 8000)
+                print('Server started at http://127.0.0.1:8000...')
+                return srv
+            
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(init(loop))
+            loop.run_forever()    
     
-    
+        注意aiohttp的初始化函数init()也是一个coroutine，loop.create_server()则利用asyncio创建TCP服务。
 
             
         
